@@ -1,0 +1,5 @@
+F:\src\labs\UrlConverterPermutations\src\Benchmark\obj\Release\net9.0\Benchmark.csproj.AssemblyReference.cache
+F:\src\labs\UrlConverterPermutations\src\Benchmark\obj\Release\net9.0\Benchmark.GeneratedMSBuildEditorConfig.editorconfig
+F:\src\labs\UrlConverterPermutations\src\Benchmark\obj\Release\net9.0\Benchmark.AssemblyInfoInputs.cache
+F:\src\labs\UrlConverterPermutations\src\Benchmark\obj\Release\net9.0\Benchmark.AssemblyInfo.cs
+F:\src\labs\UrlConverterPermutations\src\Benchmark\obj\Release\net9.0\Benchmark.csproj.CoreCompileInputs.cache
