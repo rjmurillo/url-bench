@@ -1,6 +1,0 @@
-F:\src\labs\UrlConverterPermutations\test\bin\Release\net9.0\CoverletSourceRootsMapping_UrlConverterPermutations
-F:\src\labs\UrlConverterPermutations\test\obj\Release\net9.0\UrlConverterPermutations.csproj.AssemblyReference.cache
-F:\src\labs\UrlConverterPermutations\test\obj\Release\net9.0\UrlConverterPermutations.GeneratedMSBuildEditorConfig.editorconfig
-F:\src\labs\UrlConverterPermutations\test\obj\Release\net9.0\UrlConverterPermutations.AssemblyInfoInputs.cache
-F:\src\labs\UrlConverterPermutations\test\obj\Release\net9.0\UrlConverterPermutations.AssemblyInfo.cs
-F:\src\labs\UrlConverterPermutations\test\obj\Release\net9.0\UrlConverterPermutations.csproj.CoreCompileInputs.cache

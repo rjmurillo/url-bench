@@ -1,5 +1,0 @@
-F:\src\labs\UrlConverterPermutations\src\Logic\obj\Release\netstandard2.0\Logic.csproj.AssemblyReference.cache
-F:\src\labs\UrlConverterPermutations\src\Logic\obj\Release\netstandard2.0\Logic.GeneratedMSBuildEditorConfig.editorconfig
-F:\src\labs\UrlConverterPermutations\src\Logic\obj\Release\netstandard2.0\Logic.AssemblyInfoInputs.cache
-F:\src\labs\UrlConverterPermutations\src\Logic\obj\Release\netstandard2.0\Logic.AssemblyInfo.cs
-F:\src\labs\UrlConverterPermutations\src\Logic\obj\Release\netstandard2.0\Logic.csproj.CoreCompileInputs.cache
