@@ -1,0 +1,66 @@
+﻿using Contracts;
+
+namespace Logic.Repositories;
+
+public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
+{
+    private readonly Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>[] _partitions;
+    private readonly ReaderWriterLockSlim[] _locks;
+
+    public PartitionedUrlRepository()
+        : this(Environment.ProcessorCount, short.MaxValue)     // Default to number of cores
+    {
+    }
+
+    public PartitionedUrlRepository(int numberOfPartitions, int capacity)
+    {
+        _partitions = new Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>[numberOfPartitions];
+        _locks = new ReaderWriterLockSlim[numberOfPartitions];
+        for (var i = 0; i < numberOfPartitions; i++)
+        {
+            _partitions[i] = new Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>(capacity, MemoryStringEqualityComparer.Ordinal);
+            _locks[i] = new ReaderWriterLockSlim();
+        }
+    }
+
+    public override ReadOnlySpan<char> GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
+    {
+        var partition = GetPartition(shortUrl);
+        var l = _locks[partition];
+
+        l.EnterReadLock();
+        try
+        {
+            if (_partitions[partition].TryGetValue(shortUrl.ToArray(), out var originalUrl))
+            {
+                return originalUrl.Span;
+            }
+        }
+        finally
+        {
+            l.ExitReadLock();
+        }
+
+        return ReadOnlySpan<char>.Empty;
+    }
+
+    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, ReadOnlyMemory<char> originalUrl)
+    {
+        var partition = GetPartition(shortUrl);
+        var l = _locks[partition];
+
+        l.EnterWriteLock();
+        try
+        {
+            return _partitions[partition].TryAdd(
+                shortUrl,
+                originalUrl);
+        }
+        finally
+        {
+            l.ExitWriteLock();
+        }
+    }
+
+    private int GetPartition(ReadOnlyMemory<char> key) => Math.Abs(MemoryStringEqualityComparer.Ordinal.GetHashCode(key) % _partitions.Length);
+}

@@ -1,0 +1,24 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 12 benchmark(s) in total *****
+// ***** Building 2 exe(s) in Parallel: Start   *****
+// ***** Done, took 00:00:00 (0.02 sec)   *****
+// Found 12 benchmarks:
+//   Benchmarks.Shorten: Net60(Runtime=.NET 6.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.Shorten_Memory: Net60(Runtime=.NET 6.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.RoundTrip: Net60(Runtime=.NET 6.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.RoundTrip_Memory: Net60(Runtime=.NET 6.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.Shorten: Net80(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.Shorten_Memory: Net80(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.RoundTrip: Net80(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.RoundTrip_Memory: Net80(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.Shorten: Net90(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.Shorten_Memory: Net90(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.RoundTrip: Net90(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.RoundTrip_Memory: Net90(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+
+Setup power plan (GUID: 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c FriendlyName: High performance)
+// **************************
+// Benchmark: Benchmarks.Shorten: Net60(Runtime=.NET 6.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+// *** Execute ***
+// Launch: 1 / 

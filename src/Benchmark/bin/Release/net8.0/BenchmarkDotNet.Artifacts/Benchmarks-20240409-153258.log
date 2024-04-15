@@ -1,0 +1,59 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 4 benchmark(s) in total *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// ***** Done, took 00:00:00 (0.02 sec)   *****
+// Found 4 benchmarks:
+//   Benchmarks.Shorten: Net90(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.Shorten_Memory: Net90(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.RoundTrip: Net90(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+//   Benchmarks.RoundTrip_Memory: Net90(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+
+Setup power plan (GUID: 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c FriendlyName: High performance)
+// **************************
+// Benchmark: Benchmarks.Shorten: Net90(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10) [ShortenerType=UrlShortener, RepositoryType=ReaderWriterLockSlimUrlRepository, LongUrl=https(...)13473 [52]]
+// *** Execute ***
+// Launch: 1 / 2
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.13.12
+// Runtime=.NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX2,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT,AvxVnni,SERIALIZE VectorSize=256
+// Job: Job-MKCVYS(Runtime=.NET 8.0, Server=True, Toolchain=InProcessEmitToolchain, IterationCount=3, LaunchCount=2, RunStrategy=Throughput, WarmupCount=10)
+
+OverheadJitting  1: 1 op, 98700.00 ns, 98.7000 us/op
+WorkloadJitting  1: 1 op, 146200.00 ns, 146.2000 us/op
+
+OverheadJitting  2: 16 op, 120500.00 ns, 7.5312 us/op
+WorkloadJitting  2: 16 op, 136300.00 ns, 8.5188 us/op
+
+WorkloadPilot    1: 16 op, 16300.00 ns, 1.0188 us/op
+WorkloadPilot    2: 32 op, 13700.00 ns, 428.1250 ns/op
+WorkloadPilot    3: 64 op, 19800.00 ns, 309.3750 ns/op
+WorkloadPilot    4: 128 op, 28100.00 ns, 219.5312 ns/op
+WorkloadPilot    5: 256 op, 43200.00 ns, 168.7500 ns/op
+WorkloadPilot    6: 512 op, 69300.00 ns, 135.3516 ns/op
+WorkloadPilot    7: 1024 op, 117000.00 ns, 114.2578 ns/op
+WorkloadPilot    8: 2048 op, 206900.00 ns, 101.0254 ns/op
+WorkloadPilot    9: 4096 op, 462500.00 ns, 112.9150 ns/op
+WorkloadPilot   10: 8192 op, 990400.00 ns, 120.8984 ns/op
+WorkloadPilot   11: 16384 op, 1843600.00 ns, 112.5244 ns/op
+WorkloadPilot   12: 32768 op, 4214100.00 ns, 128.6041 ns/op
+WorkloadPilot   13: 65536 op, 8738600.00 ns, 133.3405 ns/op
+WorkloadPilot   14: 131072 op, 16286000.00 ns, 124.2523 ns/op
+WorkloadPilot   15: 262144 op, 43165800.00 ns, 164.6645 ns/op
+WorkloadPilot   16: 524288 op, 115096100.00 ns, 219.5284 ns/op
+WorkloadPilot   17: 1048576 op, 192644800.00 ns, 183.7204 ns/op
+WorkloadPilot   18: 2097152 op, 464650500.00 ns, 221.5626 ns/op
+WorkloadPilot   19: 4194304 op, 951068900.00 ns, 226.7525 ns/op
+
+OverheadWarmup   1: 4194304 op, 4519900.00 ns, 1.0776 ns/op
+OverheadWarmup   2: 4194304 op, 4785500.00 ns, 1.1410 ns/op
+OverheadWarmup   3: 4194304 op, 4820600.00 ns, 1.1493 ns/op
+OverheadWarmup   4: 4194304 op, 4504700.00 ns, 1.0740 ns/op
+OverheadWarmup   5: 4194304 op, 4494400.00 ns, 1.0715 ns/op
+OverheadWarmup   6: 4194304 op, 4529400.00 ns, 1.0799 ns/op
+OverheadWarmup   7: 4194304 op, 4485100.00 ns, 1.0693 ns/op
+
+OverheadActual   1: 4194304 op, 4522100.00 ns, 1

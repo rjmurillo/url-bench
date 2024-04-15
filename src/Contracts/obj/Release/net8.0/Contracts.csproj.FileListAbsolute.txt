@@ -1,0 +1,11 @@
+F:\src\labs\UrlConverterPermutations\src\Contracts\bin\Release\net8.0\Contracts.deps.json
+F:\src\labs\UrlConverterPermutations\src\Contracts\bin\Release\net8.0\Contracts.dll
+F:\src\labs\UrlConverterPermutations\src\Contracts\bin\Release\net8.0\Contracts.pdb
+F:\src\labs\UrlConverterPermutations\src\Contracts\obj\Release\net8.0\Contracts.GeneratedMSBuildEditorConfig.editorconfig
+F:\src\labs\UrlConverterPermutations\src\Contracts\obj\Release\net8.0\Contracts.AssemblyInfoInputs.cache
+F:\src\labs\UrlConverterPermutations\src\Contracts\obj\Release\net8.0\Contracts.AssemblyInfo.cs
+F:\src\labs\UrlConverterPermutations\src\Contracts\obj\Release\net8.0\Contracts.csproj.CoreCompileInputs.cache
+F:\src\labs\UrlConverterPermutations\src\Contracts\obj\Release\net8.0\Contracts.dll
+F:\src\labs\UrlConverterPermutations\src\Contracts\obj\Release\net8.0\refint\Contracts.dll
+F:\src\labs\UrlConverterPermutations\src\Contracts\obj\Release\net8.0\Contracts.pdb
+F:\src\labs\UrlConverterPermutations\src\Contracts\obj\Release\net8.0\ref\Contracts.dll
