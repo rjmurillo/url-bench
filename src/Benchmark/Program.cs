@@ -26,7 +26,13 @@ public class Benchmarks
 {
     private IUrlShortener _urlShortener;
 
-    [Params( typeof(IncrementingIntegerUrlShortener), typeof(HashUrlShortener))]
+    [Params(
+        typeof(IncrementingIntegerUrlShortener)
+        ,typeof(Sha256HashUrlShortener)
+#if NET8_0_OR_GREATER
+        ,typeof(Murmur3HashUrlShortener)
+#endif
+    )]
     public Type ShortenerType;
 
     //[Params(typeof(ReaderWriterLockSlimUrlRepository), typeof(PartitionedUrlRepository), typeof(ConcurrentUrlRepository), typeof(FASTERUrlRepository))]
