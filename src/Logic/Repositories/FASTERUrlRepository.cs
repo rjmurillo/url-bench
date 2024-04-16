@@ -11,15 +11,15 @@ namespace Logic.Repositories;
 public class FASTERUrlRepository : ReadOnlyMemoryUrlRepositoryBase, IDisposable
 #pragma warning restore S101 // Types should be named in PascalCase
 {
-    private readonly FasterKVSettings<ReadOnlyMemory<char>, ReadOnlyMemory<char>> _settings;
-    private readonly FasterKV<ReadOnlyMemory<char>, ReadOnlyMemory<char>> _store;
-    private readonly ClientSession<ReadOnlyMemory<char>, ReadOnlyMemory<char>, ReadOnlyMemory<char>, ReadOnlyMemory<char>, Empty, SimpleFunctions<ReadOnlyMemory<char>, ReadOnlyMemory<char>>> _session;
+    private readonly FasterKVSettings<string, string> _settings;
+    private readonly FasterKV<string, string> _store;
+    private readonly ClientSession<string, string, string, string, Empty, SimpleFunctions<string, string>> _session;
 
     public FASTERUrlRepository()
     {
-        _settings = new FasterKVSettings<ReadOnlyMemory<char>, ReadOnlyMemory<char>>(null);
-        _store = new FasterKV<ReadOnlyMemory<char>, ReadOnlyMemory<char>>(_settings);
-        _session = _store.For(new SimpleFunctions<ReadOnlyMemory<char>, ReadOnlyMemory<char>>()).NewSession<SimpleFunctions<ReadOnlyMemory<char>, ReadOnlyMemory<char>>>();
+        _settings = new FasterKVSettings<string, string>(null);
+        _store = new FasterKV< string, string>(_settings);
+        _session = _store.For(new SimpleFunctions<string, string>()).NewSession<SimpleFunctions<string, string>>();
     }
 
     public void Dispose()
@@ -41,23 +41,19 @@ public class FASTERUrlRepository : ReadOnlyMemoryUrlRepositoryBase, IDisposable
         // Dispose unmanaged resources
     }
 
-    public override ReadOnlySpan<char> GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
+    public override string GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
     {
-        var retVal = ReadOnlyMemory<char>.Empty;
-        var status = _session.Read(ref shortUrl, ref retVal);
+        var shortu = shortUrl.ToString();
+        var retVal = string.Empty;
+        var status = _session.Read(ref shortu, ref retVal);
 
-        if (!status.Found ||
-            retVal.IsEmpty)
-        {
-            retVal = ReadOnlyMemory<char>.Empty;
-        }
-
-        return retVal.Span;
+        return retVal;
     }
 
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, ReadOnlyMemory<char> originalUrl)
+    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, string originalUrl)
     {
-        var status = _session.Upsert(ref shortUrl, ref originalUrl);
+        var shortu = shortUrl.ToString();
+        var status = _session.Upsert(ref shortu, ref originalUrl);
         return status.IsCompletedSuccessfully;
     }
 }

@@ -15,6 +15,6 @@ public abstract class ReadOnlyMemoryUrlRepositoryBase : UrlRepositoryBase
 
     public abstract string GetOriginalUrl(ReadOnlyMemory<char> shortUrl);
 
-    public override bool SaveUrlMapping(string shortUrl, string originalUrl) => SaveUrlMapping(shortUrl.AsSpan(), originalUrl);
-    public abstract bool SaveUrlMapping(ReadOnlySpan<char> shortUrl, string originalUrl);
+    public override bool SaveUrlMapping(string shortUrl, string originalUrl) => SaveUrlMapping(shortUrl.AsMemory(), originalUrl);
+    public abstract bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, string originalUrl);
 }

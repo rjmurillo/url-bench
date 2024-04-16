@@ -4,7 +4,7 @@ namespace Logic.Repositories;
 
 public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
 {
-    private readonly Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>[] _partitions;
+    private readonly Dictionary<ReadOnlyMemory<char>, string>[] _partitions;
     private readonly ReaderWriterLockSlim[] _locks;
 
     public PartitionedUrlRepository()
@@ -14,16 +14,16 @@ public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
 
     public PartitionedUrlRepository(int numberOfPartitions, int capacity)
     {
-        _partitions = new Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>[numberOfPartitions];
+        _partitions = new Dictionary<ReadOnlyMemory<char>, string>[numberOfPartitions];
         _locks = new ReaderWriterLockSlim[numberOfPartitions];
         for (var i = 0; i < numberOfPartitions; i++)
         {
-            _partitions[i] = new Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>(capacity, MemoryStringEqualityComparer.Ordinal);
+            _partitions[i] = new Dictionary<ReadOnlyMemory<char>, string>(capacity, MemoryStringEqualityComparer.Ordinal);
             _locks[i] = new ReaderWriterLockSlim();
         }
     }
 
-    public override ReadOnlySpan<char> GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
+    public override string GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
     {
         var partition = GetPartition(shortUrl);
         var l = _locks[partition];
@@ -33,7 +33,7 @@ public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
         {
             if (_partitions[partition].TryGetValue(shortUrl.ToArray(), out var originalUrl))
             {
-                return originalUrl.Span;
+                return originalUrl;
             }
         }
         finally
@@ -41,10 +41,10 @@ public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
             l.ExitReadLock();
         }
 
-        return ReadOnlySpan<char>.Empty;
+        return string.Empty;
     }
 
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, ReadOnlyMemory<char> originalUrl)
+    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, string originalUrl)
     {
         var partition = GetPartition(shortUrl);
         var l = _locks[partition];

@@ -14,7 +14,7 @@ public class ConcurrentUrlRepository : ReadOnlyMemoryUrlRepositoryBase
 
     public ConcurrentUrlRepository(int concurrencyLevel, int capacity)
     {
-        _urlMappings = new ConcurrentDictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>(concurrencyLevel, capacity, MemoryStringEqualityComparer.Ordinal);
+        _urlMappings = new ConcurrentDictionary<ReadOnlyMemory<char>, string>(concurrencyLevel, capacity, MemoryStringEqualityComparer.Ordinal);
     }
 
     public override string GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
@@ -27,7 +27,7 @@ public class ConcurrentUrlRepository : ReadOnlyMemoryUrlRepositoryBase
         return string.Empty;
     }
 
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, ReadOnlyMemory<char> originalUrl)
+    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, string originalUrl)
     {
         return _urlMappings.TryAdd(shortUrl, originalUrl);
     }

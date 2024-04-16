@@ -9,14 +9,14 @@ public class FastCacheUrlRepository : ReadOnlyMemoryUrlRepositoryBase
     {
         if (Cached<ReadOnlyMemory<char>>.TryGet(shortUrl, out var originalUrl))
         {
-            return originalUrl.Value.Span;
+            return originalUrl.Value.ToString();
         }
 
         return string.Empty;
     }
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, ReadOnlyMemory<char> originalUrl)
+    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, string originalUrl)
     {
-        Cached<ReadOnlyMemory<char>>.Save(shortUrl, originalUrl, TimeSpan.MaxValue);
+        Cached<ReadOnlyMemory<char>>.Save(shortUrl, originalUrl.AsMemory(), TimeSpan.MaxValue);
         return true;
     }
 }

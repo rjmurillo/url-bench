@@ -4,7 +4,7 @@ using Logic.Repositories;
 namespace Logic.Shorteners;
 
 public class ReadOnlyMemoryUrlShortener(ReadOnlyMemoryUrlRepositoryBase urlRepository, ulong initialValue) 
-    : ReadOnlyMemoryUrlShortenerBase(urlRepository)
+    : UrlShortener(urlRepository, initialValue)
 {
     public ReadOnlyMemoryUrlShortener(ReadOnlyMemoryUrlRepositoryBase urlRepository)
         : this(urlRepository, 0UL)
@@ -24,7 +24,7 @@ public class ReadOnlyMemoryUrlShortener(ReadOnlyMemoryUrlRepositoryBase urlRepos
             var shortUrl = Convert.AsBase62String(value);
 
             // TODO: Be smarter about this so we don't cause infinite loop when repository is down
-            while (!Repository.SaveUrlMapping(shortUrl.ToArray(), originalUrl))
+            while (!Repository.SaveUrlMapping(shortUrl, originalUrl))
             {
                 shortUrl = Convert.AsBase62String(value);
             }
