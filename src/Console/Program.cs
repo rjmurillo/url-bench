@@ -39,7 +39,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             internal const int NumberOfUrls = 10_000_000;
             internal const int Iterations = 3;
             internal static readonly Type RepoType = typeof(FASTERUrlRepository);
-            internal static readonly Type ShortenerType = typeof(UrlShortener);
+            internal static readonly Type ShortenerType = typeof(IncrementingIntegerUrlShortener);
             //internal static readonly Type RepoType = typeof(ReaderWriterLockSlimUrlRepository);
         }
 
@@ -112,7 +112,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
             var repoType = UrlRepositoryHelper.GetRepositoryType(settings.StorageType);
             var repo = (IUrlRepository)Activator.CreateInstance(repoType);
-            var shortener = new UrlShortener(repo);
+            var shortener = new IncrementingIntegerUrlShortener(repo);
 
             var sw = new Stopwatch();
             long workingSet;

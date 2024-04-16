@@ -138,7 +138,7 @@ public abstract class ShortenerTests
     public void RetrieveOriginalUrl_returns_result_within_requirements_when_keyspace_is_used()
     {
         var upper = (ulong)(Math.Pow(62, 7) - 1.0d);
-        Shortener = new UrlShortener(Repository, upper);
+        Shortener = new IncrementingIntegerUrlShortener(Repository, upper);
 
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
         var shortUrl = Shortener.ShortenUrl(longUrl);
@@ -178,7 +178,7 @@ public class UrlShortener_ReaderWriterLockSlimUrlRepository : ShortenerTests
         :base(output)
     {
         Repository = new ReaderWriterLockSlimUrlRepository();
-        Shortener = new UrlShortener(Repository);
+        Shortener = new IncrementingIntegerUrlShortener(Repository);
     }
 }
 
@@ -188,7 +188,7 @@ public class UrlShortener_PartitionedUrlRepository : ShortenerTests
      : base(output)
     {
         Repository = new PartitionedUrlRepository();
-        Shortener = new UrlShortener(Repository);
+        Shortener = new IncrementingIntegerUrlShortener(Repository);
     }
 }
 
@@ -198,7 +198,7 @@ public class UrlShortener_ConcurrentUrlRepository : ShortenerTests
         : base(output)
     {
         Repository = new ConcurrentUrlRepository(Environment.ProcessorCount, 0);
-        Shortener = new UrlShortener(Repository);
+        Shortener = new IncrementingIntegerUrlShortener(Repository);
     }
 }
 
@@ -207,7 +207,7 @@ public class UrlShortener_ConcurrentUrlRepository : ShortenerTests
 //    public UrlShortener_MemoryCacheUrlRepository(ITestOutputHelper output) : base(output)
 //    {
 //        Repository = new MemoryCacheUrlRepository();
-//        Shortener = new UrlShortener(Repository);
+//        Shortener = new IncrementingIntegerUrlShortener(Repository);
 //    }
 //}
 
@@ -216,7 +216,7 @@ public class UrlShortener_FastCacheUrlRepository : ShortenerTests
     public UrlShortener_FastCacheUrlRepository(ITestOutputHelper output) : base(output)
     {
         Repository = new FastCacheUrlRepository();
-        Shortener = new UrlShortener(Repository);
+        Shortener = new IncrementingIntegerUrlShortener(Repository);
     }
 }
 
@@ -225,7 +225,7 @@ public sealed class UrlShortener_FasterUrlRepository : ShortenerTests, IDisposab
     public UrlShortener_FasterUrlRepository(ITestOutputHelper output) : base(output)
     {
         Repository = new FASTERUrlRepository();
-        Shortener = new UrlShortener(Repository);
+        Shortener = new IncrementingIntegerUrlShortener(Repository);
     }
 
     public void Dispose()
@@ -246,8 +246,9 @@ public class Performance_FunctionalTests
     }
 
     [SkippableTheory]
-    [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(UrlShortener))]
-    [InlineData(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository), typeof(UrlShortener))]
+    [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(IncrementingIntegerUrlShortener))]
+    [InlineData(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository), typeof(IncrementingIntegerUrlShortener))]
+    [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(HashUrlShortener))]
     public void StringTests(Type repositoryType, Type shortenerType)
     {
         // Arrange
@@ -259,7 +260,7 @@ public class Performance_FunctionalTests
 
         shortUrl.ShouldNotBeNullOrEmpty();
         shortUrl.ShouldNotBeNullOrWhiteSpace();
-        shortUrl.Length.ShouldBeLessThan(8);
+        shortUrl.Length.ShouldBeLessThan(9);
 
         var retrievedOriginalUrl = repository.GetOriginalUrl(shortUrl);
         _output.WriteLine($"Retrieved URL: {retrievedOriginalUrl}");
@@ -270,8 +271,8 @@ public class Performance_FunctionalTests
     }
 
     [SkippableTheory]
-    [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(UrlShortener))]
-    [InlineData(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository), typeof(UrlShortener))]
+    [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(IncrementingIntegerUrlShortener))]
+    [InlineData(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository), typeof(IncrementingIntegerUrlShortener))]
     public void MemoryTests(Type repositoryType, Type shortenerType)
     {
         // Arrange

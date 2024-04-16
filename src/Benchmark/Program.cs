@@ -26,14 +26,14 @@ public class Benchmarks
 {
     private IUrlShortener _urlShortener;
 
-    [Params( typeof(UrlShortener))]
+    [Params( typeof(IncrementingIntegerUrlShortener), typeof(HashUrlShortener))]
     public Type ShortenerType;
 
     //[Params(typeof(ReaderWriterLockSlimUrlRepository), typeof(PartitionedUrlRepository), typeof(ConcurrentUrlRepository), typeof(FASTERUrlRepository))]
     //[Params(typeof(FASTERUrlRepository), typeof(ConcurrentUrlRepository))]
     //[Params(typeof(FASTERUrlRepository))]
     //[Params(typeof(ReaderWriterLockSlimUrlRepository), typeof(ReaderWriterLockSlimReadOnlyMemoryRepository))]
-    [Params(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository))]
+    [Params(typeof(FASTERUrlRepository))]
     public Type RepositoryType;
 
     [Params("https://jobs.careers.microsoft.com/us/en/job/1613473")]

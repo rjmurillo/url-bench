@@ -7,6 +7,7 @@ public static class Convert
 {
     private const string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private const ulong CharLength = 62UL;
+    private const int MaxLength = 8;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> AsBase62String(ulong value)
@@ -41,5 +42,12 @@ public static class Convert
         {
             ArrayPool<char>.Shared.Return(arrayToReturnToPool);
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ReadOnlySpan<char> AsBase62String(byte[] hash)
+    {
+        var index = BitConverter.ToUInt64(hash, 0) % (ulong)Math.Pow(CharLength, MaxLength);
+        return AsBase62String(index);
     }
 }
