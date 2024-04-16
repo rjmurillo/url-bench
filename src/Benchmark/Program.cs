@@ -28,18 +28,18 @@ public class Benchmarks
 
     [Params(
         typeof(IncrementingIntegerUrlShortener)
-        ,typeof(Sha256HashUrlShortener)
 #if NET8_0_OR_GREATER
+        , typeof(Sha256HashUrlShortener)
         ,typeof(Murmur3HashUrlShortener)
 #endif
     )]
     public Type ShortenerType;
 
-    //[Params(typeof(ReaderWriterLockSlimUrlRepository), typeof(PartitionedUrlRepository), typeof(ConcurrentUrlRepository), typeof(FASTERUrlRepository))]
+    [Params(typeof(ReaderWriterLockSlimUrlRepository), typeof(PartitionedUrlRepository), typeof(ConcurrentUrlRepository), typeof(FASTERUrlRepository))]
     //[Params(typeof(FASTERUrlRepository), typeof(ConcurrentUrlRepository))]
     //[Params(typeof(FASTERUrlRepository))]
     //[Params(typeof(ReaderWriterLockSlimUrlRepository), typeof(ReaderWriterLockSlimReadOnlyMemoryRepository))]
-    [Params(typeof(FASTERUrlRepository))]
+    //[Params(typeof(FASTERUrlRepository))]
     public Type RepositoryType;
 
     [Params("https://jobs.careers.microsoft.com/us/en/job/1613473")]

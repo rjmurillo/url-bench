@@ -248,8 +248,8 @@ public class Performance_FunctionalTests
     [SkippableTheory]
     [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(IncrementingIntegerUrlShortener))]
     [InlineData(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository), typeof(IncrementingIntegerUrlShortener))]
-    [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(Sha256HashUrlShortener))]
 #if NET8_0_OR_GREATER
+    [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(Sha256HashUrlShortener))]
     [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(Murmur3HashUrlShortener))]
 #endif
     public void StringTests(Type repositoryType, Type shortenerType)

@@ -1,4 +1,5 @@
 ﻿#if NET8_0_OR_GREATER
+using System.Runtime.InteropServices;
 using System.Text;
 using Contracts;
 using MurmurHash;
@@ -20,25 +21,35 @@ public class Murmur3HashUrlShortener(IUrlRepository urlRepository, uint seed) : 
             return string.Empty;
         }
 
+        Span<byte> inputBuffer = stackalloc byte[Encoding.Unicode.GetMaxByteCount(originalUrl.Length + 10)]; // Extra space for attempts
+        Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
+
         var attempt = 0;
-        ReadOnlySpan<byte> inputSpan = Encoding.Unicode.GetBytes(originalUrl).AsSpan();
-
-        var shortUrl = Convert.AsBase62String(MurmurHash3.Hash32(ref inputSpan, seed)).ToString();
-
-        while (!Repository.SaveUrlMapping(shortUrl, originalUrl))
+        do
         {
-            inputSpan = Encoding.Unicode.GetBytes(originalUrl + attempt++).AsSpan();
-
-            shortUrl = Convert.AsBase62String(MurmurHash3.Hash32(ref inputSpan, seed)).ToString();
-
-            if (attempt > 1000)    // Arbitrary number to prevent infinite loop
+            originalUrl.AsSpan().CopyTo(charBuffer); // Copy original URL to buffer
+            if (attempt > 0)
             {
-                throw new InvalidOperationException("Could not generate a unique short URL");
+                // Write attempt number as string to buffer right after the URL
+                attempt.TryFormat(charBuffer[originalUrl.Length..], out _);
             }
-        }
 
-        return shortUrl;
+            // Encode the char buffer containing the URL and attempt number into the input buffer
+            var bytesUsed = Encoding.Unicode.GetBytes(charBuffer[..(originalUrl.Length + (attempt > 0 ? (int)Math.Log10(attempt) + 1 : 0))], inputBuffer);
+            ReadOnlySpan<byte> inputSpan = inputBuffer[..bytesUsed];
 
+            // Calculate hash and convert to Base62
+            var shortUrl = Convert.AsBase62String(MurmurHash3.Hash32(ref inputSpan, seed)).ToString();
+
+            if (Repository.SaveUrlMapping(shortUrl, originalUrl))
+            {
+                return shortUrl;
+            }
+
+            attempt++;
+        } while (attempt <= 1000);
+
+        throw new InvalidOperationException("Could not generate a unique short URL");
     }
 }
 
