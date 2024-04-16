@@ -1,6 +1,8 @@
 ﻿using Spectre.Console;
 using Spectre.Console.Cli;
 
+namespace Console;
+
 internal static class SettingsDumper
 {
     public static void Dump(CommandSettings settings)

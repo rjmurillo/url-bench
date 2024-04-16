@@ -111,7 +111,7 @@ public abstract class ShortenerTests
 
         _output.WriteLine($"Shortened URL: {shortUrl}");
 
-        var originalUrl = Shortener.RetrieveOriginalUrl(shortUrl);
+        var originalUrl = Repository.GetOriginalUrl(shortUrl);
 
         _output.WriteLine($"Original URL: {originalUrl}");
 
@@ -122,18 +122,16 @@ public abstract class ShortenerTests
     public void MemoryOptimized_RetrieveOriginalUrl_returns_original_url()
     {
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
-        var shortener = Shortener as ReadOnlyMemoryUrlShortenerBase;
 
-        Skip.If(shortener == null);
 
-        var shortUrl = shortener.ShortenUrl(longUrl.AsMemory());
+        var shortUrl = Shortener.ShortenUrl(longUrl);
         _output.WriteLine($"Shortened URL: {shortUrl}");
 
-        var originalUrl = shortener.RetrieveOriginalUrl(new ReadOnlyMemory<char>(shortUrl.ToArray()));
+        var originalUrl = Repository.GetOriginalUrl(shortUrl);
 
         _output.WriteLine($"Original URL: {originalUrl}");
 
-        originalUrl.ToArray().ShouldBe(longUrl.ToCharArray());
+        originalUrl.ShouldBe(longUrl);
     }
 
     [Fact]
@@ -147,7 +145,7 @@ public abstract class ShortenerTests
 
         _output.WriteLine($"Shortened URL: {shortUrl}");
 
-        var originalUrl = Shortener.RetrieveOriginalUrl(shortUrl);
+        var originalUrl = Repository.GetOriginalUrl(shortUrl);
 
         _output.WriteLine($"Original URL: {originalUrl}");
 
@@ -166,7 +164,7 @@ public abstract class ShortenerTests
 
         Assert.True(shortUrl.Length < longUrl.Length, "The short version is longer than the original");
 
-        var originalUrl = Shortener.RetrieveOriginalUrl(shortUrl);
+        var originalUrl = Repository.GetOriginalUrl(shortUrl);
 
         _output.WriteLine($"Original URL: {originalUrl}");
 
@@ -190,6 +188,16 @@ public class UrlShortener_PartitionedUrlRepository : ShortenerTests
      : base(output)
     {
         Repository = new PartitionedUrlRepository();
+        Shortener = new UrlShortener(Repository);
+    }
+}
+
+public class UrlShortener_ConcurrentUrlRepository : ShortenerTests
+{
+    public UrlShortener_ConcurrentUrlRepository(ITestOutputHelper output)
+        : base(output)
+    {
+        Repository = new ConcurrentUrlRepository(Environment.ProcessorCount, 0);
         Shortener = new UrlShortener(Repository);
     }
 }
@@ -239,11 +247,11 @@ public class Performance_FunctionalTests
 
     [SkippableTheory]
     [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(UrlShortener))]
-    [InlineData(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository), typeof(ReadOnlyMemoryUrlShortener))]
+    [InlineData(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository), typeof(UrlShortener))]
     public void StringTests(Type repositoryType, Type shortenerType)
     {
         // Arrange
-        var shortener = TypeFactory(repositoryType, shortenerType);
+        var (shortener, repository) = TypeFactory(repositoryType, shortenerType);
 
         // Regular
         var shortUrl = shortener.ShortenUrl(LongUrl);
@@ -253,7 +261,7 @@ public class Performance_FunctionalTests
         shortUrl.ShouldNotBeNullOrWhiteSpace();
         shortUrl.Length.ShouldBeLessThan(8);
 
-        var retrievedOriginalUrl = shortener.RetrieveOriginalUrl(shortUrl);
+        var retrievedOriginalUrl = repository.GetOriginalUrl(shortUrl);
         _output.WriteLine($"Retrieved URL: {retrievedOriginalUrl}");
 
         retrievedOriginalUrl.ShouldNotBeNullOrEmpty();
@@ -263,45 +271,38 @@ public class Performance_FunctionalTests
 
     [SkippableTheory]
     [InlineData(typeof(ReaderWriterLockSlimUrlRepository), typeof(UrlShortener))]
-    [InlineData(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository), typeof(ReadOnlyMemoryUrlShortener))]
+    [InlineData(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository), typeof(UrlShortener))]
     public void MemoryTests(Type repositoryType, Type shortenerType)
     {
         // Arrange
-        var shortener = TypeFactory(repositoryType, shortenerType);
+        var (shortener, repository) = TypeFactory(repositoryType, shortenerType);
 
         // Memory
-        if (shortener is ReadOnlyMemoryUrlShortenerBase urlShortener)
-        {
-            var shortUrlMemory = urlShortener.ShortenUrl(LongUrl.AsMemory());
-            _output.WriteLine($"Shortened URL: {shortUrlMemory}");
 
-            shortUrlMemory.IsEmpty.ShouldBeFalse();
-            shortUrlMemory.IsWhiteSpace().ShouldBeFalse();
-            shortUrlMemory.Length.ShouldBeLessThan(8);
+        var shortUrlMemory = shortener.ShortenUrl(LongUrl);
+        _output.WriteLine($"Shortened URL: {shortUrlMemory}");
 
-            var originalUrlMemory = urlShortener.RetrieveOriginalUrl(shortUrlMemory.ToArray());
-            _output.WriteLine($"Retrieved URL: {originalUrlMemory}");
+        shortUrlMemory.ShouldNotBeNullOrWhiteSpace();
+        shortUrlMemory.Length.ShouldBeLessThan(8);
 
-            originalUrlMemory.ShouldNotBeNullOrEmpty();
-            originalUrlMemory.ShouldBe(LongUrl);
+        var originalUrlMemory = repository.GetOriginalUrl(shortUrlMemory);
+        _output.WriteLine($"Retrieved URL: {originalUrlMemory}");
 
-            //originalUrlMemory.IsEmpty.ShouldBeFalse();
-            //originalUrlMemory.IsWhiteSpace().ShouldBeFalse();
-            //originalUrlMemory.ToArray().ShouldBe(LongUrl.ToCharArray());
-        }
-        else
-        {
-            Skip.If(true);
-        }
+        originalUrlMemory.ShouldNotBeNullOrEmpty();
+        originalUrlMemory.ShouldBe(LongUrl);
+
+        //originalUrlMemory.IsEmpty.ShouldBeFalse();
+        //originalUrlMemory.IsWhiteSpace().ShouldBeFalse();
+        //originalUrlMemory.ToArray().ShouldBe(LongUrl.ToCharArray());
     }
 
-    private static IUrlShortener TypeFactory(Type repositoryType, Type shortenerType)
+    private static (IUrlShortener, IUrlRepository) TypeFactory(Type repositoryType, Type shortenerType)
     {
         var repository = Activator.CreateInstance(repositoryType) as IUrlRepository;
         repository.ShouldNotBeNull();
         var shortener = Activator.CreateInstance(shortenerType, new object[]{repository}) as IUrlShortener;
         shortener.ShouldNotBeNull();
 
-        return shortener;
+        return (shortener, repository);
     }
 }

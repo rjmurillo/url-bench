@@ -26,7 +26,7 @@ public class Benchmarks
 {
     private IUrlShortener _urlShortener;
 
-    [Params(typeof(ReadOnlyMemoryUrlShortener))]
+    [Params( typeof(UrlShortener))]
     public Type ShortenerType;
 
     //[Params(typeof(ReaderWriterLockSlimUrlRepository), typeof(PartitionedUrlRepository), typeof(ConcurrentUrlRepository), typeof(FASTERUrlRepository))]
@@ -40,12 +40,13 @@ public class Benchmarks
     public string LongUrl;
 
     private string _knownShort;
+    private IUrlRepository? _repository;
 
     [GlobalSetup]
     public void Setup()
     {
-        var repository = (IUrlRepository)Activator.CreateInstance(RepositoryType);
-        _urlShortener = (IUrlShortener)Activator.CreateInstance(ShortenerType, new object[]{repository});
+        _repository = (IUrlRepository)Activator.CreateInstance(RepositoryType);
+        _urlShortener = (IUrlShortener)Activator.CreateInstance(ShortenerType, new object[]{_repository});
 
         _knownShort = _urlShortener.ShortenUrl(LongUrl);
     }
@@ -57,44 +58,15 @@ public class Benchmarks
     }
 
     [Benchmark]
-    public void Shorten_Memory()
+    public void RetrieveOriginalUrl()
     {
-        if (_urlShortener is ReadOnlyMemoryUrlShortenerBase urlShortener)
-        {
-            var shortUrl = urlShortener.ShortenUrl(LongUrl.AsMemory());
-        }
-        else
-        {
-            throw new NotSupportedException($"Type {_urlShortener.GetType().Name} does not support {nameof(ReadOnlyMemory<char>)}.");
-        }
-        
-        
+        _repository.GetOriginalUrl(_knownShort);
     }
-
-    //[Benchmark]
-    //public void RetrieveOriginalUrl()
-    //{
-    //    _urlShortener.RetrieveOriginalUrl(_knownShort);
-    //}
 
     [Benchmark]
     public void RoundTrip()
     {
         var shortUrl = _urlShortener.ShortenUrl(LongUrl);
-        var originalUrl = _urlShortener.RetrieveOriginalUrl(shortUrl);
-    }
-
-    [Benchmark]
-    public void RoundTrip_Memory()
-    {
-        if (_urlShortener is ReadOnlyMemoryUrlShortenerBase urlShortener)
-        {
-            var shortUrl = urlShortener.ShortenUrl(LongUrl.AsMemory());
-            var originalUrl = urlShortener.RetrieveOriginalUrl(shortUrl.ToArray());
-        }
-        else
-        {
-            throw new NotSupportedException($"Type {_urlShortener.GetType().Name} does not support {nameof(ReadOnlyMemory<char>)}.");
-        }
+        var originalUrl = _repository.GetOriginalUrl(shortUrl);
     }
 }

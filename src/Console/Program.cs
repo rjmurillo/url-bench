@@ -1,6 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using BenchmarkDotNet.Mathematics;
+using Console;
+using Contracts;
+
 using Logic;
 using Logic.Repositories;
 using Logic.Shorteners;
@@ -17,12 +20,10 @@ app.Configure(config =>
 
     config.AddCommand<BenchmarkCommand>("bench")
         .WithExample($"bench -s {nameof(ReaderWriterLockSlimUrlRepository)}")
-        //.WithExample($"bench -s {nameof(ConcurrentUrlRepository)}")
-        //.WithExample($"bench -s {nameof(PartitionedUrlRepository)}")
-        //.WithExample($"bench -s {nameof(FASTERUrlRepository)}")
+        .WithExample($"bench -s {nameof(ConcurrentUrlRepository)}")
+        .WithExample($"bench -s {nameof(PartitionedUrlRepository)}")
+        .WithExample($"bench -s {nameof(FASTERUrlRepository)}")
         ;
-
-
 });
 
 return app.Run(args.Length > 0 ? args : ["bench"]);
@@ -37,8 +38,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             internal const string Url = "https://www.microsoft.com/en-us/security/business/endpoint-security/microsoft-defender-endpoint";
             internal const int NumberOfUrls = 10_000_000;
             internal const int Iterations = 3;
-            //internal static readonly Type RepoType = typeof(FASTERUrlRepository);
-            internal static readonly Type RepoType = typeof(ReaderWriterLockSlimUrlRepository);
+            internal static readonly Type RepoType = typeof(FASTERUrlRepository);
+            internal static readonly Type ShortenerType = typeof(UrlShortener);
+            //internal static readonly Type RepoType = typeof(ReaderWriterLockSlimUrlRepository);
         }
 
         [CommandOption("-i|--iterations")]
@@ -56,6 +58,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         [CommandOption("-s|--storage")]
         public string? StorageType { get; private set; }
 
+        [CommandOption("-t|--urlshortener")]
+        public string? ShortenerType { get; private set; }
+
         [CommandOption("-p|--maxdop")]
         [DefaultValue(1)]
         public int MaxDegreeOfParallelism { get; init; }
@@ -65,17 +70,35 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             if (string.IsNullOrWhiteSpace(StorageType))
             {
                 StorageType = Defaults.RepoType.Name;
-                return base.Validate();
+            }
+
+            if (string.IsNullOrWhiteSpace(ShortenerType))
+            {
+                ShortenerType = Defaults.ShortenerType.Name;
             }
 
 
-            var typesImplementingIUrlRepository = UrlRepositoryHelper.GetConcreteTypes();
+            var typesImplementingIUrlRepository = UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>();
 
-            return typesImplementingIUrlRepository.Any(t =>
-                t.Name.Equals(StorageType, StringComparison.OrdinalIgnoreCase))
+            var storageValidationResult = UrlRepositoryHelper.GetRepositoryType(StorageType) != null
                 ? ValidationResult.Success()
-                : ValidationResult.Error("Unrecognized storage type. Use: " +
-                                         string.Join(", ", typesImplementingIUrlRepository.Select(t => t.Name)));
+                : ValidationResult.Error(
+                    $"Unrecognized storage type '{StorageType}'. Use: {string.Join(", ", typesImplementingIUrlRepository.Select(t => t.Name))}");
+
+            if (!storageValidationResult.Successful)
+            {
+                return storageValidationResult;
+            }
+
+            var typesImplementingIUrlShortener = UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>();
+
+            var shortenerValidationResult = UrlRepositoryHelper.GetShortenerType(ShortenerType) != null
+                ? ValidationResult.Success()
+                : ValidationResult.Error(
+                    $"Unrecognized URL shortener type '{ShortenerType}'. Use: {string.Join(", ", typesImplementingIUrlShortener.Select(t => t.Name))}");
+
+
+            return shortenerValidationResult;
         }
     }
 
@@ -85,14 +108,31 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         {
             SettingsDumper.Dump(settings);
 
-            var repoType = UrlRepositoryHelper.GetType(settings.StorageType);
+            const int maxDictionaryCapacity = 2_000_000_000;
+
+            var repoType = UrlRepositoryHelper.GetRepositoryType(settings.StorageType);
             var repo = (IUrlRepository)Activator.CreateInstance(repoType);
             var shortener = new UrlShortener(repo);
 
             var sw = new Stopwatch();
             long workingSet;
-            var readSamples = new List<double>(settings.Iterations * settings.NumberOfUrls);
-            var writeSamples = new List<double>(settings.Iterations * settings.NumberOfUrls);
+
+            var writeSampleCount = settings.Iterations * settings.NumberOfUrls;
+            if (writeSampleCount < 0 || writeSampleCount > maxDictionaryCapacity)
+            {
+                // We overflowed, set to Int32.MaxValue
+                writeSampleCount = maxDictionaryCapacity;
+            }
+
+            var readSampleCount = settings.Iterations * settings.NumberOfUrls;
+            if (readSampleCount < 0 || readSampleCount > maxDictionaryCapacity)
+            {
+                // We overflowed, set to Int32.MaxValue
+                readSampleCount = maxDictionaryCapacity;
+            }
+
+            var readSamples = new List<double>(readSampleCount);
+            var writeSamples = new List<double>(writeSampleCount);
 
             AnsiConsole.Status()
                 .Spinner(Spinner.Known.Dots)
@@ -110,7 +150,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             {
                                 var shortUrl = shortener.ShortenUrl(settings.Url);
 
-                                if (i % (1 << 19) == 0)
+                                if (i % 524288 == 0)
                                 {
                                     GC.Collect();
                                     workingSet = Process.GetCurrentProcess().WorkingSet64;
@@ -135,7 +175,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                 {
                                     var shortUrl = shortener.ShortenUrl(settings.Url);
 
-                                    if (i % (1 << 19) == 0)
+                                    if (i % 524288 == 0)
                                     {
                                         GC.Collect();
                                         workingSet = Process.GetCurrentProcess().WorkingSet64;
@@ -171,12 +211,22 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                     {
                         for (var j = 1; j <= settings.Iterations; j++)
                         {
+
+
                             sw.Start();
                             for (var i = 0; i < settings.NumberOfUrls; i++)
                             {
                                 var k = (ulong)rnd.NextInt64(1, settings.NumberOfUrls * j);
-                                var shortUrl = Convert.AsBase62String(k).ToArray();
-                                var longUrl = shortener.RetrieveOriginalUrl(shortUrl);
+                                var shortUrl = Convert.AsBase62String(k).ToString();
+                                var longUrl = repo.GetOriginalUrl(shortUrl);
+
+                                if (i % 524288 == 0)
+                                {
+                                    GC.Collect();
+                                    workingSet = Process.GetCurrentProcess().WorkingSet64;
+
+                                    ctx.Status($"Reading... Iteration: {j}, URLs {i}: {workingSet / 1048576}M");
+                                }
                             }
 
                             sw.Stop();
@@ -194,8 +244,16 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                 new ParallelOptions { MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism }, i =>
                                 {
                                     var k = (ulong)rnd.NextInt64(1, settings.NumberOfUrls * j);
-                                    var shortUrl = Convert.AsBase62String(k);
-                                    var longUrl = shortener.RetrieveOriginalUrl(shortUrl);
+                                    var shortUrl = Convert.AsBase62String(k).ToString();
+                                    var longUrl = repo.GetOriginalUrl(shortUrl);
+
+                                    if (i % 524288 == 0)
+                                    {
+                                        GC.Collect();
+                                        workingSet = Process.GetCurrentProcess().WorkingSet64;
+
+                                        ctx.Status($"Reading... Iteration: {j}, URLs {i}: {workingSet / 1048576}M");
+                                    }
                                 });
                             sw.Stop();
                             readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
@@ -218,40 +276,5 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         }
 
         return 0;
-    }
-}
-
-public static class StatisticsDumper
-{
-    public static void Dump(Statistics statistics)
-    {
-        var table = new Table().RoundedBorder();
-        table.AddColumn("[grey]Name[/]");
-        table.AddColumn("[grey]Value[/]");
-
-        var properties = statistics.GetType().GetProperties();
-        foreach (var property in properties)
-        {
-            var value = property.GetValue(statistics);
-                string? displayValue = null;
-                if (value is double[] doubleArray)
-                {
-                    displayValue = string.Join(", ", doubleArray.Select(d => d.ToString()));
-                }
-                else
-                {
-                    // Convert other values to string and escape brackets
-                    displayValue = value?.ToString()
-                        ?.Replace("[", "[[")
-                        ?.Replace("]", "]]");
-                }
-
-
-                table.AddRow(
-                property.Name,
-                displayValue ?? "[grey]null[/]");
-        }
-
-        AnsiConsole.Write(table);
     }
 }
