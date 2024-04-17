@@ -2,9 +2,9 @@
 
 namespace Logic.Repositories;
 
-public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
+public class PartitionedUrlRepository : UrlRepositoryBase
 {
-    private readonly Dictionary<ReadOnlyMemory<char>, string>[] _partitions;
+    private readonly Dictionary<string, string>[] _partitions;
     private readonly ReaderWriterLockSlim[] _locks;
 
     public PartitionedUrlRepository()
@@ -14,24 +14,24 @@ public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
 
     public PartitionedUrlRepository(int numberOfPartitions, int capacity)
     {
-        _partitions = new Dictionary<ReadOnlyMemory<char>, string>[numberOfPartitions];
+        _partitions = new Dictionary<string, string>[numberOfPartitions];
         _locks = new ReaderWriterLockSlim[numberOfPartitions];
         for (var i = 0; i < numberOfPartitions; i++)
         {
-            _partitions[i] = new Dictionary<ReadOnlyMemory<char>, string>(capacity, MemoryStringEqualityComparer.Ordinal);
+            _partitions[i] = new Dictionary<string, string>(capacity, StringComparer.Ordinal);
             _locks[i] = new ReaderWriterLockSlim();
         }
     }
 
-    public override string GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
+    public override string GetOriginalUrl(string shortUrl)
     {
-        var partition = GetPartition(shortUrl);
+        var partition = GetPartition(shortUrl.AsMemory());
         var l = _locks[partition];
 
         l.EnterReadLock();
         try
         {
-            if (_partitions[partition].TryGetValue(shortUrl.ToArray(), out var originalUrl))
+            if (_partitions[partition].TryGetValue(shortUrl, out var originalUrl))
             {
                 return originalUrl;
             }
@@ -44,9 +44,9 @@ public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
         return string.Empty;
     }
 
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, string originalUrl)
+    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
-        var partition = GetPartition(shortUrl);
+        var partition = GetPartition(shortUrl.AsMemory());
         var l = _locks[partition];
 
         l.EnterWriteLock();

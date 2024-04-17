@@ -3,21 +3,16 @@ using Contracts;
 
 namespace Logic.Repositories;
 
-public class ConcurrentUrlRepository : ReadOnlyMemoryUrlRepositoryBase
+public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRepositoryBase
 {
-    private readonly ConcurrentDictionary<ReadOnlyMemory<char>, string> _urlMappings;
+    private readonly ConcurrentDictionary<string, string> _urlMappings = new(concurrencyLevel, capacity, StringComparer.Ordinal);
 
     public ConcurrentUrlRepository()
         : this(Environment.ProcessorCount, short.MaxValue)
     {
     }
 
-    public ConcurrentUrlRepository(int concurrencyLevel, int capacity)
-    {
-        _urlMappings = new ConcurrentDictionary<ReadOnlyMemory<char>, string>(concurrencyLevel, capacity, MemoryStringEqualityComparer.Ordinal);
-    }
-
-    public override string GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
+    public override string GetOriginalUrl(string shortUrl)
     {
         if (_urlMappings.TryGetValue(shortUrl, out var originalUrl))
         {
@@ -27,7 +22,7 @@ public class ConcurrentUrlRepository : ReadOnlyMemoryUrlRepositoryBase
         return string.Empty;
     }
 
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, string originalUrl)
+    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
         return _urlMappings.TryAdd(shortUrl, originalUrl);
     }

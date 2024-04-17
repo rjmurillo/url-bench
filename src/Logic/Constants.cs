@@ -2,5 +2,6 @@
 
 internal static class Constants
 {
-    public const long Base62Power7 = 3521614606208;
+    public const long Base62Power8 = 218_340_105_584_896;
+    public const int MaxLength = 8;
 }

@@ -2,54 +2,46 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using Contracts;
+using IdGen;
 using MurmurHash;
 
 namespace Logic.Shorteners;
 
-
-public class Murmur3HashUrlShortener(IUrlRepository urlRepository, uint seed) : UrlShortenerBase(urlRepository)
+public class Murmur3HashUrlShortener(uint seed)
+    : IUrlShortener
 {
-    public Murmur3HashUrlShortener(IUrlRepository urlRepository)
-        :this(urlRepository, 0U)
+    private readonly IdGenerator _generator = new(0, new IdGeneratorOptions(sequenceOverflowStrategy: SequenceOverflowStrategy.SpinWait));
+
+    public Murmur3HashUrlShortener()
+        : this(0U)
     {
     }
 
-    public override string ShortenUrl(string originalUrl)
+    public string ShortenUrl(string originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))
         {
             return string.Empty;
         }
 
-        Span<byte> inputBuffer = stackalloc byte[Encoding.Unicode.GetMaxByteCount(originalUrl.Length + 10)]; // Extra space for attempts
+        Span<byte> inputBuffer = stackalloc byte[Encoding.Unicode.GetMaxByteCount(originalUrl.Length + 20)];
         Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
 
-        var attempt = 0;
-        do
-        {
-            originalUrl.AsSpan().CopyTo(charBuffer); // Copy original URL to buffer
-            if (attempt > 0)
-            {
-                // Write attempt number as string to buffer right after the URL
-                attempt.TryFormat(charBuffer[originalUrl.Length..], out _);
-            }
+        // Directly use Snowflake ID as a part of the URL for hashing
+        var id = _generator.CreateId();
+        id.TryFormat(charBuffer, out var charsWrittenId);
+        originalUrl.AsSpan().CopyTo(charBuffer[charsWrittenId..]); // Append original URL after ID
 
-            // Encode the char buffer containing the URL and attempt number into the input buffer
-            var bytesUsed = Encoding.Unicode.GetBytes(charBuffer[..(originalUrl.Length + (attempt > 0 ? (int)Math.Log10(attempt) + 1 : 0))], inputBuffer);
-            ReadOnlySpan<byte> inputSpan = inputBuffer[..bytesUsed];
+        // Encode the char buffer containing the ID and the URL into the input buffer
+        var bytesUsed = Encoding.Unicode.GetBytes(charBuffer[..(charsWrittenId + originalUrl.Length)], inputBuffer);
+        ReadOnlySpan<byte> inputSpan = inputBuffer[..bytesUsed];
 
-            // Calculate hash and convert to Base62
-            var shortUrl = Convert.AsBase62String(MurmurHash3.Hash32(ref inputSpan, seed)).ToString();
+        // Calculate hash and convert to Base62
+        var value = MurmurHash3.Hash32(ref inputSpan, seed);
 
-            if (Repository.SaveUrlMapping(shortUrl, originalUrl))
-            {
-                return shortUrl;
-            }
-
-            attempt++;
-        } while (attempt <= 1000);
-
-        throw new InvalidOperationException("Could not generate a unique short URL");
+        Span<char> base62Buffer = stackalloc char[Constants.MaxLength];
+        Convert.AsBase62String(value, ref base62Buffer);
+        return base62Buffer.ToString();
     }
 }
 

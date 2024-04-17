@@ -1,60 +1,64 @@
 ﻿#if NET8_0_OR_GREATER
 
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using Contracts;
+using IdGen;
 
 namespace Logic.Shorteners;
 
 
 
-public class Sha256HashUrlShortener(IUrlRepository urlRepository) : UrlShortenerBase(urlRepository)
+public class Sha256HashUrlShortener()
+    : IUrlShortener, IDisposable
 {
-    private SHA256 sha256 = SHA256.Create();
+    private SHA256 _sha256 = SHA256.Create();
+    private readonly IdGenerator _generator = new(0, new IdGeneratorOptions(sequenceOverflowStrategy: SequenceOverflowStrategy.SpinWait));
+    private bool _disposed;
 
-    public override string ShortenUrl(string originalUrl)
+    public string ShortenUrl(string originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))
         {
             return string.Empty;
         }
 
-        Span<byte> urlBuffer = stackalloc byte[Encoding.Unicode.GetMaxByteCount(originalUrl.Length + 10)]; // Extra space for attempts
-        Span<byte> hashBuffer = stackalloc byte[32]; // SHA256 outputs 32 bytes
-        Span<char> base62Buffer = stackalloc char[8]; // Buffer for Base62 result
+        // Generating a unique ID for each URL to ensure uniqueness
+        var uniqueId = _generator.CreateId();
 
+        // Encode the unique ID and URL together to ensure each input to SHA256 is unique
+        Span<byte> urlBuffer = stackalloc byte[Encoding.Unicode.GetMaxByteCount(originalUrl.Length + 32)];
+        var bytesWritten = Encoding.Unicode.GetBytes(uniqueId + originalUrl, urlBuffer);
 
-        var attempt = 0;
-        string shortUrl;
-        do
+        Span<byte> hashBuffer = stackalloc byte[32];  // SHA256 outputs 32 bytes, 256 bits
+        _sha256.TryComputeHash(urlBuffer[..bytesWritten], hashBuffer, out _);
+
+        // Base62 encode the SHA256 hash
+        Span<char> base62Buffer = stackalloc char[Constants.MaxLength];  // Buffer for Base62 result, ensure it's appropriately sized
+        Convert.AsBase62String(hashBuffer, ref base62Buffer);
+
+        return base62Buffer.ToString();
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
         {
-            var bytes = Encoding.Unicode.GetBytes(originalUrl.AsSpan(), urlBuffer);
-            if (attempt > 0)
+            if (disposing)
             {
-                // Append the attempt number as Unicode characters directly to the buffer
-                Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(urlBuffer);
-                charBuffer[originalUrl.Length] = (char)('0' + (attempt % 10)); // Simplistic, works for attempt < 10
-                bytes = Encoding.Unicode.GetBytes(charBuffer.Slice(0, originalUrl.Length + 1), urlBuffer);
+                _sha256.Dispose();
+                _sha256 = null!;
             }
 
-            sha256.TryComputeHash(urlBuffer.Slice(0, bytes), hashBuffer, out _);
-            Convert.AsBase62String(hashBuffer, ref base62Buffer);
-
-            shortUrl = new string(base62Buffer);
-
-            if (Repository.SaveUrlMapping(shortUrl, originalUrl))
-                break;
-
-            attempt++;
-        } while (attempt <= 10);
-
-        if (attempt > 10)
-        {
-            throw new InvalidOperationException("Could not generate a unique short URL");
+            _disposed = true;
         }
+    }
 
-        return shortUrl;
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
 

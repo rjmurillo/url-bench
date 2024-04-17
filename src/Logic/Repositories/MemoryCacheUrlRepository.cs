@@ -1,34 +1,43 @@
-﻿//public class MemoryCacheUrlRepository : IUrlRepository
-//{
-//    private readonly IMemoryCache _cache;
+﻿using System.Drawing;
+using System.Text;
+using Contracts;
+using Logic;
+using Logic.Repositories;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
-//    public MemoryCacheUrlRepository()
-//        : this(Constants.Base62Power7)
-//    {
-//    }
+public class MemoryCacheUrlRepository : UrlRepositoryBase
+{
+    private readonly IMemoryCache _cache;
+    private static readonly MemoryCacheEntryOptions Options = new() { Size = 1};
 
-//    public MemoryCacheUrlRepository(long sizeLimit)
-//    {
-//        var options = new MemoryCacheOptions()
-//        {
-//            //SizeLimit = sizeLimit,
-//            TrackLinkedCacheEntries = false,
-//            TrackStatistics = false,
-//            ExpirationScanFrequency = TimeSpan.MaxValue,
-//        };
+    public MemoryCacheUrlRepository()
+        : this(Constants.Base62Power8)
+    {
+    }
 
-//        _cache = new MemoryCache(options);
-//    }
+    public MemoryCacheUrlRepository(long sizeLimit)
+    {
+        var options = new MemoryCacheOptions()
+        {
+            SizeLimit = sizeLimit,
+            TrackLinkedCacheEntries = false,
+            TrackStatistics = false,
+            ExpirationScanFrequency = TimeSpan.MaxValue,
+        };
 
-//    public ReadOnlySpan<char> GetOriginalUrl(ReadOnlySpan<char> shortUrl)
-//    {
-//        _cache.TryGetValue(shortUrl, out ReadOnlyMemory<char>? originalUrl);
-//        return originalUrl.AsSpan() ?? ReadOnlySpan<char>.Empty;
-//    }
+        _cache = new MemoryCache(options);
+    }
 
-//    public bool SaveUrlMapping(ReadOnlySpan<char> shortUrl, ReadOnlySpan<char> originalUrl)
-//    {
-//        _cache.Set(shortUrl, originalUrl);
-//        return true;
-//    }
-//}
+    public override string GetOriginalUrl(string shortUrl)
+    {
+        _cache.TryGetValue(shortUrl, out string? originalUrl);
+        return originalUrl ?? string.Empty;
+    }
+
+    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
+    {
+        _cache.Set(shortUrl, originalUrl, Options);
+        return true;
+    }
+}

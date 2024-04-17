@@ -23,6 +23,9 @@ app.Configure(config =>
         .WithExample($"bench -s {nameof(ConcurrentUrlRepository)}")
         .WithExample($"bench -s {nameof(PartitionedUrlRepository)}")
         .WithExample($"bench -s {nameof(FASTERUrlRepository)}")
+        .WithExample($"bench -t {nameof(IncrementingIntegerUrlShortener)}")
+        .WithExample($"bench -t {nameof(Sha256HashUrlShortener)}")
+        .WithExample($"bench -t {nameof(Murmur3HashUrlShortener)}")
         ;
 });
 
@@ -39,8 +42,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             internal const int NumberOfUrls = 10_000_000;
             internal const int Iterations = 3;
             internal static readonly Type RepoType = typeof(FASTERUrlRepository);
-            internal static readonly Type ShortenerType = typeof(IncrementingIntegerUrlShortener);
-            //internal static readonly Type RepoType = typeof(ReaderWriterLockSlimUrlRepository);
+            internal static readonly Type ShortenerType = typeof(Sha256HashUrlShortener);
         }
 
         [CommandOption("-i|--iterations")]
@@ -112,7 +114,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
             var repoType = UrlRepositoryHelper.GetRepositoryType(settings.StorageType);
             var repo = (IUrlRepository)Activator.CreateInstance(repoType);
-            var shortener = new IncrementingIntegerUrlShortener(repo);
+            var shortener = new IncrementingIntegerUrlShortener();
 
             var sw = new Stopwatch();
             long workingSet;

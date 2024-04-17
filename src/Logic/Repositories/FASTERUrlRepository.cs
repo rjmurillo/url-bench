@@ -8,7 +8,7 @@ namespace Logic.Repositories;
 // 2. stores more data than fits into memory,
 // 3. can be persisted to disk
 #pragma warning disable S101 // Types should be named in PascalCase
-public class FASTERUrlRepository : ReadOnlyMemoryUrlRepositoryBase, IDisposable
+public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
 #pragma warning restore S101 // Types should be named in PascalCase
 {
     private readonly FasterKVSettings<string, string> _settings;
@@ -41,19 +41,17 @@ public class FASTERUrlRepository : ReadOnlyMemoryUrlRepositoryBase, IDisposable
         // Dispose unmanaged resources
     }
 
-    public override string GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
+    public override string GetOriginalUrl(string shortUrl)
     {
-        var shortu = shortUrl.ToString();
         var retVal = string.Empty;
-        var status = _session.Read(ref shortu, ref retVal);
+        var status = _session.Read(ref shortUrl, ref retVal);
 
         return retVal;
     }
 
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, string originalUrl)
+    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
-        var shortu = shortUrl.ToString();
-        var status = _session.Upsert(ref shortu, ref originalUrl);
+        var status = _session.Upsert(ref shortUrl, ref originalUrl);
         return status.IsCompletedSuccessfully;
     }
 }
