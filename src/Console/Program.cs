@@ -9,7 +9,7 @@ using Logic.Repositories;
 using Logic.Shorteners;
 using Spectre.Console;
 using Spectre.Console.Cli;
-
+using UrlConverterPermutations;
 using static BenchmarkCommand;
 using Convert = Logic.Convert;
 
@@ -42,7 +42,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             internal const int NumberOfUrls = 10_000_000;
             internal const int Iterations = 3;
             internal static readonly Type RepoType = typeof(FASTERUrlRepository);
-            internal static readonly Type ShortenerType = typeof(Sha256HashUrlShortener);
+            internal static readonly Type ShortenerType = typeof(IncrementingIntegerUrlShortener);
         }
 
         [CommandOption("-i|--iterations")]
@@ -113,28 +113,31 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             const int maxDictionaryCapacity = 2_000_000_000;
 
             var repoType = UrlRepositoryHelper.GetRepositoryType(settings.StorageType);
-            var repo = (IUrlRepository)Activator.CreateInstance(repoType);
-            var shortener = new IncrementingIntegerUrlShortener();
-
+            var repo = Factory.CreateRepository(repoType!);
+            var shortenerType = UrlRepositoryHelper.GetShortenerType(settings.ShortenerType);
+            var shortener = Factory.CreateShortener(shortenerType!);
+            var facade = new Facade(shortener, repo);
             var sw = new Stopwatch();
             long workingSet;
 
             var writeSampleCount = settings.Iterations * settings.NumberOfUrls;
             if (writeSampleCount < 0 || writeSampleCount > maxDictionaryCapacity)
             {
-                // We overflowed, set to Int32.MaxValue
+                // We overflowed or we're trying to allocate that will cause OOM
                 writeSampleCount = maxDictionaryCapacity;
             }
 
             var readSampleCount = settings.Iterations * settings.NumberOfUrls;
             if (readSampleCount < 0 || readSampleCount > maxDictionaryCapacity)
             {
-                // We overflowed, set to Int32.MaxValue
+                // We overflowed or we're trying to allocate that will cause OOM
                 readSampleCount = maxDictionaryCapacity;
             }
 
             var readSamples = new List<double>(readSampleCount);
             var writeSamples = new List<double>(writeSampleCount);
+            
+            const int progressInterval = 524288;
 
             AnsiConsole.Status()
                 .Spinner(Spinner.Known.Dots)
@@ -150,9 +153,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             sw.Start();
                             for (var i = 0; i < settings.NumberOfUrls; i++)
                             {
-                                var shortUrl = shortener.ShortenUrl(settings.Url);
+                                var shortUrl = facade.ShortenAndSave(settings.Url);
 
-                                if (i % 524288 == 0)
+                                if (i % progressInterval == 0)
                                 {
                                     GC.Collect();
                                     workingSet = Process.GetCurrentProcess().WorkingSet64;
@@ -175,9 +178,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             Parallel.For(0, settings.NumberOfUrls,
                                 new ParallelOptions { MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism }, i =>
                                 {
-                                    var shortUrl = shortener.ShortenUrl(settings.Url);
+                                    var shortUrl = facade.ShortenAndSave(settings.Url);
 
-                                    if (i % 524288 == 0)
+                                    if (i % progressInterval == 0)
                                     {
                                         GC.Collect();
                                         workingSet = Process.GetCurrentProcess().WorkingSet64;
@@ -220,9 +223,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             {
                                 var k = (ulong)rnd.NextInt64(1, settings.NumberOfUrls * j);
                                 var shortUrl = Convert.AsBase62String(k).ToString();
-                                var longUrl = repo.GetOriginalUrl(shortUrl);
+                                var longUrl = facade.GetOriginalUrl(shortUrl);
 
-                                if (i % 524288 == 0)
+                                if (i % progressInterval == 0)
                                 {
                                     GC.Collect();
                                     workingSet = Process.GetCurrentProcess().WorkingSet64;
@@ -247,9 +250,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                 {
                                     var k = (ulong)rnd.NextInt64(1, settings.NumberOfUrls * j);
                                     var shortUrl = Convert.AsBase62String(k).ToString();
-                                    var longUrl = repo.GetOriginalUrl(shortUrl);
+                                    var longUrl = facade.GetOriginalUrl(shortUrl);
 
-                                    if (i % 524288 == 0)
+                                    if (i % progressInterval == 0)
                                     {
                                         GC.Collect();
                                         workingSet = Process.GetCurrentProcess().WorkingSet64;
