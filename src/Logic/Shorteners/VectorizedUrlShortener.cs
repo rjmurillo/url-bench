@@ -9,6 +9,8 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.InteropServices;
+using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace Logic.Shorteners;
 
@@ -21,7 +23,29 @@ public class VectorizedUrlShortener : IUrlShortener
             return string.Empty;
         }
 
-        Span<byte> inputBuffer = stackalloc byte[Encoding.Unicode.GetMaxByteCount(originalUrl.Length)];
+        var byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
+
+        // Decide between stackalloc and ArrayPool
+        if (byteCount <= Constants.MaxStackSize)
+        {
+            Span<byte> inputBuffer = stackalloc byte[byteCount];
+            return ProcessUrl(originalUrl, inputBuffer);
+        }
+
+        var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
+        try
+        {
+            var poolBuffer = arrayFromPool.AsSpan(0, byteCount);
+            return ProcessUrl(originalUrl, poolBuffer);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(arrayFromPool);
+        }
+    }
+
+    private static string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
+    {
         Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
 
         originalUrl.AsSpan().CopyTo(charBuffer); // Copy the original URL into the char buffer
@@ -33,9 +57,9 @@ public class VectorizedUrlShortener : IUrlShortener
         Convert.AsBase62String(value, ref base62Buffer);
 
         return base62Buffer.ToString();
-
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong FlexibleHash(Span<byte> data)
     {
         if (Avx2.IsSupported
@@ -68,6 +92,7 @@ public class VectorizedUrlShortener : IUrlShortener
         throw new PlatformNotSupportedException("Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeHash256(Span<byte> data)
     {
         var hash = Vector256<uint>.Zero;
@@ -90,6 +115,7 @@ public class VectorizedUrlShortener : IUrlShortener
         return ReduceHashToUInt64(hash);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeSseHash128(Span<byte> data)
     {
         var hash = Vector128<uint>.Zero;
@@ -108,6 +134,7 @@ public class VectorizedUrlShortener : IUrlShortener
         return ReduceHashToUInt64(hash);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeAdvSimdHash128(Span<byte> data)
     {
         var hash = Vector128<uint>.Zero;
@@ -126,6 +153,7 @@ public class VectorizedUrlShortener : IUrlShortener
         return ReduceHashToUInt64(hash);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ReduceHashToUInt64<T>(T hash) where T : struct
     {
         if (hash is Vector256<uint> v256)
