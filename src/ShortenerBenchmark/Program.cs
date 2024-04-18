@@ -23,7 +23,7 @@ BenchmarkRunner.Run<Benchmarks>(config);
 [GcServer(true)]
 public class Benchmarks
 {
-    private IUrlShortener _urlShortener;
+    private IUrlShortener _urlShortener = null!;
 
     [Params(
         typeof(IncrementingIntegerUrlShortener)
@@ -31,11 +31,14 @@ public class Benchmarks
 #if NET8_0_OR_GREATER
         ,typeof(Sha256HashUrlShortener)
         ,typeof(Murmur3HashUrlShortener)
+        ,typeof(VectorizedUrlShortener)
 #endif
     )]
     public Type ShortenerType;
 
-    [Params("https://jobs.careers.microsoft.com/us/en/job/1613473")]
+    [Params(
+        "https://jobs.careers.microsoft.com/us/en/job/1613473"
+        )]
     public string LongUrl;
 
     [GlobalSetup]
