@@ -1,6 +1,8 @@
 ﻿#if NET8_0_OR_GREATER
 
+using System.Buffers;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -23,10 +25,29 @@ public class Sha256HashUrlShortener()
 
         var byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
 
-        Span<byte> inputBuffer = byteCount <= Constants.MaxStackSize
-                                ? stackalloc byte[byteCount]
-                                : new byte[byteCount];
-        Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
+        // Decide between stackalloc and ArrayPool
+        if (byteCount <= Constants.MaxStackSize)
+        {
+            Span<byte> inputBuffer = stackalloc byte[byteCount];
+            return ProcessUrl(originalUrl, inputBuffer);
+        }
+
+        var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
+        try
+        {
+            var poolBuffer = arrayFromPool.AsSpan(0, byteCount);
+            return ProcessUrl(originalUrl, poolBuffer);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(arrayFromPool);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
+    {
+        var charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
 
         originalUrl.AsSpan().CopyTo(charBuffer); // Copy the original URL into the char buffer
         var bytesUsed = Encoding.Unicode.GetBytes(charBuffer, inputBuffer);
