@@ -3,7 +3,7 @@ using Contracts;
 
 namespace Logic.Repositories;
 
-public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRepositoryBase
+public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRepositoryBase, IDisposable
 {
     private readonly ConcurrentDictionary<string, string> _urlMappings = new(concurrencyLevel, capacity, StringComparer.Ordinal);
 
@@ -25,5 +25,19 @@ public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRe
     public override bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
         return _urlMappings.TryAdd(shortUrl, originalUrl);
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _urlMappings.Clear();
+        }
     }
 }

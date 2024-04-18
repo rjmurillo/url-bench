@@ -6,7 +6,7 @@ using Logic.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
-public class MemoryCacheUrlRepository : UrlRepositoryBase
+public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
 {
     private readonly IMemoryCache _cache;
     private static readonly MemoryCacheEntryOptions Options = new() { Size = 1};
@@ -39,5 +39,19 @@ public class MemoryCacheUrlRepository : UrlRepositoryBase
     {
         _cache.Set(shortUrl, originalUrl, Options);
         return true;
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _cache.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

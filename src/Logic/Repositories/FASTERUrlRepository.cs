@@ -37,8 +37,6 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
             _settings.Dispose();
             _store.Dispose();
         }
-
-        // Dispose unmanaged resources
     }
 
     public override string GetOriginalUrl(string shortUrl)

@@ -2,7 +2,7 @@
 
 namespace Logic.Repositories;
 
-public class PartitionedUrlRepository : UrlRepositoryBase
+public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
 {
     private readonly Dictionary<string, string>[] _partitions;
     private readonly ReaderWriterLockSlim[] _locks;
@@ -63,4 +63,26 @@ public class PartitionedUrlRepository : UrlRepositoryBase
     }
 
     private int GetPartition(ReadOnlyMemory<char> key) => Math.Abs(MemoryStringEqualityComparer.Ordinal.GetHashCode(key) % _partitions.Length);
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            foreach (var partition in _partitions)
+            {
+                partition.Clear();
+            }
+
+            foreach (var l in _locks)
+            {
+                l.Dispose();
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 }

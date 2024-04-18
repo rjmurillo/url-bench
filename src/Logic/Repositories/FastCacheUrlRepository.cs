@@ -3,7 +3,7 @@ using FastCache;
 
 namespace Logic.Repositories;
 
-public class FastCacheUrlRepository : UrlRepositoryBase
+public class FastCacheUrlRepository : UrlRepositoryBase, IDisposable
 {
     public override string GetOriginalUrl(string shortUrl)
     {
@@ -18,5 +18,19 @@ public class FastCacheUrlRepository : UrlRepositoryBase
     {
         Cached<string>.Save(shortUrl, originalUrl, TimeSpan.MaxValue);
         return true;
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // TODO: Clear the cache
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

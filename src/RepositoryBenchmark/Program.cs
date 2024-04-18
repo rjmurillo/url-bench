@@ -49,19 +49,20 @@ public class Benchmarks
     )]
     public string LongUrl;
 
-    [Params(1, 100, 1_000_000, 10_000_000)]
+    [Params(1, 1_000, 1_000_000)]
     public int NumberOfUrls;
 
     private Facade _facade;
     private Random _rnd;
+    private IUrlRepository _repo = null!;
 
-    [GlobalSetup]
+    [IterationSetup]
     public void Setup()
     {
-        var urlShortener = Factory.CreateShortener(ShortenerType);
-        var repo = Factory.CreateRepository(RepositoryType);
+        _urlShortener = Factory.CreateShortener(ShortenerType);
+        _repo = Factory.CreateRepository(RepositoryType);
 
-        _facade = new Facade(urlShortener, repo);
+        _facade = new Facade(_urlShortener, _repo);
 
         for (var i = 0; i <= NumberOfUrls; i++)
         {
@@ -69,6 +70,25 @@ public class Benchmarks
         }
 
         _rnd = new Random(0);
+    }
+
+    [IterationCleanup]
+    public void Cleanup()
+    {
+        if (_urlShortener is IDisposable ud)
+        {
+            ((IDisposable)ud).Dispose();
+        }
+
+        _urlShortener = null;
+        
+        if (_repo is IDisposable rd)
+        {
+            ((IDisposable)rd).Dispose();
+        }
+
+        _repo = null;
+        _facade = null;
     }
 
     [Benchmark]

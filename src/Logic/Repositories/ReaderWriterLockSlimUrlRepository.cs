@@ -1,6 +1,6 @@
 ﻿namespace Logic.Repositories;
 
-public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase
+public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase, IDisposable
 {
     // We're using this because ConcurrentDictionary is too slow
     private readonly ReaderWriterLockSlim _lock = new();
@@ -41,5 +41,20 @@ public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase
         {
             _lock.ExitWriteLock();
         }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _urlMappings.Clear();
+            _lock.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }
