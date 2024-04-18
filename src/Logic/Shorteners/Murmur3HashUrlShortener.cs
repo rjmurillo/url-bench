@@ -1,17 +1,16 @@
 ﻿#if NET8_0_OR_GREATER
+using System.Buffers;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Contracts;
-using IdGen;
-using MurmurHash;
+using Logic.Hashing;
 
 namespace Logic.Shorteners;
 
 public class Murmur3HashUrlShortener(uint seed)
     : IUrlShortener
 {
-    private readonly IdGenerator _generator = new(0, new IdGeneratorOptions(sequenceOverflowStrategy: SequenceOverflowStrategy.SpinWait));
-
     public Murmur3HashUrlShortener()
         : this(0U)
     {
@@ -24,22 +23,40 @@ public class Murmur3HashUrlShortener(uint seed)
             return string.Empty;
         }
 
-        Span<byte> inputBuffer = stackalloc byte[Encoding.Unicode.GetMaxByteCount(originalUrl.Length + 20)];
-        Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
+        var byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
 
-        // Directly use Snowflake ID as a part of the URL for hashing
-        var id = _generator.CreateId();
-        id.TryFormat(charBuffer, out var charsWrittenId);
-        originalUrl.AsSpan().CopyTo(charBuffer[charsWrittenId..]); // Append original URL after ID
+        // Decide between stackalloc and ArrayPool
+        if (byteCount <= Constants.MaxStackSize)
+        {
+            Span<byte> inputBuffer = stackalloc byte[byteCount];
+            return ProcessUrl(originalUrl, inputBuffer);
+        }
 
-        // Encode the char buffer containing the ID and the URL into the input buffer
-        var bytesUsed = Encoding.Unicode.GetBytes(charBuffer[..(charsWrittenId + originalUrl.Length)], inputBuffer);
+        var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
+        try
+        {
+            var poolBuffer = arrayFromPool.AsSpan(0, byteCount);
+            return ProcessUrl(originalUrl, poolBuffer);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(arrayFromPool);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
+    {
+        var charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
+
+        originalUrl.AsSpan().CopyTo(charBuffer); // Copy the original URL into the char buffer
+        var bytesUsed = Encoding.Unicode.GetBytes(charBuffer, inputBuffer);
         ReadOnlySpan<byte> inputSpan = inputBuffer[..bytesUsed];
 
         // Calculate hash and convert to Base62
-        var value = MurmurHash3.Hash32(ref inputSpan, seed);
+        var value = Murmur3.Hash64(ref inputSpan, seed);
 
-        Span<char> base62Buffer = stackalloc char[Constants.MaxLength];
+        Span<char> base62Buffer = stackalloc char[Math.Min(Convert.DetermineBufferLength(value), Constants.MaxSlugLength)];
         Convert.AsBase62String(value, ref base62Buffer);
         return base62Buffer.ToString();
     }

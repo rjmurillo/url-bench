@@ -1,19 +1,17 @@
 ﻿#if NET8_0_OR_GREATER
 
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using Contracts;
-using IdGen;
 
 namespace Logic.Shorteners;
-
-
 
 public class Sha256HashUrlShortener()
     : IUrlShortener, IDisposable
 {
     private SHA256 _sha256 = SHA256.Create();
-    private readonly IdGenerator _generator = new(0, new IdGeneratorOptions(sequenceOverflowStrategy: SequenceOverflowStrategy.SpinWait));
     private bool _disposed;
 
     public string ShortenUrl(string originalUrl)
@@ -23,18 +21,23 @@ public class Sha256HashUrlShortener()
             return string.Empty;
         }
 
-        // Generating a unique ID for each URL to ensure uniqueness
-        var uniqueId = _generator.CreateId();
+        var byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
 
-        // Encode the unique ID and URL together to ensure each input to SHA256 is unique
-        Span<byte> urlBuffer = stackalloc byte[Encoding.Unicode.GetMaxByteCount(originalUrl.Length + 32)];
-        var bytesWritten = Encoding.Unicode.GetBytes(uniqueId + originalUrl, urlBuffer);
+        Span<byte> inputBuffer = byteCount <= Constants.MaxStackSize
+                                ? stackalloc byte[byteCount]
+                                : new byte[byteCount];
+        Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
+
+        originalUrl.AsSpan().CopyTo(charBuffer); // Copy the original URL into the char buffer
+        var bytesUsed = Encoding.Unicode.GetBytes(charBuffer, inputBuffer);
 
         Span<byte> hashBuffer = stackalloc byte[32];  // SHA256 outputs 32 bytes, 256 bits
-        _sha256.TryComputeHash(urlBuffer[..bytesWritten], hashBuffer, out _);
+        var success = _sha256.TryComputeHash(inputBuffer[..bytesUsed], hashBuffer, out var value);
+
+        Debug.Assert(success, "Could not create the hash from input.");
 
         // Base62 encode the SHA256 hash
-        Span<char> base62Buffer = stackalloc char[Constants.MaxLength];  // Buffer for Base62 result, ensure it's appropriately sized
+        Span<char> base62Buffer = stackalloc char[Constants.MaxSlugLength];
         Convert.AsBase62String(hashBuffer, ref base62Buffer);
 
         return base62Buffer.ToString();
