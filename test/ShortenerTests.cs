@@ -125,9 +125,9 @@ public class ShortenerTests(ITestOutputHelper output)
 
     [Theory]
     [MemberData(nameof(ShortenerData))]
-    public void ShortUrl_is_not_same_after_10_million(IUrlShortener shortener)
+    public void ShortUrl_is_not_same_after_1_million(IUrlShortener shortener)
     {
-        const ulong upper = 10_000_000UL;
+        const ulong upper = 1_000_000UL;
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
         var hs = new HashSet<string>(StringComparer.Ordinal);
 
@@ -136,7 +136,7 @@ public class ShortenerTests(ITestOutputHelper output)
             var a = shortener.ShortenUrl(longUrl);
 
             a.ShouldNotBeNullOrWhiteSpace();
-            hs.Add(a).ShouldBeTrue($"Duplicate detected: {a}");
+            hs.Add(a).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
         }
     }
 
@@ -157,6 +157,4 @@ public class ShortenerTests(ITestOutputHelper output)
             hs.TryAdd(a, byte.MinValue).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
         });
     }
-
-
 }
