@@ -41,6 +41,9 @@ public class Benchmarks
         )]
     public string LongUrl;
 
+    [Params(1, 1_000, 1_000_000)]
+    public int NumberOfUrls;
+
     [GlobalSetup]
     public void Setup()
     {
@@ -50,6 +53,9 @@ public class Benchmarks
     [Benchmark]
     public void Shorten()
     {
-        var shortUrl = _urlShortener.ShortenUrl(LongUrl);
+        for (var i = 0; i <= NumberOfUrls; i++)
+        {
+            var shortUrl = _urlShortener.ShortenUrl(LongUrl);
+        }
     }
 }
