@@ -14,6 +14,8 @@ using System.Runtime.CompilerServices;
 
 namespace Logic.Shorteners;
 
+// TODO: Refactor this to separate classes for each of the hashing strategies
+// TODO: Refactor to become a facade based on capabilities detected at runtime
 public class VectorizedUrlShortener : IUrlShortener
 {
     public string ShortenUrl(string originalUrl)
@@ -44,7 +46,8 @@ public class VectorizedUrlShortener : IUrlShortener
         }
     }
 
-    private static string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
     {
         Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
 

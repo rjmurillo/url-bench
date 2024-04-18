@@ -44,16 +44,16 @@ public class Sha256HashUrlShortener()
         }
     }
 
+    // This is unlikely to inline (too many IL bytes)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
     {
-        var charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
+        // Copy the original URL into the buffer
+        var bytesUsed = Encoding.Unicode.GetBytes(originalUrl, inputBuffer);
 
-        originalUrl.AsSpan().CopyTo(charBuffer); // Copy the original URL into the char buffer
-        var bytesUsed = Encoding.Unicode.GetBytes(charBuffer, inputBuffer);
-
-        Span<byte> hashBuffer = stackalloc byte[32];  // SHA256 outputs 32 bytes, 256 bits
-        var success = _sha256.TryComputeHash(inputBuffer[..bytesUsed], hashBuffer, out var value);
+        // SHA256 outputs 32 bytes, 256 bits
+        Span<byte> hashBuffer = stackalloc byte[32];
+        var success = _sha256.TryComputeHash(inputBuffer[..bytesUsed], hashBuffer, out _);
 
         Debug.Assert(success, "Could not create the hash from input.");
 

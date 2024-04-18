@@ -43,13 +43,12 @@ public class Murmur3HashUrlShortener(uint seed)
         }
     }
 
+    // REVIEW: This isn't inlining: localloc size unknown
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
     {
-        var charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
-
-        originalUrl.AsSpan().CopyTo(charBuffer); // Copy the original URL into the char buffer
-        var bytesUsed = Encoding.Unicode.GetBytes(charBuffer, inputBuffer);
+        // Copy the original URL into the buffer
+        var bytesUsed = Encoding.Unicode.GetBytes(originalUrl, inputBuffer);
         ReadOnlySpan<byte> inputSpan = inputBuffer[..bytesUsed];
 
         // Calculate hash and convert to Base62
