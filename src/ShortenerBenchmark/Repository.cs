@@ -13,14 +13,6 @@ using Logic.Shorteners;
 using UrlConverterPermutations;
 using Convert = Logic.Convert;
 
-var config = DefaultConfig.Instance
-        //.With(Job.MediumRun.WithRuntime(CoreRuntime.Core60).WithId("Net60").WithToolchain(InProcessEmitToolchain.Instance).WithStrategy(RunStrategy.Throughput).WithIterationCount(3).AsBaseline())
-        .With(Job.MediumRun.WithRuntime(CoreRuntime.Core80).WithId("Net80").WithToolchain(InProcessEmitToolchain.Instance).WithStrategy(RunStrategy.Throughput).WithIterationCount(1))
-    //.With(Job.MediumRun.WithRuntime(CoreRuntime.Core80).WithId("Net90").WithToolchain(InProcessEmitToolchain.Instance).WithStrategy(RunStrategy.Throughput).WithIterationCount(3))
-    ;
-
-BenchmarkRunner.Run<Benchmarks>(config);
-
 //[RPlotExporter]
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
 // GC and Memory allocation
@@ -31,7 +23,7 @@ BenchmarkRunner.Run<Benchmarks>(config);
 // Get details about what the JIT is doing
 [JitStatsDiagnoser]
 [GcServer(true)]
-public class Benchmarks
+public class Repository
 {
     private IUrlShortener _urlShortener = null!;
 
@@ -51,10 +43,7 @@ public class Benchmarks
                   )]
     public Type RepositoryType;
 
-    [Params(
-        "https://jobs.careers.microsoft.com/us/en/job/1613473"
-    )]
-    public string LongUrl;
+    private const string LongUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
 
     [Params(1, 1_000, 1_000_000)]
     public int NumberOfUrls;
@@ -62,24 +51,24 @@ public class Benchmarks
     private Facade _facade;
     private Random _rnd;
     private IUrlRepository _repo = null!;
+    private HashSet<string> _shortUrls;
 
-    [IterationSetup]
+    [GlobalSetup]
     public void Setup()
     {
         _urlShortener = Factory.CreateShortener(ShortenerType);
         _repo = Factory.CreateRepository(RepositoryType);
-
+        _shortUrls = new HashSet<string>(NumberOfUrls);
         _facade = new Facade(_urlShortener, _repo);
 
         for (var i = 0; i <= NumberOfUrls; i++)
         {
-            _facade.ShortenAndSave(LongUrl);
+            _shortUrls.Add(_facade.ShortenAndSave(LongUrl + i));
         }
-
         _rnd = new Random(0);
     }
 
-    [IterationCleanup]
+    [GlobalSetup]
     public void Cleanup()
     {
         if (_urlShortener is IDisposable ud)
@@ -88,7 +77,7 @@ public class Benchmarks
         }
 
         _urlShortener = null;
-        
+
         if (_repo is IDisposable rd)
         {
             ((IDisposable)rd).Dispose();
@@ -99,13 +88,10 @@ public class Benchmarks
     }
 
     [Benchmark]
-    public void Retrieve_Random()
+    public string Retrieve_Random()
     {
-        for (var i = 0; i <= NumberOfUrls; i++)
-        {
-            var k = (ulong)_rnd.Next(1, NumberOfUrls);
-            var shortUrl = Convert.AsBase62String(k).ToString();
-            var longUrl = _facade.GetOriginalUrl(shortUrl);
-        }
+        var i = _rnd.Next(0, NumberOfUrls);
+        var shortUrl = _shortUrls.ElementAt(i);
+        return _facade.GetOriginalUrl(shortUrl);
     }
 }
