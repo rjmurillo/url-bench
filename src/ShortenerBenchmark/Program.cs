@@ -1,5 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Diagnostics.dotTrace;
+using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Jobs;
@@ -18,8 +20,14 @@ var config = DefaultConfig.Instance
 BenchmarkRunner.Run<Benchmarks>(config);
 
 //[RPlotExporter]
+[InliningDiagnoser(true, new[]{"Logic.Shorteners", "Logic.Repositories"})]
+// GC and Memory allocation
 [MemoryDiagnoser]
 //[DotTraceDiagnoser]
+// Profile the code
+//[EtwProfiler]
+// Get details about what the JIT is doing
+[JitStatsDiagnoser]
 [GcServer(true)]
 public class Benchmarks
 {
@@ -41,7 +49,7 @@ public class Benchmarks
         )]
     public string LongUrl;
 
-    [Params(1, 1_000, 1_000_000)]
+    //[Params(1, 1_000, 1_000_000)]
     public int NumberOfUrls;
 
     [GlobalSetup]
