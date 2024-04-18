@@ -1,6 +1,10 @@
 ﻿using Contracts;
 using NonBlocking;
 using Shouldly;
+
+using System.Text;
+using System.Web;
+
 using Xunit.Abstractions;
 
 namespace UrlConverterPermutations;
@@ -33,6 +37,61 @@ public class ShortenerTests(ITestOutputHelper output)
 
         shortUrl.ShouldNotBeNull();
         shortUrl.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [MemberData(nameof(ShortenerData))]
+    public void Tricky_LongUrl_is_handled(IUrlShortener shortener)
+    {
+        string CreateTestUrl()
+        {
+            string baseUrl = "https://www.example.com:8080/search";
+            string query = $"q={HttpUtility.UrlEncode("testing browser capabilities")}&lang=en";
+            string hash = $"section1?nested=true&unicode={HttpUtility.UrlEncode("προσωπική δοκιμή")}&dataurl=data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==";
+            return $"{baseUrl}?{query}#{hash}";
+        }
+
+        var Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
+
+        var longUrl = CreateTestUrl();
+        var shortUrl = shortener.ShortenUrl(longUrl);
+
+        output.WriteLine($"Shortened URL: {shortUrl}");
+
+        shortUrl.ShouldNotBeNull();
+        shortUrl.ShouldNotBeEmpty();
+        shortUrl.Length.ShouldBeLessThan(9);
+        shortUrl.ShouldBeSubsetOf(Base62Chars);
+    }
+
+    [Theory]
+    [MemberData(nameof(ShortenerData))]
+    public void Long_LongUrl_is_handled(IUrlShortener shortener)
+    {
+        string CreateTestUrl()
+        {
+            var sb = new StringBuilder("https://www.example.com?");
+            sb.Append("data=");
+
+            // Create a large string of dummy data
+            var longData = new string('x', 4096); // Create a string with 4096 'x' characters
+
+            sb.Append(longData);
+
+            return sb.ToString();
+        }
+
+        var Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
+
+        var longUrl = CreateTestUrl();
+        var shortUrl = shortener.ShortenUrl(longUrl);
+
+        output.WriteLine($"Shortened URL: {shortUrl}");
+
+        shortUrl.ShouldNotBeNull();
+        shortUrl.ShouldNotBeEmpty();
+        shortUrl.Length.ShouldBeLessThan(9);
+        shortUrl.ShouldBeSubsetOf(Base62Chars);
     }
 
     [Theory]
