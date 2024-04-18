@@ -1,4 +1,4 @@
-﻿#if NET8_0_OR_GREATER
+﻿
 
 using System.Buffers;
 using System.Diagnostics;
@@ -85,5 +85,3 @@ public class Sha256HashUrlShortener()
         GC.SuppressFinalize(this);
     }
 }
-
-#endif

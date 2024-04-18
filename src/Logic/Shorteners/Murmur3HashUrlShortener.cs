@@ -1,5 +1,4 @@
-﻿#if NET8_0_OR_GREATER
-using System.Buffers;
+﻿using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -61,5 +60,3 @@ public class Murmur3HashUrlShortener(uint seed)
         return base62Buffer.ToString();
     }
 }
-
-#endif

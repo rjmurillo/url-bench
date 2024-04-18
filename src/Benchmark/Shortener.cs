@@ -22,11 +22,9 @@ public class Shortener
     [Params(
         typeof(IncrementingIntegerUrlShortener)
         , typeof(SnowflakeUrlShortener)
-#if NET8_0_OR_GREATER
         ,typeof(Sha256HashUrlShortener)
         ,typeof(Murmur3HashUrlShortener)
         ,typeof(VectorizedUrlShortener)
-#endif
     )]
     public Type ShortenerType;
 
