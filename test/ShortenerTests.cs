@@ -17,7 +17,7 @@ public class ShortenerTests(ITestOutputHelper output)
     [MemberData(nameof(ShortenerData))]
     public void LongUrl_is_null(IUrlShortener shortener)
     {
-        const string longUrl = null;
+        const string? longUrl = null;
         var shortUrl = shortener.ShortenUrl(longUrl!);
 
         output.WriteLine($"Shortened URL: {shortUrl}");
@@ -45,9 +45,9 @@ public class ShortenerTests(ITestOutputHelper output)
     {
         string CreateTestUrl()
         {
-            string baseUrl = "https://www.example.com:8080/search";
-            string query = $"q={HttpUtility.UrlEncode("testing browser capabilities")}&lang=en";
-            string hash = $"section1?nested=true&unicode={HttpUtility.UrlEncode("προσωπική δοκιμή")}&dataurl=data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==";
+            var baseUrl = "https://www.example.com:8080/search";
+            var query = $"q={HttpUtility.UrlEncode("testing browser capabilities")}&lang=en";
+            var hash = $"section1?nested=true&unicode={HttpUtility.UrlEncode("προσωπική δοκιμή")}&dataurl=data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==";
             return $"{baseUrl}?{query}#{hash}";
         }
 
