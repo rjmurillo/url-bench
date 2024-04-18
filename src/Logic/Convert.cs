@@ -52,7 +52,6 @@ public static class Convert
         return bufferLength;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AsBase62String(ulong value, ref Span<char> buffer)
     {
         var bufferIndex = buffer.Length - 1;
