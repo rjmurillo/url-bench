@@ -1,89 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BenchmarkDotNet.Attributes;
-using Contracts;
-using Logic;
+﻿using BenchmarkDotNet.Attributes;
 using Proto.Utilities.Benchmark;
 
 using UrlConverterPermutations;
 
 namespace Benchmark;
 
-public abstract class ShortenerBenchmarks
+public class ShortenerParallel : ShortenerBenchmarksBase
 {
-    protected IUrlShortener UrlShortener { get; set; } = null!;
-
-    [ParamsSource(nameof(ShortenerTypes))]
-    public Type ShortenerType;
-
-    public IEnumerable<Type> ShortenerTypes => UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>();
-
-    [Params(
-        "https://jobs.careers.microsoft.com/us/en/job/1613473"
-    )]
-    public string LongUrl;
-
-    [GlobalSetup]
-    public void Setup()
-    {
-        UrlShortener = Factory.CreateShortener(ShortenerType);
-    }
-
-    [GlobalCleanup]
-    public void Cleanup()
-    {
-        if (UrlShortener is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
-    }
-}
-
-public class ShortenerParallel : ShortenerBenchmarks
-{
+    // -1 means no limits
+    // 1 means single-threaded
+    // 2 means two threads
     [Params(-1, 1, 2)]
     public int MaxConcurrency { get; set; }
 
-    private BenchmarkThreadHelper? threadHelper;
-    private ParallelOptions? parallelOptions;
-    private Action[] parallelActions;
+    private BenchmarkThreadHelper? _threadHelper;
+    
 
     [GlobalSetup(Target = nameof(ShortenParallel))]
     public void SetupParallel()
     {
+        // REVIEW: Is this needed since there is a GlobalSetup?
         UrlShortener = Factory.CreateShortener(ShortenerType);
 
-        //parallelOptions = new ParallelOptions
-        //{
-        //    MaxDegreeOfParallelism = MaxConcurrency
-        //};
-
-        //parallelActions = new Action[100];
-
-        //for (var i = 0; i < 100; i++)
-        //{
-        //    parallelActions[i] = () => UrlShortener.ShortenUrl(LongUrl);
-        //}
-
-        threadHelper = new BenchmarkThreadHelper(MaxConcurrency)
+        _threadHelper = new BenchmarkThreadHelper(MaxConcurrency);
+        for (var i = 0; i < 100; i++)
         {
-            () => UrlShortener.ShortenUrl(LongUrl)
-        };
+            _threadHelper.Add(() => UrlShortener.ShortenUrl(LongUrl));
+        }
     }
 
     [Benchmark]
     public void ShortenParallel()
     {
-        //Parallel.Invoke(parallelOptions, parallelActions);
-        threadHelper!.ExecuteAndWait();
+        _threadHelper!.ExecuteAndWait();
     }
 
     [GlobalCleanup(Target = nameof(ShortenParallel))]
     public void CleanupParallel()
     {
-        threadHelper?.Dispose();
+        _threadHelper?.Dispose();
     }
 }

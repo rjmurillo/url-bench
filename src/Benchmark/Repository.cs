@@ -1,4 +1,5 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using Benchmark;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Engines;
@@ -13,7 +14,12 @@ using Logic.Shorteners;
 using UrlConverterPermutations;
 using Convert = Logic.Convert;
 
-public class Repository
+public interface IRepositoryBenchmark
+{
+    Type RepositoryType { get; set; }
+}
+
+public class Repository : IRepositoryBenchmark, IShortenerBenchmark
 {
     private IUrlShortener _urlShortener = null!;
 
@@ -21,11 +27,11 @@ public class Repository
         // This is the fastest out of all of the shorteners
         typeof(IncrementingIntegerUrlShortener)
        )]
-    public Type ShortenerType;
+    public Type ShortenerType { get; set; }
 
     [ParamsSource(nameof(RepositoryTypes))]
-    public Type RepositoryType;
-    
+    public Type RepositoryType { get; set; }
+
     public IEnumerable<Type> RepositoryTypes => UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>();
 
     private const string LongUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";

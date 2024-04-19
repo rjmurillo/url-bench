@@ -6,7 +6,12 @@ using UrlConverterPermutations;
 
 namespace Benchmark;
 
-public class Shortener : ShortenerBenchmarks
+public interface IShortenerBenchmark
+{
+    public Type ShortenerType { get; set; }
+}
+
+public class Shortener : ShortenerBenchmarksBase
 {
     
 
