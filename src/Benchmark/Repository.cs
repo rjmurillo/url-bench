@@ -68,7 +68,7 @@ public class Repository
         _rnd = new Random(0);
     }
 
-    [GlobalSetup]
+    [GlobalCleanup]
     public void Cleanup()
     {
         if (_urlShortener is IDisposable ud)
