@@ -6,23 +6,13 @@ using Logic;
 using Logic.Shorteners;
 using UrlConverterPermutations;
 
-[InliningDiagnoser(true, new[]{"Logic.Shorteners", "Logic.Repositories"})]
-// GC and Memory allocation
-[MemoryDiagnoser]
-//[DotTraceDiagnoser]
-// Profile the code
-//[EtwProfiler]
-// Get details about what the JIT is doing
-[JitStatsDiagnoser]
-[GcServer(true)]
-[SimpleJob(RunStrategy.Throughput)]
 public class Shortener
 {
     private IUrlShortener _urlShortener = null!;
 
     [ParamsSource(nameof(ShortenerTypes))]
     public Type ShortenerType;
-    
+
     public IEnumerable<Type> ShortenerTypes => UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>();
 
     [Params(

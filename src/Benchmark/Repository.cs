@@ -13,16 +13,6 @@ using Logic.Shorteners;
 using UrlConverterPermutations;
 using Convert = Logic.Convert;
 
-//[RPlotExporter]
-[InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
-// GC and Memory allocation
-[MemoryDiagnoser]
-//[DotTraceDiagnoser]
-// Profile the code
-//[EtwProfiler]
-// Get details about what the JIT is doing
-[JitStatsDiagnoser]
-[GcServer(true)]
 public class Repository
 {
     private IUrlShortener _urlShortener = null!;
