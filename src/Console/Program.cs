@@ -136,7 +136,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
             var readSamples = new List<double>(readSampleCount);
             var writeSamples = new List<double>(writeSampleCount);
-            
+
             const int progressInterval = 524288;
 
             AnsiConsole.Status()
@@ -159,18 +159,18 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                 {
                                     sw.Stop();
                                     writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                                    
+
                                     GC.Collect();
                                     workingSet = Process.GetCurrentProcess().WorkingSet64;
 
-                                    ctx.Status($"Generating... Iteration: {j}, URLs {i:N3}: {workingSet / 1048576}M");
+                                    ctx.Status($"Generating... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M");
                                     sw.Restart();
                                 }
                             }
 
                             sw.Stop();
                             writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N3} elements: {sw.ElapsedMilliseconds / 1000.0:0.000} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N3} inserts/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} inserts/sec)");
                             sw.Reset();
                         }
                     }
@@ -186,15 +186,20 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
                                     if (i % progressInterval == 0)
                                     {
+                                        sw.Stop();
+                                        writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
+
                                         GC.Collect();
                                         workingSet = Process.GetCurrentProcess().WorkingSet64;
 
                                         ctx.Status($"Generating... Iteration: {j}, URLs {i:N3}: {workingSet / 1048576}M");
+
+                                        sw.Restart();
                                     }
                                 });
                             sw.Stop();
                             writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N3} elements: {sw.ElapsedMilliseconds / 1000.0:0.000} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N3} inserts/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} inserts/sec)");
                             sw.Reset();
                         }
                     }
@@ -231,7 +236,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                 {
                                     sw.Stop();
                                     readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                                    
+
                                     GC.Collect();
                                     workingSet = Process.GetCurrentProcess().WorkingSet64;
 
@@ -242,7 +247,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
                             sw.Stop();
                             readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N3} elements: {sw.ElapsedMilliseconds / 1000.0:0.000} secs ({(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0)):N3} reads/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0)):N0} reads/sec)");
                             sw.Reset();
                         }
                     }
@@ -260,15 +265,20 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
                                     if (i % progressInterval == 0)
                                     {
+                                        sw.Stop();
+                                        readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
+
                                         GC.Collect();
                                         workingSet = Process.GetCurrentProcess().WorkingSet64;
 
                                         ctx.Status($"Reading... Iteration: {j}, URLs {i:N3}: {workingSet / 1048576}M");
+
+                                        sw.Restart();
                                     }
                                 });
                             sw.Stop();
                             readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N3} elements: {sw.ElapsedMilliseconds / 1000.0:0.000} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N3} reads/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} reads/sec)");
                             sw.Reset();
                         }
                     }
