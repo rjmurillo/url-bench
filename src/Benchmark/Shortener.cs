@@ -2,6 +2,7 @@
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Engines;
 using Contracts;
+using Logic;
 using Logic.Shorteners;
 using UrlConverterPermutations;
 
@@ -19,14 +20,10 @@ public class Shortener
 {
     private IUrlShortener _urlShortener = null!;
 
-    [Params(
-        typeof(IncrementingIntegerUrlShortener)
-        , typeof(SnowflakeUrlShortener)
-        ,typeof(Sha256HashUrlShortener)
-        ,typeof(Murmur3HashUrlShortener)
-        ,typeof(VectorizedUrlShortener)
-    )]
+    [ParamsSource(nameof(ShortenerTypes))]
     public Type ShortenerType;
+    
+    public IEnumerable<Type> ShortenerTypes => UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>();
 
     [Params(
         "https://jobs.careers.microsoft.com/us/en/job/1613473"

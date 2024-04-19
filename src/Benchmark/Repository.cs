@@ -33,15 +33,10 @@ public class Repository
        )]
     public Type ShortenerType;
 
-    [Params(
-               typeof(ConcurrentUrlRepository)
-               , typeof(FastCacheUrlRepository)
-               , typeof(FASTERUrlRepository)
-               , typeof(MemoryCacheUrlRepository)
-               , typeof(PartitionedUrlRepository)
-               , typeof(ReaderWriterLockSlimUrlRepository)
-                  )]
+    [ParamsSource(nameof(RepositoryTypes))]
     public Type RepositoryType;
+    
+    public IEnumerable<Type> RepositoryTypes => UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>();
 
     private const string LongUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
 
