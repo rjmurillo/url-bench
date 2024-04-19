@@ -1,8 +1,6 @@
 ﻿using System.Globalization;
 using BenchmarkDotNet.Extensions;
 using BenchmarkDotNet.Mathematics;
-using BenchmarkDotNet.Reports;
-
 using Perfolizer.Horology;
 using Perfolizer.Mathematics.OutlierDetection;
 using Spectre.Console;

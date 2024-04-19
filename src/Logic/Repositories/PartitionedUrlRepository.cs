@@ -1,6 +1,4 @@
-﻿using Contracts;
-
-namespace Logic.Repositories;
+﻿namespace Logic.Repositories;
 
 public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
 {

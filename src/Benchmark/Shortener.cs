@@ -1,8 +1,4 @@
 ﻿using BenchmarkDotNet.Attributes;
-using Contracts;
-using Logic;
-using Proto.Utilities.Benchmark;
-using UrlConverterPermutations;
 
 namespace Benchmark;
 
@@ -13,7 +9,7 @@ public interface IShortenerBenchmark
 
 public class Shortener : ShortenerBenchmarksBase
 {
-    
+
 
     [Benchmark]
     public string Shorten()
@@ -21,5 +17,5 @@ public class Shortener : ShortenerBenchmarksBase
         return UrlShortener.ShortenUrl(LongUrl);
     }
 
-    
+
 }

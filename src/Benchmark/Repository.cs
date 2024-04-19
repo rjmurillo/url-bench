@@ -1,18 +1,9 @@
 ﻿using Benchmark;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Diagnostics.Windows.Configs;
-using BenchmarkDotNet.Engines;
-using BenchmarkDotNet.Environments;
-using BenchmarkDotNet.Jobs;
-using BenchmarkDotNet.Running;
-using BenchmarkDotNet.Toolchains.InProcess.Emit;
 using Contracts;
 using Logic;
-using Logic.Repositories;
 using Logic.Shorteners;
 using UrlConverterPermutations;
-using Convert = Logic.Convert;
 
 public interface IRepositoryBenchmark
 {

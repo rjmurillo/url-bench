@@ -10,7 +10,6 @@ using Logic.Shorteners;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using UrlConverterPermutations;
-using static BenchmarkCommand;
 using Convert = Logic.Convert;
 
 var app = new CommandApp();

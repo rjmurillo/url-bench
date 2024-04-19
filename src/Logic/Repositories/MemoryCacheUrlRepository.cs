@@ -1,10 +1,6 @@
-﻿using System.Drawing;
-using System.Text;
-using Contracts;
-using Logic;
+﻿using Logic;
 using Logic.Repositories;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 
 public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
 {
