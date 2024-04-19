@@ -1,4 +1,5 @@
-﻿using System.Security.Principal;
+﻿using System.Diagnostics;
+using System.Security.Principal;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -20,7 +21,8 @@ static IConfig GetGlobalConfig()
 
     var config = DefaultConfig.Instance
         .AddJob(j)
-        //.AddColumn(new TypeNameColumn())
+        .AddColumn(new RepositoryTypeColumn())
+        .AddColumn(new ShortenerTypeColumn())
         .AddColumn(StatisticColumn.P80)
         .AddColumn(StatisticColumn.P90)
         .AddColumn(StatisticColumn.P95)
@@ -28,6 +30,14 @@ static IConfig GetGlobalConfig()
         .AddDiagnoser(new MemoryDiagnoser(new MemoryDiagnoserConfig(true)))
         .AddDiagnoser(ThreadingDiagnoser.Default)
         ;
+
+    // Allow to disable optimizations when actively debugging
+#if DEBUG
+    if (Debugger.IsAttached)
+    {
+        config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
+    }
+#endif
 
     var windows = false;
     var elevated = false;
