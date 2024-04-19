@@ -13,17 +13,6 @@ public static class StatisticsDumper
 {
     public static void Dump(Statistics statistics)
     {
-        var allOutliers = statistics.AllOutliers;
-        // TODO: Improve
-        var actualOutliers = statistics.GetActualOutliers(OutlierMode.RemoveAll);
-
-        if (allOutliers.Any())
-        {
-            AnsiConsole.WriteLine(GetMessage(actualOutliers, allOutliers, statistics.LowerOutliers, statistics.UpperOutliers, CultureInfo.CurrentUICulture));
-
-            statistics = new Statistics(statistics.OriginalValues.Except(allOutliers));
-        }
-
         var table = new Table().RoundedBorder();
         table.AddColumn("[grey]Name[/]");
         table.AddColumn("[grey]Value[/]");
@@ -35,7 +24,11 @@ public static class StatisticsDumper
             string? displayValue = null;
             if (value is double[] doubleArray)
             {
-                displayValue = string.Join(", ", doubleArray.Select(d => d.ToString()));
+                displayValue = string.Join(", ", doubleArray.Select(d => d.ToString("N0")));
+            }
+            else if (value is double doubleValue)
+            {
+                displayValue = doubleValue.ToString("N0");
             }
             else
             {
@@ -54,11 +47,22 @@ public static class StatisticsDumper
         AnsiConsole.Write(table);
 
         AnsiConsole.WriteLine(statistics.ToString(
-            CultureInfo.CurrentUICulture, 
-            x=> x.ToString("N3"),
+            CultureInfo.CurrentUICulture,
+            x => x.ToString("N0"),
             true));
-        
-        
+
+        var allOutliers = statistics.AllOutliers;
+        // TODO: Improve
+        var actualOutliers = statistics.GetActualOutliers(OutlierMode.RemoveAll);
+
+        if (allOutliers.Any())
+        {
+            
+            AnsiConsole.WriteLine(GetMessage(actualOutliers, allOutliers, statistics.LowerOutliers, statistics.UpperOutliers, CultureInfo.CurrentUICulture));
+
+            statistics = new Statistics(statistics.OriginalValues.Except(allOutliers));
+            Dump(statistics);
+        }
     }
 
     public static string GetMessage(double[] actualOutliers, double[] allOutliers, double[] lowerOutliers, double[] upperOutliers, CultureInfo cultureInfo)
