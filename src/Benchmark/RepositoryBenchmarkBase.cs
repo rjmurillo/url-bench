@@ -24,7 +24,7 @@ public abstract class RepositoryBenchmarkBase
     [ParamsSource(nameof(RepositoryTypes))]
     public Type RepositoryType { get; set; }
 
-    public IEnumerable<Type> RepositoryTypes => UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>().Take(1);
+    public IEnumerable<Type> RepositoryTypes => UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>();
 
     private const string LongUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
 
@@ -48,7 +48,7 @@ public abstract class RepositoryBenchmarkBase
         {
             ShortUrls.Add(Facade.ShortenAndSave(LongUrl + i));
         }
-        
+
     }
 
     [GlobalCleanup]
