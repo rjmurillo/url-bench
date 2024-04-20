@@ -25,7 +25,7 @@ static IConfig GetGlobalConfig()
         .AddColumn(StatisticColumn.P50)
         .AddColumn(StatisticColumn.P95)
         .AddColumn(StatisticColumn.OperationsPerSecond)
-        .AddExporter(new RPlotExporter())
+        .AddExporter(RPlotExporter.Default, PlainExporter.Default)
         .AddDiagnoser(new MemoryDiagnoser(new MemoryDiagnoserConfig(true)))
         .AddDiagnoser(ThreadingDiagnoser.Default)
         ;
