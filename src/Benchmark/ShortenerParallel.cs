@@ -10,7 +10,7 @@ public class ShortenerParallel : ShortenerBenchmarksBase
     // -1 means no limits
     // 1 means single-threaded
     // 2 means two threads
-    [Params(-1, 1, 2)]
+    [Params(-1, 1, 2, 8, 16)]
     public int MaxConcurrency { get; set; }
 
     private BenchmarkThreadHelper? _threadHelper;
@@ -19,8 +19,7 @@ public class ShortenerParallel : ShortenerBenchmarksBase
     [GlobalSetup(Target = nameof(ShortenParallel))]
     public void SetupParallel()
     {
-        // REVIEW: Is this needed since there is a GlobalSetup?
-        UrlShortener = Factory.CreateShortener(ShortenerType);
+        base.Setup();
 
         _threadHelper = new BenchmarkThreadHelper(MaxConcurrency);
         for (var i = 0; i < 100; i++)
