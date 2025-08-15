@@ -12,11 +12,8 @@ namespace Logic.Shorteners;
 /// A URL shortener that generates short URLs using the SHA-256 hash algorithm.
 /// </summary>
 public class Sha256HashUrlShortener()
-    : IUrlShortener, IDisposable
+    : IUrlShortener
 {
-    private SHA256 _sha256 = SHA256.Create();
-    private bool _disposed;
-
     /// <summary>
     /// Shortens the specified original URL by generating a unique short URL using the SHA-256 hash algorithm.
     /// </summary>
@@ -65,26 +62,20 @@ public class Sha256HashUrlShortener()
 
         // SHA256 outputs 32 bytes, 256 bits
         Span<byte> hashBuffer = stackalloc byte[32];
-        var success = _sha256.TryComputeHash(inputBuffer[..bytesUsed], hashBuffer, out _);
 
-        Debug.Assert(success, "Could not create the hash from input.");
+#if NET8_0_OR_GREATER
+        var success = SHA256.TryHashData(inputBuffer[..bytesUsed], hashBuffer, out var written);
+        Debug.Assert(success && written == 32, "Could not create the hash from input.");
+#else
+        var hashArray = SHA256.HashData(inputBuffer[..bytesUsed]);
+        Debug.Assert(hashArray.Length == 32, "Unexpected SHA-256 hash length.");
+        hashArray.AsSpan().CopyTo(hashBuffer);
+#endif
 
         // Base62 encode the SHA256 hash
         Span<char> base62Buffer = stackalloc char[Constants.MaxSlugLength];
         Convert.AsBase62String(hashBuffer, ref base62Buffer);
 
         return base62Buffer.ToString();
-    }
-
-    /// <summary>
-    /// Releases the unmanaged resources used by the Sha256HashUrlShortener and optionally releases the managed resources.
-    /// </summary>
-    public void Dispose()
-    {
-        if (!_disposed)
-        {
-            _sha256?.Dispose();
-            _disposed = true;
-        }
     }
 }
