@@ -34,20 +34,21 @@ public class VectorizedUrlShortener : IUrlShortener
             return string.Empty;
         }
 
-        var byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
+        int charCount = originalUrl.Length;
+        int byteCount = charCount * sizeof(char); // exact byte count
 
         // Decide between stackalloc and ArrayPool
         if (byteCount <= Constants.MaxStackSize)
         {
             Span<byte> inputBuffer = stackalloc byte[byteCount];
-            return ProcessUrl(originalUrl, inputBuffer);
+            return ProcessUrl(originalUrl, inputBuffer, charCount, byteCount);
         }
 
         var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
             var poolBuffer = arrayFromPool.AsSpan(0, byteCount);
-            return ProcessUrl(originalUrl, poolBuffer);
+            return ProcessUrl(originalUrl, poolBuffer, charCount, byteCount);
         }
         finally
         {
@@ -56,14 +57,14 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
+    private string ProcessUrl(string originalUrl, Span<byte> bytes, int charCount, int byteCount)
     {
-        Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
+        // Reinterpret as char[] of EXACT length, then back to bytes of EXACT length
+        var chars = MemoryMarshal.Cast<byte, char>(bytes)[..charCount];
+        originalUrl.AsSpan().CopyTo(chars);
 
-        originalUrl.AsSpan().CopyTo(charBuffer); // Copy the original URL into the char buffer
-        Span<byte> byteBuffer = MemoryMarshal.Cast<char, byte>(charBuffer); // Reinterpret the byte buffer as char buffer
-
-        var value = FlexibleHash(byteBuffer);
+        // Only hash the bytes written
+        var value = FlexibleHash(bytes[..byteCount]);
 
         Span<char> base62Buffer = stackalloc char[Math.Min(Convert.DetermineBufferLength(value), Constants.MaxSlugLength)];
         Convert.AsBase62String(value, ref base62Buffer);
