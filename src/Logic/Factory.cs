@@ -25,9 +25,4 @@ public static class Factory
     {
         return Activator.CreateInstance(repositoryType) as IUrlRepository;
     }
-
-    public static T? TypeFactory<T>()
-    {
-        return (T)Activator.CreateInstance(typeof(T));
-    }
 }
