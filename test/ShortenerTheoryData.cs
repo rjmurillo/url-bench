@@ -15,8 +15,8 @@ public class ShortenerTheoryData : TheoryData<IUrlShortener>
 
         foreach (var shortener in shorteners)
         {
-            var s = Factory.CreateShortener(shortener);
-            Debug.Assert(s != null, nameof(s) + " != null");
+            var s = Factory.CreateShortener(shortener)
+                                ?? throw new InvalidOperationException($"Failed to create {shortener.FullName}. Ensure a public parameterless constructor.");
             Add(s);
         }
     }
