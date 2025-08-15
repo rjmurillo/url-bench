@@ -101,7 +101,6 @@ jobs:
       with:
         name: .NET Test Reports (${{ matrix.os }})
         path: "artifacts/TestResults/**/*.trx"
-        if-no-files-found: error
 
     - name: Upload Code Coverage Report
       uses: actions/upload-artifact@v4
