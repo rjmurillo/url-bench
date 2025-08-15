@@ -1,8 +1,7 @@
-﻿namespace Contracts
+﻿namespace Contracts;
+
+public interface IUrlRepository
 {
-    public interface IUrlRepository
-    {
-        string GetOriginalUrl(string shortUrl);
-        bool SaveUrlMapping(string shortUrl, string originalUrl);
-    }
+    string GetOriginalUrl(string shortUrl);
+    bool SaveUrlMapping(string shortUrl, string originalUrl);
 }

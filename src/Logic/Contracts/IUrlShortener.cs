@@ -1,7 +1,6 @@
-﻿namespace Contracts
+﻿namespace Contracts;
+
+public interface IUrlShortener
 {
-    public interface IUrlShortener
-    {
-        string ShortenUrl(string originalUrl);
-    }
+    string ShortenUrl(string originalUrl);
 }
