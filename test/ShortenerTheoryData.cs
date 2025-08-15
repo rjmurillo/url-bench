@@ -1,4 +1,5 @@
-﻿using Contracts;
+﻿using System.Diagnostics;
+using Contracts;
 using Logic;
 
 namespace UrlConverterPermutations;
@@ -13,6 +14,7 @@ public class ShortenerTheoryData : TheoryData<IUrlShortener>
         foreach (var shortener in shorteners)
         {
             var s = Factory.CreateShortener(shortener);
+            Debug.Assert(s != null, nameof(s) + " != null");
             Add(s);
         }
     }
