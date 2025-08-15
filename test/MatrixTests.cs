@@ -43,7 +43,7 @@ public class MatrixTests(ITestOutputHelper output)
     /// </summary>
     /// <param name="shortener">The URL shortener to test.</param>
     /// <param name="repository">The URL repository to test.</param>
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(MatrixData))]
     public void ShortUrl_is_not_same_after_2_iterations(IUrlShortener? shortener, IUrlRepository? repository)
     {
@@ -51,6 +51,8 @@ public class MatrixTests(ITestOutputHelper output)
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
         var hs = new HashSet<string>(StringComparer.Ordinal);
         var f = new UrlManager(shortener, repository);
+
+        Skip.If(Utilities.IsDeterministicHashShortener(shortener), "Deterministic hash shorteners are not supported.");
 
         for (var i = 0UL; i < upper; i++)
         {

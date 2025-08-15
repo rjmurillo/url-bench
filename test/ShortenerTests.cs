@@ -2,7 +2,6 @@
 using NonBlocking;
 using System.Text;
 using System.Web;
-using Logic.Shorteners;
 
 namespace UrlConverterPermutations;
 
@@ -16,14 +15,6 @@ public class ShortenerTests(ITestOutputHelper output)
     /// Gets the theory data containing all URL shortener implementations to test.
     /// </summary>
     public static ShortenerTheoryData ShortenerData = new();
-
-    private static bool IsDeterministicHashShortener(IUrlShortener shortener)
-    {
-        var shortenerType = shortener.GetType();
-        return shortenerType == typeof(VectorizedUrlShortener) ||
-               shortenerType == typeof(Murmur3HashUrlShortener) ||
-               shortenerType == typeof(Sha256HashUrlShortener);
-    }
 
     /// <summary>
     /// Tests that null URLs are handled correctly by returning an empty string.
@@ -157,7 +148,7 @@ public class ShortenerTests(ITestOutputHelper output)
         output.WriteLine($"ShortUrl1: {shortUrl1}");
         output.WriteLine($"ShortUrl2: {shortUrl2}");
 
-        Skip.If(IsDeterministicHashShortener(shortener));
+        Skip.If(Utilities.IsDeterministicHashShortener(shortener));
 
         // For non-deterministic shorteners, different outputs are expected
         shortUrl1.ShouldNotBe(shortUrl2);        
@@ -175,7 +166,7 @@ public class ShortenerTests(ITestOutputHelper output)
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
         var hs = new HashSet<string>(StringComparer.Ordinal);
 
-        if (IsDeterministicHashShortener(shortener))
+        if (Utilities.IsDeterministicHashShortener(shortener))
         {
             // For deterministic hash functions, test that the same input produces consistent output
             var firstResult = shortener.ShortenUrl(longUrl);
@@ -214,7 +205,7 @@ public class ShortenerTests(ITestOutputHelper output)
         var processorCount = Environment.ProcessorCount; // Number of logical CPUs
         var hs = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
 
-        if (IsDeterministicHashShortener(shortener))
+        if (Utilities.IsDeterministicHashShortener(shortener))
         {
             // For deterministic hash functions, test thread safety by ensuring consistent output
             var expectedResult = shortener.ShortenUrl(longUrl);
