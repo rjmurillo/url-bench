@@ -110,6 +110,7 @@ jobs:
         path: "artifacts/TestResults/coverage/**"
 
     - name: Publish coverage summary to GitHub
+      if: success()
       run: cat artifacts/TestResults/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
       shell: bash
 
