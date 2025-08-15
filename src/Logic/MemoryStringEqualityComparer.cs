@@ -6,7 +6,7 @@ public class MemoryStringEqualityComparer(StringComparison comparison) : IEquali
     public static MemoryStringEqualityComparer OrdinalIgnoreCase { get; } = new(StringComparison.OrdinalIgnoreCase);
 
     public MemoryStringEqualityComparer(bool ignoreCase = false)
-        :this(ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)
+        : this(ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)
     {
     }
 

@@ -1,0 +1,3 @@
+[submodule "third_party/ProtoBenchmarkHelpers"]
+	path = third_party/ProtoBenchmarkHelpers
+	url = https://github.com/timcassell/ProtoBenchmarkHelpers.git

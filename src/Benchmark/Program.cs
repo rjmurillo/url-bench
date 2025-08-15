@@ -1,100 +1,67 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System.Diagnostics;
+using System.Security.Principal;
+using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Diagnostics.dotTrace;
-using BenchmarkDotNet.Engines;
-using BenchmarkDotNet.Environments;
+using BenchmarkDotNet.Diagnosers;
+using BenchmarkDotNet.Diagnostics.Windows;
+using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
-using BenchmarkDotNet.Toolchains.InProcess.Emit;
-using Contracts;
-using Logic.Repositories;
-using Logic.Shorteners;
 
-var config = DefaultConfig.Instance
-    //.With(Job.MediumRun.WithRuntime(CoreRuntime.Core60).WithId("Net60").WithToolchain(InProcessEmitToolchain.Instance).WithStrategy(RunStrategy.Throughput).WithIterationCount(3).AsBaseline())
-    .With(Job.MediumRun.WithRuntime(CoreRuntime.Core80).WithId("Net80").WithToolchain(InProcessEmitToolchain.Instance).WithStrategy(RunStrategy.Throughput).WithIterationCount(1))
-    //.With(Job.MediumRun.WithRuntime(CoreRuntime.Core80).WithId("Net90").WithToolchain(InProcessEmitToolchain.Instance).WithStrategy(RunStrategy.Throughput).WithIterationCount(3))
-    ;
+// Allow to pass in arguments from the command line
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, GetGlobalConfig());
+return;
 
-BenchmarkRunner.Run<Benchmarks>(config);
-
-//[RPlotExporter]
-[MemoryDiagnoser]
-//[DotTraceDiagnoser]
-[GcServer(true)]
-public class Benchmarks
+static IConfig GetGlobalConfig()
 {
-    private IUrlShortener _urlShortener;
+    var j = Job.Default
+                    .WithGcMode(GcMode.Default.WithServer(true))
+                    .AsDefault();
 
-    [Params(typeof(ReadOnlyMemoryUrlShortener))]
-    public Type ShortenerType;
+    var config = DefaultConfig.Instance
+        .AddJob(j)
+        .AddColumn(StatisticColumn.P25)
+        .AddColumn(StatisticColumn.P50)
+        .AddColumn(StatisticColumn.P95)
+        .AddColumn(StatisticColumn.OperationsPerSecond)
+        .AddExporter(RPlotExporter.Default, PlainExporter.Default)
+        .AddDiagnoser(new MemoryDiagnoser(new MemoryDiagnoserConfig(true)))
+        .AddDiagnoser(ThreadingDiagnoser.Default)
+        ;
 
-    //[Params(typeof(ReaderWriterLockSlimUrlRepository), typeof(PartitionedUrlRepository), typeof(ConcurrentUrlRepository), typeof(FASTERUrlRepository))]
-    //[Params(typeof(FASTERUrlRepository), typeof(ConcurrentUrlRepository))]
-    //[Params(typeof(FASTERUrlRepository))]
-    //[Params(typeof(ReaderWriterLockSlimUrlRepository), typeof(ReaderWriterLockSlimReadOnlyMemoryRepository))]
-    [Params(typeof(ReaderWriterLockSlimReadOnlyMemoryRepository))]
-    public Type RepositoryType;
-
-    [Params("https://jobs.careers.microsoft.com/us/en/job/1613473")]
-    public string LongUrl;
-
-    private string _knownShort;
-
-    [GlobalSetup]
-    public void Setup()
+    // Allow to disable optimizations when actively debugging
+#if DEBUG
+    if (Debugger.IsAttached)
     {
-        var repository = (IUrlRepository)Activator.CreateInstance(RepositoryType);
-        _urlShortener = (IUrlShortener)Activator.CreateInstance(ShortenerType, new object[]{repository});
-
-        _knownShort = _urlShortener.ShortenUrl(LongUrl);
+        config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
     }
+#endif
 
-    [Benchmark]
-    public void Shorten()
-    {
-        var shortUrl = _urlShortener.ShortenUrl(LongUrl);
-    }
+    var windows = false;
+    var elevated = false;
 
-    [Benchmark]
-    public void Shorten_Memory()
+#if NET5_0_OR_GREATER
+    windows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+#endif
+
+    if (windows)
     {
-        if (_urlShortener is ReadOnlyMemoryUrlShortenerBase urlShortener)
+        using (var identity = WindowsIdentity.GetCurrent())
         {
-            var shortUrl = urlShortener.ShortenUrl(LongUrl.AsMemory());
+            var principal = new WindowsPrincipal(identity);
+            elevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
-        else
-        {
-            throw new NotSupportedException($"Type {_urlShortener.GetType().Name} does not support {nameof(ReadOnlyMemory<char>)}.");
-        }
-        
-        
-    }
 
-    //[Benchmark]
-    //public void RetrieveOriginalUrl()
-    //{
-    //    _urlShortener.RetrieveOriginalUrl(_knownShort);
-    //}
+        config = config.AddDiagnoser(
+            new InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" }),
+            new JitStatsDiagnoser());
 
-    [Benchmark]
-    public void RoundTrip()
-    {
-        var shortUrl = _urlShortener.ShortenUrl(LongUrl);
-        var originalUrl = _urlShortener.RetrieveOriginalUrl(shortUrl);
-    }
-
-    [Benchmark]
-    public void RoundTrip_Memory()
-    {
-        if (_urlShortener is ReadOnlyMemoryUrlShortenerBase urlShortener)
+        if (elevated)
         {
-            var shortUrl = urlShortener.ShortenUrl(LongUrl.AsMemory());
-            var originalUrl = urlShortener.RetrieveOriginalUrl(shortUrl.ToArray());
-        }
-        else
-        {
-            throw new NotSupportedException($"Type {_urlShortener.GetType().Name} does not support {nameof(ReadOnlyMemory<char>)}.");
+            config = config.AddDiagnoser(new EtwProfiler());
         }
     }
+
+    return config;
 }
+

@@ -1,22 +1,35 @@
-﻿using Contracts;
-using FastCache;
+﻿using FastCache;
 
 namespace Logic.Repositories;
 
-public class FastCacheUrlRepository : ReadOnlyMemoryUrlRepositoryBase
+public class FastCacheUrlRepository : UrlRepositoryBase, IDisposable
 {
-    public override string GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
+    public override string GetOriginalUrl(string shortUrl)
     {
-        if (Cached<ReadOnlyMemory<char>>.TryGet(shortUrl, out var originalUrl))
+        if (Cached<string>.TryGet(shortUrl, out var originalUrl))
         {
-            return originalUrl.Value.Span;
+            return originalUrl.Value;
         }
 
         return string.Empty;
     }
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, ReadOnlyMemory<char> originalUrl)
+    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
-        Cached<ReadOnlyMemory<char>>.Save(shortUrl, originalUrl, TimeSpan.MaxValue);
+        Cached<string>.Save(shortUrl, originalUrl, TimeSpan.MaxValue);
         return true;
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // TODO: Clear the cache
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

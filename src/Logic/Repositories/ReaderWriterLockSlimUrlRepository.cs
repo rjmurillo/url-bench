@@ -1,50 +1,6 @@
 ﻿namespace Logic.Repositories;
 
-public class ReaderWriterLockSlimReadOnlyMemoryRepository(int capacity) : ReadOnlyMemoryUrlRepositoryBase
-{
-    // We're using this because ConcurrentDictionary is too slow
-    private readonly ReaderWriterLockSlim _lock = new();
-
-    private readonly Dictionary<ReadOnlyMemory<char>, string> _urlMappings = new(capacity, MemoryStringEqualityComparer.Ordinal);
-
-    public ReaderWriterLockSlimReadOnlyMemoryRepository()
-        : this(short.MaxValue)
-    {
-    }
-
-    public override string GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            if (_urlMappings.TryGetValue(shortUrl, out var originalUrl))
-            {
-                return originalUrl;
-            }
-
-            return string.Empty;
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
-
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, string originalUrl)
-    {
-        _lock.EnterWriteLock();
-        try
-        {
-            return _urlMappings.TryAdd(shortUrl, originalUrl);
-        }
-        finally
-        {
-            _lock.ExitWriteLock();
-        }
-    }
-}
-
-public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase
+public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase, IDisposable
 {
     // We're using this because ConcurrentDictionary is too slow
     private readonly ReaderWriterLockSlim _lock = new();
@@ -85,5 +41,20 @@ public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase
         {
             _lock.ExitWriteLock();
         }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _urlMappings.Clear();
+            _lock.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

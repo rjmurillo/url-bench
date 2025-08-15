@@ -1,23 +1,17 @@
 ﻿using System.Collections.Concurrent;
-using Contracts;
 
 namespace Logic.Repositories;
 
-public class ConcurrentUrlRepository : ReadOnlyMemoryUrlRepositoryBase
+public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRepositoryBase, IDisposable
 {
-    private readonly ConcurrentDictionary<ReadOnlyMemory<char>, string> _urlMappings;
+    private readonly ConcurrentDictionary<string, string> _urlMappings = new(concurrencyLevel, capacity, StringComparer.Ordinal);
 
     public ConcurrentUrlRepository()
         : this(Environment.ProcessorCount, short.MaxValue)
     {
     }
 
-    public ConcurrentUrlRepository(int concurrencyLevel, int capacity)
-    {
-        _urlMappings = new ConcurrentDictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>(concurrencyLevel, capacity, MemoryStringEqualityComparer.Ordinal);
-    }
-
-    public override string GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
+    public override string GetOriginalUrl(string shortUrl)
     {
         if (_urlMappings.TryGetValue(shortUrl, out var originalUrl))
         {
@@ -27,8 +21,22 @@ public class ConcurrentUrlRepository : ReadOnlyMemoryUrlRepositoryBase
         return string.Empty;
     }
 
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, ReadOnlyMemory<char> originalUrl)
+    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
         return _urlMappings.TryAdd(shortUrl, originalUrl);
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _urlMappings.Clear();
+        }
     }
 }

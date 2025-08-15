@@ -1,0 +1,191 @@
+﻿using System.Text;
+using Contracts;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.InteropServices;
+using System.Buffers;
+using System.Runtime.CompilerServices;
+
+namespace Logic.Shorteners;
+
+// TODO: Refactor this to separate classes for each of the hashing strategies
+// TODO: Refactor to become a facade based on capabilities detected at runtime
+public class VectorizedUrlShortener : IUrlShortener
+{
+    public string ShortenUrl(string originalUrl)
+    {
+        if (string.IsNullOrWhiteSpace(originalUrl))
+        {
+            return string.Empty;
+        }
+
+        var byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
+
+        // Decide between stackalloc and ArrayPool
+        if (byteCount <= Constants.MaxStackSize)
+        {
+            Span<byte> inputBuffer = stackalloc byte[byteCount];
+            return ProcessUrl(originalUrl, inputBuffer);
+        }
+
+        var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
+        try
+        {
+            var poolBuffer = arrayFromPool.AsSpan(0, byteCount);
+            return ProcessUrl(originalUrl, poolBuffer);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(arrayFromPool);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
+    {
+        Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
+
+        originalUrl.AsSpan().CopyTo(charBuffer); // Copy the original URL into the char buffer
+        Span<byte> byteBuffer = MemoryMarshal.Cast<char, byte>(charBuffer); // Reinterpret the byte buffer as char buffer
+
+        var value = FlexibleHash(byteBuffer);
+
+        Span<char> base62Buffer = stackalloc char[Math.Min(Convert.DetermineBufferLength(value), Constants.MaxSlugLength)];
+        Convert.AsBase62String(value, ref base62Buffer);
+
+        return base62Buffer.ToString();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong FlexibleHash(Span<byte> data)
+    {
+        if (Avx2.IsSupported
+#if NET8_0_OR_GREATER
+            && Vector256.IsHardwareAccelerated
+#endif
+            )
+        {
+
+            return ComputeHash256(data);
+        }
+
+        if ((Sse2.IsSupported || AdvSimd.IsSupported)
+#if NET8_0_OR_GREATER
+            && Vector128.IsHardwareAccelerated
+#endif
+            )
+        {
+            if (Sse2.IsSupported)
+            {
+                return ComputeSseHash128(data);
+            }
+
+            if (AdvSimd.IsSupported)
+            {
+                return ComputeAdvSimdHash128(data);
+            }
+        }
+
+        throw new PlatformNotSupportedException("Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ComputeHash256(Span<byte> data)
+    {
+        var hash = Vector256<uint>.Zero;
+        var i = 0;
+        for (; i <= data.Length - 32; i += 32)
+        {
+            var block = Vector256.Create(
+                BitConverter.ToUInt32(data.Slice(i, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 4, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 8, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 12, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 16, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 20, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 24, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 28, 4))
+            );
+            hash = Avx2.Xor(hash, block);
+        }
+
+        return ReduceHashToUInt64(hash);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ComputeSseHash128(Span<byte> data)
+    {
+        var hash = Vector128<uint>.Zero;
+        var i = 0;
+        for (; i <= data.Length - 16; i += 16)
+        {
+            var block = Vector128.Create(
+                BitConverter.ToUInt32(data.Slice(i, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 4, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 8, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 12, 4))
+            );
+            hash = Sse2.Xor(hash, block);
+        }
+
+        return ReduceHashToUInt64(hash);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ComputeAdvSimdHash128(Span<byte> data)
+    {
+        var hash = Vector128<uint>.Zero;
+        var i = 0;
+        for (; i <= data.Length - 16; i += 16)
+        {
+            var block = Vector128.Create(
+                BitConverter.ToUInt32(data.Slice(i, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 4, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 8, 4)),
+                BitConverter.ToUInt32(data.Slice(i + 12, 4))
+            );
+            hash = AdvSimd.Xor(hash, block);
+        }
+
+        return ReduceHashToUInt64(hash);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ReduceHashToUInt64<T>(T hash) where T : struct
+    {
+        if (hash is Vector256<uint> v256)
+        {
+            // Extract lower and upper halves of Vector256<uint>
+            var lower = v256.GetLower();
+            var upper = v256.GetUpper();
+
+            // XOR the lower and upper parts to combine into a single Vector128<uint>
+            var reduced = Sse2.Xor(lower, upper);
+
+            // Further reduce the size by XOR folding the remaining 128-bit vector
+            reduced = Sse2.Xor(reduced, Sse2.ShiftRightLogical128BitLane(reduced, 8));
+
+            // Convert to Vector128<ulong> and extract the final result
+            var reduced64 = reduced.AsUInt64();
+            var result = reduced64.GetElement(0) ^ reduced64.GetElement(1);
+            return result;
+        }
+
+        if (hash is Vector128<uint> v128)
+        {
+            if (Sse2.IsSupported)
+            {
+                // Reduce Vector128<uint> by XOR folding it down to 64 bits
+                var shuffled = Sse2.Shuffle(v128, 0b_00_00_00_01);
+                var reduced = Sse2.Xor(v128, shuffled);
+
+                // Convert to Vector128<ulong> and extract the final result
+                var reduced64 = reduced.AsUInt64();
+                return reduced64.GetElement(0) ^ Sse2.Extract(reduced.AsUInt16(), 1);
+            }
+        }
+
+        throw new ArgumentException("Unsupported vector type for hashing.");
+    }
+}

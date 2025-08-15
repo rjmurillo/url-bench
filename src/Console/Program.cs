@@ -1,12 +1,14 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using BenchmarkDotNet.Mathematics;
+using Console;
+using Contracts;
+
 using Logic;
 using Logic.Repositories;
 using Logic.Shorteners;
 using Spectre.Console;
 using Spectre.Console.Cli;
-
 using static BenchmarkCommand;
 using Convert = Logic.Convert;
 
@@ -17,12 +19,13 @@ app.Configure(config =>
 
     config.AddCommand<BenchmarkCommand>("bench")
         .WithExample($"bench -s {nameof(ReaderWriterLockSlimUrlRepository)}")
-        //.WithExample($"bench -s {nameof(ConcurrentUrlRepository)}")
-        //.WithExample($"bench -s {nameof(PartitionedUrlRepository)}")
-        //.WithExample($"bench -s {nameof(FASTERUrlRepository)}")
+        .WithExample($"bench -s {nameof(ConcurrentUrlRepository)}")
+        .WithExample($"bench -s {nameof(PartitionedUrlRepository)}")
+        .WithExample($"bench -s {nameof(FASTERUrlRepository)}")
+        .WithExample($"bench -t {nameof(IncrementingIntegerUrlShortener)}")
+        .WithExample($"bench -t {nameof(SnowflakeUrlShortener)}")
+        .WithExample($"bench -t {nameof(Murmur3HashUrlShortener)}")
         ;
-
-
 });
 
 return app.Run(args.Length > 0 ? args : ["bench"]);
@@ -37,8 +40,8 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             internal const string Url = "https://www.microsoft.com/en-us/security/business/endpoint-security/microsoft-defender-endpoint";
             internal const int NumberOfUrls = 10_000_000;
             internal const int Iterations = 3;
-            //internal static readonly Type RepoType = typeof(FASTERUrlRepository);
-            internal static readonly Type RepoType = typeof(ReaderWriterLockSlimUrlRepository);
+            internal static readonly Type RepoType = typeof(FASTERUrlRepository);
+            internal static readonly Type ShortenerType = typeof(IncrementingIntegerUrlShortener);
         }
 
         [CommandOption("-i|--iterations")]
@@ -51,10 +54,13 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
         [CommandOption("-u|--url")]
         [DefaultValue(Defaults.Url)]
-        public string Url { get; init; }
+        public string? Url { get; init; }
 
         [CommandOption("-s|--storage")]
         public string? StorageType { get; private set; }
+
+        [CommandOption("-t|--urlshortener")]
+        public string? ShortenerType { get; private set; }
 
         [CommandOption("-p|--maxdop")]
         [DefaultValue(1)]
@@ -65,17 +71,35 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             if (string.IsNullOrWhiteSpace(StorageType))
             {
                 StorageType = Defaults.RepoType.Name;
-                return base.Validate();
+            }
+
+            if (string.IsNullOrWhiteSpace(ShortenerType))
+            {
+                ShortenerType = Defaults.ShortenerType.Name;
             }
 
 
-            var typesImplementingIUrlRepository = UrlRepositoryHelper.GetConcreteTypes();
+            var typesImplementingIUrlRepository = UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>();
 
-            return typesImplementingIUrlRepository.Any(t =>
-                t.Name.Equals(StorageType, StringComparison.OrdinalIgnoreCase))
+            var storageValidationResult = UrlRepositoryHelper.GetRepositoryType(StorageType) != null
                 ? ValidationResult.Success()
-                : ValidationResult.Error("Unrecognized storage type. Use: " +
-                                         string.Join(", ", typesImplementingIUrlRepository.Select(t => t.Name)));
+                : ValidationResult.Error(
+                    $"Unrecognized storage type '{StorageType}'. Use: {string.Join(", ", typesImplementingIUrlRepository.Select(t => t.Name))}");
+
+            if (!storageValidationResult.Successful)
+            {
+                return storageValidationResult;
+            }
+
+            var typesImplementingIUrlShortener = UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>();
+
+            var shortenerValidationResult = UrlRepositoryHelper.GetShortenerType(ShortenerType) != null
+                ? ValidationResult.Success()
+                : ValidationResult.Error(
+                    $"Unrecognized URL shortener type '{ShortenerType}'. Use: {string.Join(", ", typesImplementingIUrlShortener.Select(t => t.Name))}");
+
+
+            return shortenerValidationResult;
         }
     }
 
@@ -85,14 +109,34 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         {
             SettingsDumper.Dump(settings);
 
-            var repoType = UrlRepositoryHelper.GetType(settings.StorageType);
-            var repo = (IUrlRepository)Activator.CreateInstance(repoType);
-            var shortener = new UrlShortener(repo);
+            const int maxDictionaryCapacity = 2_000_000_000;
 
+            var repoType = UrlRepositoryHelper.GetRepositoryType(settings.StorageType);
+            var repo = Factory.CreateRepository(repoType!);
+            var shortenerType = UrlRepositoryHelper.GetShortenerType(settings.ShortenerType);
+            var shortener = Factory.CreateShortener(shortenerType!);
+            var facade = new Facade(shortener, repo);
             var sw = new Stopwatch();
             long workingSet;
-            var readSamples = new List<double>(settings.Iterations * settings.NumberOfUrls);
-            var writeSamples = new List<double>(settings.Iterations * settings.NumberOfUrls);
+
+            var writeSampleCount = settings.Iterations * settings.NumberOfUrls;
+            if (writeSampleCount < 0 || writeSampleCount > maxDictionaryCapacity)
+            {
+                // We overflowed or we're trying to allocate that will cause OOM
+                writeSampleCount = maxDictionaryCapacity;
+            }
+
+            int readSampleCount = settings.Iterations * settings.NumberOfUrls;
+            if (readSampleCount < 0 || readSampleCount > maxDictionaryCapacity)
+            {
+                // We overflowed or we're trying to allocate that will cause OOM
+                readSampleCount = maxDictionaryCapacity;
+            }
+
+            var readSamples = new List<double>(readSampleCount);
+            var writeSamples = new List<double>(writeSampleCount);
+
+            const int progressInterval = 524288;
 
             AnsiConsole.Status()
                 .Spinner(Spinner.Known.Dots)
@@ -108,20 +152,24 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             sw.Start();
                             for (var i = 0; i < settings.NumberOfUrls; i++)
                             {
-                                var shortUrl = shortener.ShortenUrl(settings.Url);
+                                var shortUrl = facade.ShortenAndSave(settings.Url);
 
-                                if (i % (1 << 19) == 0)
+                                if (i % progressInterval == 0)
                                 {
+                                    sw.Stop();
+                                    writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
+
                                     GC.Collect();
                                     workingSet = Process.GetCurrentProcess().WorkingSet64;
 
-                                    ctx.Status($"Generating... Iteration: {j}, URLs {i}: {workingSet / 1048576}M");
+                                    ctx.Status($"Generating... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M");
+                                    sw.Restart();
                                 }
                             }
 
                             sw.Stop();
                             writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls} elements: {sw.ElapsedMilliseconds / 1000.0:0.000} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):0.00} inserts/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} inserts/sec)");
                             sw.Reset();
                         }
                     }
@@ -133,19 +181,24 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             Parallel.For(0, settings.NumberOfUrls,
                                 new ParallelOptions { MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism }, i =>
                                 {
-                                    var shortUrl = shortener.ShortenUrl(settings.Url);
+                                    var shortUrl = facade.ShortenAndSave(settings.Url);
 
-                                    if (i % (1 << 19) == 0)
+                                    if (i % progressInterval == 0)
                                     {
+                                        sw.Stop();
+                                        writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
+
                                         GC.Collect();
                                         workingSet = Process.GetCurrentProcess().WorkingSet64;
 
-                                        ctx.Status($"Generating... Iteration: {j}, URLs {i}: {workingSet / 1048576}M");
+                                        ctx.Status($"Generating... Iteration: {j}, URLs {i:N3}: {workingSet / 1048576}M");
+
+                                        sw.Restart();
                                     }
                                 });
                             sw.Stop();
                             writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls} elements: {sw.ElapsedMilliseconds / 1000.0:0.000} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):0.00} inserts/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} inserts/sec)");
                             sw.Reset();
                         }
                     }
@@ -153,7 +206,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                     workingSet = Process.GetCurrentProcess().WorkingSet64;
                     AnsiConsole.MarkupLineInterpolated($"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet / 1048576}M");
 
-                    var writeStatistics = new Statistics(writeSamples);
+                    var writeStatistics = new Statistics(writeSamples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
                     StatisticsDumper.Dump(writeStatistics);
                 });
 
@@ -175,13 +228,25 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             for (var i = 0; i < settings.NumberOfUrls; i++)
                             {
                                 var k = (ulong)rnd.NextInt64(1, settings.NumberOfUrls * j);
-                                var shortUrl = Convert.AsBase62String(k).ToArray();
-                                var longUrl = shortener.RetrieveOriginalUrl(shortUrl);
+                                var shortUrl = Convert.AsBase62String(k).ToString();
+                                var longUrl = facade.GetOriginalUrl(shortUrl);
+
+                                if (i % progressInterval == 0)
+                                {
+                                    sw.Stop();
+                                    readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
+
+                                    GC.Collect();
+                                    workingSet = Process.GetCurrentProcess().WorkingSet64;
+
+                                    ctx.Status($"Reading... Iteration: {j}, URLs {i:N3}: {workingSet / 1048576}M");
+                                    sw.Restart();
+                                }
                             }
 
                             sw.Stop();
                             readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls} elements: {sw.ElapsedMilliseconds / 1000.0:0.000} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):0.00} reads/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0)):N0} reads/sec)");
                             sw.Reset();
                         }
                     }
@@ -194,12 +259,25 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                 new ParallelOptions { MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism }, i =>
                                 {
                                     var k = (ulong)rnd.NextInt64(1, settings.NumberOfUrls * j);
-                                    var shortUrl = Convert.AsBase62String(k);
-                                    var longUrl = shortener.RetrieveOriginalUrl(shortUrl);
+                                    var shortUrl = Convert.AsBase62String(k).ToString();
+                                    var longUrl = facade.GetOriginalUrl(shortUrl);
+
+                                    if (i % progressInterval == 0)
+                                    {
+                                        sw.Stop();
+                                        readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
+
+                                        GC.Collect();
+                                        workingSet = Process.GetCurrentProcess().WorkingSet64;
+
+                                        ctx.Status($"Reading... Iteration: {j}, URLs {i:N3}: {workingSet / 1048576}M");
+
+                                        sw.Restart();
+                                    }
                                 });
                             sw.Stop();
                             readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls} elements: {sw.ElapsedMilliseconds / 1000.0:0.000} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):0.00} reads/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} reads/sec)");
                             sw.Reset();
                         }
                     }
@@ -207,7 +285,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                     workingSet = Process.GetCurrentProcess().WorkingSet64;
                     AnsiConsole.MarkupLineInterpolated($"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet / 1048576}M");
 
-                    var readStatistics = new Statistics(readSamples);
+                    var readStatistics = new Statistics(readSamples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
                     StatisticsDumper.Dump(readStatistics);
                 });
         }
@@ -218,40 +296,5 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         }
 
         return 0;
-    }
-}
-
-public static class StatisticsDumper
-{
-    public static void Dump(Statistics statistics)
-    {
-        var table = new Table().RoundedBorder();
-        table.AddColumn("[grey]Name[/]");
-        table.AddColumn("[grey]Value[/]");
-
-        var properties = statistics.GetType().GetProperties();
-        foreach (var property in properties)
-        {
-            var value = property.GetValue(statistics);
-                string? displayValue = null;
-                if (value is double[] doubleArray)
-                {
-                    displayValue = string.Join(", ", doubleArray.Select(d => d.ToString()));
-                }
-                else
-                {
-                    // Convert other values to string and escape brackets
-                    displayValue = value?.ToString()
-                        ?.Replace("[", "[[")
-                        ?.Replace("]", "]]");
-                }
-
-
-                table.AddRow(
-                property.Name,
-                displayValue ?? "[grey]null[/]");
-        }
-
-        AnsiConsole.Write(table);
     }
 }

@@ -1,10 +1,8 @@
-﻿using Contracts;
+﻿namespace Logic.Repositories;
 
-namespace Logic.Repositories;
-
-public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
+public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
 {
-    private readonly Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>[] _partitions;
+    private readonly Dictionary<string, string>[] _partitions;
     private readonly ReaderWriterLockSlim[] _locks;
 
     public PartitionedUrlRepository()
@@ -14,26 +12,26 @@ public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
 
     public PartitionedUrlRepository(int numberOfPartitions, int capacity)
     {
-        _partitions = new Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>[numberOfPartitions];
+        _partitions = new Dictionary<string, string>[numberOfPartitions];
         _locks = new ReaderWriterLockSlim[numberOfPartitions];
         for (var i = 0; i < numberOfPartitions; i++)
         {
-            _partitions[i] = new Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>(capacity, MemoryStringEqualityComparer.Ordinal);
+            _partitions[i] = new Dictionary<string, string>(capacity, StringComparer.Ordinal);
             _locks[i] = new ReaderWriterLockSlim();
         }
     }
 
-    public override ReadOnlySpan<char> GetOriginalUrl(ReadOnlyMemory<char> shortUrl)
+    public override string GetOriginalUrl(string shortUrl)
     {
-        var partition = GetPartition(shortUrl);
+        var partition = GetPartition(shortUrl.AsMemory());
         var l = _locks[partition];
 
         l.EnterReadLock();
         try
         {
-            if (_partitions[partition].TryGetValue(shortUrl.ToArray(), out var originalUrl))
+            if (_partitions[partition].TryGetValue(shortUrl, out var originalUrl))
             {
-                return originalUrl.Span;
+                return originalUrl;
             }
         }
         finally
@@ -41,12 +39,12 @@ public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
             l.ExitReadLock();
         }
 
-        return ReadOnlySpan<char>.Empty;
+        return string.Empty;
     }
 
-    public override bool SaveUrlMapping(ReadOnlyMemory<char> shortUrl, ReadOnlyMemory<char> originalUrl)
+    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
-        var partition = GetPartition(shortUrl);
+        var partition = GetPartition(shortUrl.AsMemory());
         var l = _locks[partition];
 
         l.EnterWriteLock();
@@ -63,4 +61,26 @@ public class PartitionedUrlRepository : ReadOnlyMemoryUrlRepositoryBase
     }
 
     private int GetPartition(ReadOnlyMemory<char> key) => Math.Abs(MemoryStringEqualityComparer.Ordinal.GetHashCode(key) % _partitions.Length);
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            foreach (var partition in _partitions)
+            {
+                partition.Clear();
+            }
+
+            foreach (var l in _locks)
+            {
+                l.Dispose();
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 }

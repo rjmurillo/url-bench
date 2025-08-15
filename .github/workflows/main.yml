@@ -1,0 +1,138 @@
+name: Main build
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_performance:
+        description: 'Run performance job? (true/false)'
+        required: false
+        default: false
+        type: boolean
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  merge_group:
+    branches:
+      - main
+  workflow_call: # Allow to be called from the release workflow
+  schedule:
+    - cron: '0 3 * * *' # Nightly run for performance validation
+
+permissions:
+  security-events: write  # required for CodeQL
+  packages: read
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-11-arm, ubuntu-24.04-arm, ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      IS_CODACY_COVERAGE_ALLOWED: ${{ secrets.CODACY_PROJECT_TOKEN != '' }}
+      IS_QLTY_COVERAGE_ALLOWED: ${{ secrets.QLTY_COVERAGE_TOKEN != '' }}
+      IS_TARGET_MAIN: ${{ github.ref == 'refs/heads/main' }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: ./global.json
+  
+    - name: NuGet Restore
+      shell: pwsh
+      run: dotnet restore
+  
+    - name: Build
+      shell: pwsh
+      run: dotnet build --no-restore --configuration Release /p:Deterministic=true /p:UseSharedCompilation=false /p:BuildInParallel=false /nodeReuse:false /bl:./artifacts/logs/release/build.release.binlog
+
+    - name: Restore Code Coverage history
+      uses: actions/download-artifact@v5
+      with:
+        name: CoverageHistory-${{ matrix.os }}
+        path: ./artifacts/TestResults/coveragehistory
+      continue-on-error: true
+
+    - name: Test
+      id: test-step
+      run: dotnet test --no-build --configuration Release --settings ./build/targets/tests/test.runsettings
+      continue-on-error: true
+      env:
+        REPORTGENERATOR_LICENSE: ${{ secrets.REPORTGENERATOR_LICENSE }}
+
+    - name: Upload coverage history
+      uses: actions/upload-artifact@v4
+      if: success() && env.IS_TARGET_MAIN == 'true'
+      with:
+        name: CoverageHistory-${{ matrix.os }}
+        path: ./artifacts/TestResults/coveragehistory
+
+    - name: Upload binlogs
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: binlogs-${{ matrix.os }}
+        path: ./artifacts/logs
+        if-no-files-found: error
+
+    - name: Upload SARIF files
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: SARIF files (${{ matrix.os }})
+        path: ./artifacts/obj/**/*.sarif
+
+    - name: Upload Test Report
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: .NET Test Reports (${{ matrix.os }})
+        path: ./artifacts/TestResults/**/*.trx
+
+    - name: Upload Code Coverage Report
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: .NET Code Coverage Reports (${{ matrix.os }})
+        path: ./artifacts/TestResults/coverage/**
+
+    - name: Publish coverage summary to GitHub
+      if: success() && steps.test-step.outcome == 'success'
+      run: cat artifacts/TestResults/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+      shell: bash
+
+    - name: Upload coverage data to Codacy
+      if: ${{ runner.os == 'Linux' && env.IS_CODACY_COVERAGE_ALLOWED == 'true' }}
+      uses: codacy/codacy-coverage-reporter-action@v1.3.0
+      with:
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: ${{ github.workspace }}/artifacts/TestResults/coverage/Cobertura.xml
+
+    - name: Upload coverage data to Qlty
+      if: ${{ runner.os == 'Linux' && env.IS_QLTY_COVERAGE_ALLOWED == 'true' }}
+      uses: qltysh/qlty-action/coverage@v2
+      with:
+        token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
+        files: ${{ github.workspace }}/artifacts/TestResults/coverage/Cobertura.xml
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: artifacts-${{ matrix.os }}
+        path: ./artifacts
+        if-no-files-found: error
