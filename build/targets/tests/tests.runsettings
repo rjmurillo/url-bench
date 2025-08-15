@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- File name extension must be .runsettings -->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Configuration>
+          <Format>cobertura</Format>
+          <IncludeTestAssembly>False</IncludeTestAssembly>
+          <CodeCoverage>
+            <EnableStaticNativeInstrumentation>False</EnableStaticNativeInstrumentation>
+            <EnableDynamicNativeInstrumentation>False</EnableDynamicNativeInstrumentation>
+            <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+            <SkipAutoProps>true</SkipAutoProps>
+            <ModulePaths>
+              <Include>
+                <!--
+                  Limit code coverage to the shipping binary.
+                  TODO: Consider using a "Just my code"-esque tool to automatically include all project references.
+                  Discuss in https://github.com/microsoft/codecoverage.
+                -->
+                <ModulePath>.*Console\.dll$</ModulePath>
+                <ModulePath>.*Console\.exe$</ModulePath>
+                <ModulePath>.*Logic\.dll$</ModulePath>                
+              </Include>
+              <Exclude>
+                <ModulePath>.*\.TestAdapter\.dll$</ModulePath> <!-- Excludes test adapters -->
+                <ModulePath>.*xunit.*</ModulePath> <!-- Excludes xUnit framework -->
+              </Exclude>
+            </ModulePaths>
+            <Attributes>
+              <Exclude>
+                <Attribute>System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute</Attribute>
+              </Exclude>
+            </Attributes>
+            <Sources>
+              <Exclude>
+                <Source>.*/PerformanceSensitiveAttribute\.cs$</Source> <!-- Excludes the class source file -->
+              </Exclude>
+            </Sources>
+            <Classes>
+              <Exclude>
+                <Class>Roslyn.Utilities.PerformanceSensitiveAttribute</Class> <!-- Excludes the class from coverage -->
+              </Exclude>
+            </Classes>
+            <Functions>
+              <Exclude>
+                <Function>^get_.*</Function> <!-- Excludes property getters -->
+                <Function>^set_.*</Function> <!-- Excludes property setters -->
+                <Function>^.*Test.*</Function> <!-- Excludes test methods -->
+                <Function>^Microsoft\.Testing.*</Function>
+                <Function>^System\.Diagnostics.*</Function>
+              </Exclude>
+            </Functions>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
