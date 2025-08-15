@@ -1,0 +1,7 @@
+# Third-Party Notices
+
+This file contains attributions for third-party libraries and components used in this project.
+
+## Libraries
+
+- ProtoBenchmarkHelpers — MIT License https://github.com/timcassell/ProtoBenchmarkHelpers/blob/main/LICENSE
