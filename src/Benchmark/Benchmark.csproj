@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\third_party\ProtoBenchmarkHelpers\ProtoBenchmarkHelpers\ProtoBenchmarkHelpers.csproj" />
     <ProjectReference Include="..\Logic\Logic.csproj" />
   </ItemGroup>
 

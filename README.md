@@ -1,8 +1,6 @@
-# README
+# URL Bench
 
-This repository contains samples for URL shortening and storage using various methods.
-
-The interfaces for the shortener and repository
+**URL Bench** is a set of benchmarks built around two interfaces:
 
 ```csharp
 public interface IUrlRepository
@@ -17,23 +15,24 @@ public interface IUrlShortener
 }
 ```
 
+There are implementations of each utilizing various .NET features and capabilities, as well as popular libraries. 
 The code is split into the following:
 
 - `src/Contracts` = The contracts above used to implement all shorteners and repositories
 - `src/Logic` = The implementation of various contracts
   - Shorteners
-    - Incrementing integer
-    - Murmur3
-    - Sha256
-    - Snowflake
-    - Vectorized
+    - `IncrementintInteger` making use of `Interlocked.Increment`
+    - `Murmur3Hash` making use of the non-cryptographic [MurmurHash](https://en.wikipedia.org/wiki/MurmurHash)
+    - `Sha256` making use of the cryptographic SHA-256 hash.
+    - `Snowflake` making use of [Snowflake ID](https://en.wikipedia.org/wiki/Snowflake_ID)
+    - `Vectorized` non-cryptographic hashing making use of hardware accelerated AVX, SSE2, or ARM SIMD
   - Repositories
-    - Concurrent Dictionary
-    - [Fast Cache](https://github.com/neon-sunset/fast-cache)
-    - Microsoft.Extensions.Caching.Memory
-    - [FASTER](https://github.com/microsoft/FASTER)
-    - Partitioned dictionary
-    - Dictionary with ReaderWriteLockSlim
+    - `Concurrent` making use of the built in .NET  `ConncurrentDictionary<string, string>` type
+    - `FastCache` making use of [fast-cache](https://github.com/neon-sunset/fast-cache) to include items with expiration time
+    - `FASTER` using a [concurrent key-value store + cache](https://aka.ms/faster)
+    - `IMemoryCache` using [ASP.NET Core's built in memory-based cache](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/memory?view=aspnetcore-8.0)
+    - `Partitioned` using a naive array of `Dictionary<string,string>` and `ReaderWriterLockSlim`.
+    - `ReaderWriterLockSlim` using a single `Diction<string,string>` and `ReaderWriterLockSlim`
 - `src/Console` = Console application for running throughput benchmarks
 - `src/Benchmark` = BenchmarkDotNet project to benchmark shorteners and repositories
 - `test` = A suite of tests for the shorteners and repositories
@@ -308,4 +307,9 @@ Also included is a BenchmarkDotNet suite that takes about 20 minutes to run for 
 dotnet run -c Release --framework net8.0 --project ./src/Benchmark/Benchmark.csproj
 ```
 
+Various benchmarks are also provided to test capabilities of different types of shorteners and repositories in throughput and multi-threaded scenarios.
 This will give the menu to select which set of bencharks to run (Repository or Shortener, or both). Repository takes about 20 minutes. Shortener takes about five minutes.
+
+## Tests
+
+Unit tests are provided for the shorteners and repositories through xUnit's `TheoryData<,>` construct: each implementation of `IUrlShortener` and `IUrlRepository` is automatically detected and placed into respective theory-based tests.

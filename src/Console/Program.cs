@@ -23,7 +23,7 @@ app.Configure(config =>
         .WithExample($"bench -s {nameof(PartitionedUrlRepository)}")
         .WithExample($"bench -s {nameof(FASTERUrlRepository)}")
         .WithExample($"bench -t {nameof(IncrementingIntegerUrlShortener)}")
-        .WithExample($"bench -t {nameof(Sha256HashUrlShortener)}")
+        .WithExample($"bench -t {nameof(SnowflakeUrlShortener)}")
         .WithExample($"bench -t {nameof(Murmur3HashUrlShortener)}")
         ;
 });

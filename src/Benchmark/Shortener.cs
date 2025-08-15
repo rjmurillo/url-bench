@@ -33,15 +33,12 @@ public class Shortener
     )]
     public string LongUrl;
 
-    [GlobalSetup]
-    public void Setup()
-    {
-        _urlShortener = Factory.CreateShortener(ShortenerType);
-    }
 
     [Benchmark]
     public string Shorten()
     {
-        return _urlShortener.ShortenUrl(LongUrl);
+        return UrlShortener.ShortenUrl(LongUrl);
     }
+
+
 }
