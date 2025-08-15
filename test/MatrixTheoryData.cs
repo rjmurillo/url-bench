@@ -5,24 +5,24 @@ namespace UrlConverterPermutations;
 
 /// <summary>
 /// Provides theory data for testing combinations of URL shorteners and repositories.
+/// Generates fresh instances for each enumeration to avoid sharing disposed instances across tests.
 /// </summary>
-public class MatrixTheoryData : TheoryData<IUrlShortener, IUrlRepository>
+public class MatrixTheoryData : IEnumerable<object[]>
 {
-    /// <summary>
-    /// Initializes a new instance of the MatrixTheoryData class and populates it with all combinations of URL shorteners and repositories.
-    /// </summary>
-    public MatrixTheoryData()
+    public IEnumerator<object[]> GetEnumerator()
     {
-        var shorteners = UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>().ToArray();
-        var repositories = UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>().ToArray();
+        var shortenerTypes = UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>().ToArray();
+        var repositoryTypes = UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>().ToArray();
 
-        foreach (var shortener in shorteners)
+        foreach (var shortenerType in shortenerTypes)
         {
-            foreach (var repository in repositories)
+            foreach (var repositoryType in repositoryTypes)
             {
-                var (s, r) = Factory.TypeFactory(repository, shortener);
-                Add(s, r);
+                var (s, r) = Factory.TypeFactory(repositoryType, shortenerType);
+                yield return new object[] { s, r };
             }
         }
     }
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 }
