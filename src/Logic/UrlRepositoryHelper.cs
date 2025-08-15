@@ -31,10 +31,10 @@ public static class UrlRepositoryHelper
 #if NET8_0_OR_GREATER
         ArgumentException.ThrowIfNullOrWhiteSpace(typeName);
 #else
-        //if (string.IsNullEmptyOrWhiteSpace(typeName))
-        //{
-        //    throw new ArgumentNullException(nameof(typeName));
-        //}
+        if (string.IsNullOrWhiteSpace(typeName))
+        {
+            throw new ArgumentNullException(nameof(typeName));
+        }
 #endif
 
         var typesImplementingIUrlShortener = GetConcreteTypes<IUrlShortener>();
