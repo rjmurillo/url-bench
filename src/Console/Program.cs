@@ -115,7 +115,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             var repo = Factory.CreateRepository(repoType!);
             var shortenerType = UrlRepositoryHelper.GetShortenerType(settings.ShortenerType);
             var shortener = Factory.CreateShortener(shortenerType!);
-            var facade = new Facade(shortener, repo);
+            var facade = new UrlManager(shortener, repo);
             var sw = new Stopwatch();
             long workingSet;
 

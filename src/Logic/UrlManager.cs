@@ -7,7 +7,7 @@ namespace Logic;
 /// </summary>
 /// <param name="shortener">The URL shortener to use for generating short URLs.</param>
 /// <param name="repository">The repository to use for storing URL mappings.</param>
-public class Facade(IUrlShortener? shortener, IUrlRepository? repository)
+public class UrlManager(IUrlShortener? shortener, IUrlRepository? repository)
 {
     private readonly IUrlShortener _shortener = shortener ?? throw new ArgumentNullException(nameof(shortener));
     private readonly IUrlRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));

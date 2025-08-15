@@ -25,7 +25,7 @@ public class MatrixTests(ITestOutputHelper output)
     {
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
 
-        var f = new Facade(shortener, repository);
+        var f = new UrlManager(shortener, repository);
 
         var shortUrl = f.ShortenAndSave(longUrl);
 
@@ -50,7 +50,7 @@ public class MatrixTests(ITestOutputHelper output)
         const ulong upper = 2UL;
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
         var hs = new HashSet<string>(StringComparer.Ordinal);
-        var f = new Facade(shortener, repository);
+        var f = new UrlManager(shortener, repository);
 
         for (var i = 0UL; i < upper; i++)
         {

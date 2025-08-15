@@ -53,7 +53,7 @@ public class Repository
     [Params(1, 1_000, 1_000_000)]
     public int NumberOfUrls;
 
-    private Facade? _facade;
+    private UrlManager? _facade;
     private Random? _rnd;
     private IUrlRepository? _repo = null!;
     private HashSet<string>? _shortUrls;
@@ -67,7 +67,7 @@ public class Repository
         _urlShortener = Factory.CreateShortener(ShortenerType);
         _repo = Factory.CreateRepository(RepositoryType);
         _shortUrls = new HashSet<string>(NumberOfUrls);
-        _facade = new Facade(_urlShortener, _repo);
+        _facade = new UrlManager(_urlShortener, _repo);
 
         for (var i = 0; i <= NumberOfUrls; i++)
         {
