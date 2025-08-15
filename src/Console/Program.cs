@@ -126,7 +126,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 writeSampleCount = maxDictionaryCapacity;
             }
 
-            var readSampleCount = settings.Iterations * settings.NumberOfUrls;
+            int readSampleCount = settings.Iterations * settings.NumberOfUrls;
             if (readSampleCount < 0 || readSampleCount > maxDictionaryCapacity)
             {
                 // We overflowed or we're trying to allocate that will cause OOM
