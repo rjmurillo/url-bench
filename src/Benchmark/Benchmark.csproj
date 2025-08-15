@@ -1,24 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net8.0;net7.0;net6.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
-    <PackageReference Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.13.12" />
-    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.12" />
-    <PackageReference Include="EffectiveCSharp.Analyzers" Version="0.2.0">
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.dotTrace" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" />
+    <PackageReference Include="EffectiveCSharp.Analyzers">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\third_party\ProtoBenchmarkHelpers\ProtoBenchmarkHelpers\ProtoBenchmarkHelpers.csproj" />
     <ProjectReference Include="..\Logic\Logic.csproj" />
   </ItemGroup>
 

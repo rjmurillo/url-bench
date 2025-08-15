@@ -1,25 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFrameworks>net8.0;net6.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="FastCache.Cached" Version="1.8.2" />
-    <PackageReference Include="IdGen" Version="3.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.8" />
-    <PackageReference Include="Microsoft.FASTER.Core" Version="2.6.3" />
-    <PackageReference Include="EffectiveCSharp.Analyzers" Version="0.2.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="ReflectionIT.ClrHeapAllocationAnalyzer" Version="3.2.3">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="FastCache.Cached" />
+    <PackageReference Include="IdGen" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.FASTER.Core" />
   </ItemGroup>
 
 </Project>
