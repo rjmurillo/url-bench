@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Contracts;
 
 namespace Logic;
@@ -8,6 +9,9 @@ public static class Factory
     {
         var repository = Activator.CreateInstance(repositoryType) as IUrlRepository;
         var shortener = Activator.CreateInstance(shortenerType) as IUrlShortener;
+
+        Debug.Assert(shortener != null, nameof(shortener) + " != null");
+        Debug.Assert(repository != null, nameof(repository) + " != null");
 
         return (shortener, repository);
     }
