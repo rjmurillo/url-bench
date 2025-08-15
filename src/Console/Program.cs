@@ -207,7 +207,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                     workingSet = Process.GetCurrentProcess().WorkingSet64;
                     AnsiConsole.MarkupLineInterpolated($"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet / 1048576}M");
 
-                    var writeStatistics = new Statistics(writeSamples.Where(p=>!double.IsNaN(p) && !double.IsInfinity(p)));
+                    var writeStatistics = new Statistics(writeSamples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
                     StatisticsDumper.Dump(writeStatistics);
                 });
 
@@ -286,7 +286,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                     workingSet = Process.GetCurrentProcess().WorkingSet64;
                     AnsiConsole.MarkupLineInterpolated($"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet / 1048576}M");
 
-                    var readStatistics = new Statistics(readSamples.Where(p=>!double.IsNaN(p) && !double.IsInfinity(p)));
+                    var readStatistics = new Statistics(readSamples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
                     StatisticsDumper.Dump(readStatistics);
                 });
         }

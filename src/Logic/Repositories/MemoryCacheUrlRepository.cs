@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
 {
     private readonly IMemoryCache _cache;
-    private static readonly MemoryCacheEntryOptions Options = new() { Size = 1};
+    private static readonly MemoryCacheEntryOptions Options = new() { Size = 1 };
 
     public MemoryCacheUrlRepository()
         : this(Constants.Base62Power8)

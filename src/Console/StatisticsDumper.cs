@@ -57,7 +57,7 @@ public static class StatisticsDumper
 
         if (allOutliers.Any())
         {
-            
+
             AnsiConsole.WriteLine(GetMessage(actualOutliers, allOutliers, statistics.LowerOutliers, statistics.UpperOutliers, CultureInfo.CurrentUICulture));
 
             statistics = new Statistics(statistics.OriginalValues.Except(allOutliers));

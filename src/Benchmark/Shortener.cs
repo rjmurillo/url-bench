@@ -5,7 +5,7 @@ using Contracts;
 using Logic.Shorteners;
 using UrlConverterPermutations;
 
-[InliningDiagnoser(true, new[]{"Logic.Shorteners", "Logic.Repositories"})]
+[InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
 // GC and Memory allocation
 [MemoryDiagnoser]
 //[DotTraceDiagnoser]
@@ -22,9 +22,9 @@ public class Shortener
     [Params(
         typeof(IncrementingIntegerUrlShortener)
         , typeof(SnowflakeUrlShortener)
-        ,typeof(Sha256HashUrlShortener)
-        ,typeof(Murmur3HashUrlShortener)
-        ,typeof(VectorizedUrlShortener)
+        , typeof(Sha256HashUrlShortener)
+        , typeof(Murmur3HashUrlShortener)
+        , typeof(VectorizedUrlShortener)
     )]
     public Type ShortenerType;
 

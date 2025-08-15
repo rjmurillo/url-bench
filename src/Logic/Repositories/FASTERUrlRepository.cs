@@ -18,7 +18,7 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     public FASTERUrlRepository()
     {
         _settings = new FasterKVSettings<string, string>(null);
-        _store = new FasterKV< string, string>(_settings);
+        _store = new FasterKV<string, string>(_settings);
         _session = _store.For(new SimpleFunctions<string, string>()).NewSession<SimpleFunctions<string, string>>();
     }
 
