@@ -10,7 +10,6 @@ using Contracts;
 using Logic;
 using Logic.Repositories;
 using Logic.Shorteners;
-using UrlConverterPermutations;
 using Convert = Logic.Convert;
 
 //[RPlotExporter]
@@ -25,7 +24,7 @@ using Convert = Logic.Convert;
 [GcServer(true)]
 public class Repository
 {
-    private IUrlShortener _urlShortener = null!;
+    private IUrlShortener? _urlShortener;
 
     [Params(
         // This is the fastest out of all of the shorteners
@@ -50,7 +49,7 @@ public class Repository
 
     private Facade _facade;
     private Random _rnd;
-    private IUrlRepository _repo = null!;
+    private IUrlRepository? _repo = null!;
     private HashSet<string> _shortUrls;
 
     [GlobalSetup]

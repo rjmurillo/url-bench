@@ -9,7 +9,6 @@ using Logic.Repositories;
 using Logic.Shorteners;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using UrlConverterPermutations;
 using static BenchmarkCommand;
 using Convert = Logic.Convert;
 

@@ -1,7 +1,6 @@
 using Contracts;
 
-
-namespace UrlConverterPermutations;
+namespace Logic;
 
 public static class Factory
 {
@@ -13,17 +12,17 @@ public static class Factory
         return (shortener, repository);
     }
 
-    public static IUrlShortener CreateShortener(Type shortenerType)
+    public static IUrlShortener? CreateShortener(Type shortenerType)
     {
         return Activator.CreateInstance(shortenerType) as IUrlShortener;
     }
 
-    public static IUrlRepository CreateRepository(Type repositoryType)
+    public static IUrlRepository? CreateRepository(Type repositoryType)
     {
         return Activator.CreateInstance(repositoryType) as IUrlRepository;
     }
 
-    public static T TypeFactory<T>()
+    public static T? TypeFactory<T>()
     {
         return (T)Activator.CreateInstance(typeof(T));
     }

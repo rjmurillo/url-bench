@@ -9,7 +9,7 @@ public class MatrixTests(ITestOutputHelper output)
 
     [Theory]
     [MemberData(nameof(MatrixData))]
-    public void RetrieveOriginalUrl_returns_original_url(IUrlShortener shortener, IUrlRepository repository)
+    public void RetrieveOriginalUrl_returns_original_url(IUrlShortener? shortener, IUrlRepository? repository)
     {
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
 
@@ -28,7 +28,7 @@ public class MatrixTests(ITestOutputHelper output)
 
     [Theory]
     [MemberData(nameof(MatrixData))]
-    public void ShortUrl_is_not_same_after_2_iterations(IUrlShortener shortener, IUrlRepository repository)
+    public void ShortUrl_is_not_same_after_2_iterations(IUrlShortener? shortener, IUrlRepository? repository)
     {
         const ulong upper = 2UL;
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";

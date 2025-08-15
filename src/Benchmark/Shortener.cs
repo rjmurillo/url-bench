@@ -2,8 +2,8 @@
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Engines;
 using Contracts;
+using Logic;
 using Logic.Shorteners;
-using UrlConverterPermutations;
 
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
 // GC and Memory allocation
@@ -17,7 +17,7 @@ using UrlConverterPermutations;
 [SimpleJob(RunStrategy.Throughput)]
 public class Shortener
 {
-    private IUrlShortener _urlShortener = null!;
+    private IUrlShortener? _urlShortener;
 
     [Params(
         typeof(IncrementingIntegerUrlShortener)

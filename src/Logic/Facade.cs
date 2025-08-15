@@ -2,7 +2,7 @@
 
 namespace Logic;
 
-public class Facade(IUrlShortener shortener, IUrlRepository repository)
+public class Facade(IUrlShortener? shortener, IUrlRepository? repository)
 {
     private readonly IUrlShortener _shortener = shortener ?? throw new ArgumentNullException(nameof(shortener));
     private readonly IUrlRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
