@@ -21,8 +21,8 @@ public static class Murmur3
     {
         var h1 = seed;
         var h2 = seed;
-        var len = data.Length;
-        var pos = 0;
+        int len = data.Length;
+        int pos = 0;
 
         ref var dataRef = ref MemoryMarshal.GetReference(data);
         var nBlocks = len / 16;
