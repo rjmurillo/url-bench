@@ -2,12 +2,21 @@
 using NonBlocking;
 using System.Text;
 using System.Web;
+using Logic.Shorteners;
 
 namespace UrlConverterPermutations;
 
 public class ShortenerTests(ITestOutputHelper output)
 {
     public static ShortenerTheoryData ShortenerData = new();
+
+    private static bool IsDeterministicHashShortener(IUrlShortener shortener)
+    {
+        var shortenerType = shortener.GetType();
+        return shortenerType == typeof(VectorizedUrlShortener) ||
+               shortenerType == typeof(Murmur3HashUrlShortener) ||
+               shortenerType == typeof(Sha256HashUrlShortener);
+    }
 
     [Theory]
     [MemberData(nameof(ShortenerData))]
@@ -117,7 +126,10 @@ public class ShortenerTests(ITestOutputHelper output)
         output.WriteLine($"ShortUrl1: {shortUrl1}");
         output.WriteLine($"ShortUrl2: {shortUrl2}");
 
-        shortUrl1.ShouldNotBe(shortUrl2);
+        Skip.If(IsDeterministicHashShortener(shortener));
+
+        // For non-deterministic shorteners, different outputs are expected
+        shortUrl1.ShouldNotBe(shortUrl2);        
     }
 
     [Theory]
@@ -128,12 +140,29 @@ public class ShortenerTests(ITestOutputHelper output)
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
         var hs = new HashSet<string>(StringComparer.Ordinal);
 
-        for (var i = 0UL; i < upper; i++)
+        if (IsDeterministicHashShortener(shortener))
         {
-            var a = shortener.ShortenUrl(longUrl);
+            // For deterministic hash functions, test that the same input produces consistent output
+            var firstResult = shortener.ShortenUrl(longUrl);
+            firstResult.ShouldNotBeNullOrWhiteSpace();
+            
+            for (var i = 0UL; i < upper; i++)
+            {
+                var result = shortener.ShortenUrl(longUrl);
+                result.ShouldNotBeNullOrWhiteSpace();
+                result.ShouldBe(firstResult); // Should always be the same for deterministic hash functions
+            }
+        }
+        else
+        {
+            // For non-deterministic shorteners, test for uniqueness across many iterations
+            for (var i = 0UL; i < upper; i++)
+            {
+                var a = shortener.ShortenUrl(longUrl);
 
-            a.ShouldNotBeNullOrWhiteSpace();
-            hs.Add(a).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
+                a.ShouldNotBeNullOrWhiteSpace();
+                hs.Add(a).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
+            }
         }
     }
 
@@ -146,12 +175,29 @@ public class ShortenerTests(ITestOutputHelper output)
         var processorCount = Environment.ProcessorCount; // Number of logical CPUs
         var hs = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
 
-        Parallel.For(0, upper, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, i =>
+        if (IsDeterministicHashShortener(shortener))
         {
-            var a = shortener.ShortenUrl(longUrl);
+            // For deterministic hash functions, test thread safety by ensuring consistent output
+            var expectedResult = shortener.ShortenUrl(longUrl);
+            expectedResult.ShouldNotBeNullOrWhiteSpace();
 
-            a.ShouldNotBeNullOrWhiteSpace();
-            hs.TryAdd(a, byte.MinValue).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
-        });
+            Parallel.For(0, upper, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, i =>
+            {
+                var result = shortener.ShortenUrl(longUrl);
+                result.ShouldNotBeNullOrWhiteSpace();
+                result.ShouldBe(expectedResult); // Should always be the same for deterministic hash functions
+            });
+        }
+        else
+        {
+            // For non-deterministic shorteners, test for uniqueness in parallel execution
+            Parallel.For(0, upper, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, i =>
+            {
+                var a = shortener.ShortenUrl(longUrl);
+
+                a.ShouldNotBeNullOrWhiteSpace();
+                hs.TryAdd(a, byte.MinValue).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
+            });
+        }
     }
 }
