@@ -146,7 +146,7 @@ public class ShortenerTests(ITestOutputHelper output)
     /// Tests that the same input URL produces different outputs for non-deterministic shorteners.
     /// </summary>
     /// <param name="shortener">The URL shortener to test.</param>
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(ShortenerData))]
     public void Same_LongUrl_Shortened_is_not_same(IUrlShortener shortener)
     {
