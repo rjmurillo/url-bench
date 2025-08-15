@@ -24,7 +24,7 @@ public class Repository
         // This is the fastest out of all of the shorteners
         typeof(IncrementingIntegerUrlShortener)
        )]
-    public Type ShortenerType;
+    public Type? ShortenerType;
 
     [Params(
                typeof(ConcurrentUrlRepository)
@@ -34,17 +34,17 @@ public class Repository
                , typeof(PartitionedUrlRepository)
                , typeof(ReaderWriterLockSlimUrlRepository)
                   )]
-    public Type RepositoryType;
+    public Type? RepositoryType;
 
     private const string LongUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
 
     [Params(1, 1_000, 1_000_000)]
     public int NumberOfUrls;
 
-    private Facade _facade;
-    private Random _rnd;
+    private Facade? _facade;
+    private Random? _rnd;
     private IUrlRepository? _repo = null!;
-    private HashSet<string> _shortUrls;
+    private HashSet<string>? _shortUrls;
 
     [GlobalSetup]
     public void Setup()

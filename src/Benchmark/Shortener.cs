@@ -28,12 +28,12 @@ public class Shortener
         , typeof(Murmur3HashUrlShortener)
         , typeof(VectorizedUrlShortener)
     )]
-    public Type ShortenerType;
+    public Type? ShortenerType;
 
     [Params(
         "https://jobs.careers.microsoft.com/us/en/job/1613473"
     )]
-    public string LongUrl;
+    public string? LongUrl;
 
     [GlobalSetup]
     public void Setup()

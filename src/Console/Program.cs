@@ -54,7 +54,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
         [CommandOption("-u|--url")]
         [DefaultValue(Defaults.Url)]
-        public string Url { get; init; }
+        public string? Url { get; init; }
 
         [CommandOption("-s|--storage")]
         public string? StorageType { get; private set; }
