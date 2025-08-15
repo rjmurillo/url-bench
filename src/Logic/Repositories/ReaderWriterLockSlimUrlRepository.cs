@@ -53,7 +53,9 @@ public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase
         _lock.EnterWriteLock();
         try
         {
-            return _urlMappings.TryAdd(shortUrl, originalUrl);
+            // Upsert semantics to avoid failing on duplicate keys
+            _urlMappings[shortUrl] = originalUrl;
+            return true;
         }
         finally
         {

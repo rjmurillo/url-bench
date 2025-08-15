@@ -72,9 +72,9 @@ public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
         l.EnterWriteLock();
         try
         {
-            return _partitions[partition].TryAdd(
-                shortUrl,
-                originalUrl);
+            // Upsert semantics to avoid failing when the key already exists
+            _partitions[partition][shortUrl] = originalUrl;
+            return true;
         }
         finally
         {
