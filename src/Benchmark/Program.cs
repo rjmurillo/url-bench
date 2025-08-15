@@ -1,4 +1,5 @@
-﻿using System.Security.Principal;
+﻿using System.Diagnostics;
+using System.Security.Principal;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -19,8 +20,6 @@ static IConfig GetGlobalConfig()
 
     var config = DefaultConfig.Instance
         .AddJob(j)
-        .AddColumn(new RepositoryTypeColumn())
-        .AddColumn(new ShortenerTypeColumn())
         .AddColumn(StatisticColumn.P25)
         .AddColumn(StatisticColumn.P50)
         .AddColumn(StatisticColumn.P95)

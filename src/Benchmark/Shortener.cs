@@ -1,7 +1,9 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Engines;
+
 using Contracts;
+
 using Logic;
 using Logic.Shorteners;
 
@@ -33,12 +35,15 @@ public class Shortener
     )]
     public string LongUrl;
 
+    [GlobalSetup]
+    public void Setup()
+    {
+        _urlShortener = Factory.CreateShortener(ShortenerType);
+    }
 
     [Benchmark]
     public string Shorten()
     {
-        return UrlShortener.ShortenUrl(LongUrl);
+        return _urlShortener.ShortenUrl(LongUrl);
     }
-
-
 }
