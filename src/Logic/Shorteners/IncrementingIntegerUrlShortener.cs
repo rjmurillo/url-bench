@@ -2,13 +2,31 @@
 
 namespace Logic.Shorteners;
 
+/// <summary>
+/// A URL shortener that generates short URLs using an incrementing integer value.
+/// </summary>
+/// <param name="initialValue">The initial value to start incrementing from.</param>
 public class IncrementingIntegerUrlShortener(ulong initialValue) : IUrlShortener
 {
+    /// <summary>
+    /// Initializes a new instance of the IncrementingIntegerUrlShortener class with an initial value of 0.
+    /// </summary>
     public IncrementingIntegerUrlShortener()
         : this(0UL)
     {
     }
 
+    /// <summary>
+    /// Shortens the specified original URL by generating a unique short URL using an incrementing integer.
+    /// </summary>
+    /// <param name="originalUrl">The original (long) URL to shorten. May be any valid URL string.</param>
+    /// <returns>
+    /// A case-sensitive slug consisting exclusively of characters.
+    /// The value contains no scheme, host, or path prefix and has no leading or trailing slashes.
+    /// The slug is not URL-encoded and is intended to be used as a single path segment
+    /// (e.g., compose the full URL externally via $"https://sho.rt/{slug}").
+    /// Returns an empty string if <paramref name="originalUrl"/> is null, empty, or whitespace.
+    /// </returns>
     public string ShortenUrl(string originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))

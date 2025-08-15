@@ -15,12 +15,19 @@ namespace System.Text;
 // ReSharper restore CheckNamespace
 
 // This is a struct, so we want to keep it as lean as possible
+/// <summary>
+/// A value type string builder that uses pooled arrays for efficient string construction.
+/// </summary>
 internal ref struct ValueStringBuilder
 {
     private char[]? _arrayToReturnToPool;
     private Span<char> _chars;
     private int _pos;
 
+    /// <summary>
+    /// Initializes a new instance of the ValueStringBuilder struct with the specified initial capacity.
+    /// </summary>
+    /// <param name="initialCapacity">The initial capacity of the string builder.</param>
     public ValueStringBuilder(int initialCapacity)
     {
         _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
@@ -28,8 +35,16 @@ internal ref struct ValueStringBuilder
         _pos = 0;
     }
 
+    /// <summary>
+    /// Gets a read-only span containing the current string content.
+    /// </summary>
+    /// <returns>A read-only span containing the current string content.</returns>
     public ReadOnlySpan<char> AsSpan() => _chars[.._pos];
 
+    /// <summary>
+    /// Appends a character to the string builder.
+    /// </summary>
+    /// <param name="c">The character to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(char c)
     {
@@ -92,6 +107,9 @@ internal ref struct ValueStringBuilder
         }
     }
 
+    /// <summary>
+    /// Releases the pooled array used by this string builder.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {

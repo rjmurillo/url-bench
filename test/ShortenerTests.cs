@@ -6,8 +6,15 @@ using Logic.Shorteners;
 
 namespace UrlConverterPermutations;
 
+/// <summary>
+/// Test class for URL shortener implementations.
+/// </summary>
+/// <param name="output">The test output helper for writing test information.</param>
 public class ShortenerTests(ITestOutputHelper output)
 {
+    /// <summary>
+    /// Gets the theory data containing all URL shortener implementations to test.
+    /// </summary>
     public static ShortenerTheoryData ShortenerData = new();
 
     private static bool IsDeterministicHashShortener(IUrlShortener shortener)
@@ -18,6 +25,10 @@ public class ShortenerTests(ITestOutputHelper output)
                shortenerType == typeof(Sha256HashUrlShortener);
     }
 
+    /// <summary>
+    /// Tests that null URLs are handled correctly by returning an empty string.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
     [Theory]
     [MemberData(nameof(ShortenerData))]
     public void LongUrl_is_null(IUrlShortener shortener)
@@ -31,6 +42,10 @@ public class ShortenerTests(ITestOutputHelper output)
         shortUrl.ShouldBeEmpty();
     }
 
+    /// <summary>
+    /// Tests that empty URLs are handled correctly by returning an empty string.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
     [Theory]
     [MemberData(nameof(ShortenerData))]
     public void LongUrl_is_empty(IUrlShortener shortener)
@@ -44,6 +59,10 @@ public class ShortenerTests(ITestOutputHelper output)
         shortUrl.ShouldBeEmpty();
     }
 
+    /// <summary>
+    /// Tests that complex URLs with special characters are handled correctly.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
     [Theory]
     [MemberData(nameof(ShortenerData))]
     public void Tricky_LongUrl_is_handled(IUrlShortener shortener)
@@ -69,6 +88,10 @@ public class ShortenerTests(ITestOutputHelper output)
         shortUrl.ShouldBeSubsetOf(Base62Chars);
     }
 
+    /// <summary>
+    /// Tests that very long URLs are handled correctly.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
     [Theory]
     [MemberData(nameof(ShortenerData))]
     public void Long_LongUrl_is_handled(IUrlShortener shortener)
@@ -99,6 +122,10 @@ public class ShortenerTests(ITestOutputHelper output)
         shortUrl.ShouldBeSubsetOf(Base62Chars);
     }
 
+    /// <summary>
+    /// Tests basic URL shortening functionality.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
     [Theory]
     [MemberData(nameof(ShortenerData))]
     public void Shorten(IUrlShortener shortener)
@@ -115,6 +142,10 @@ public class ShortenerTests(ITestOutputHelper output)
         shortUrl.ShouldBeSubsetOf(Base62Chars);
     }
 
+    /// <summary>
+    /// Tests that the same input URL produces different outputs for non-deterministic shorteners.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
     [Theory]
     [MemberData(nameof(ShortenerData))]
     public void Same_LongUrl_Shortened_is_not_same(IUrlShortener shortener)
@@ -132,6 +163,10 @@ public class ShortenerTests(ITestOutputHelper output)
         shortUrl1.ShouldNotBe(shortUrl2);        
     }
 
+    /// <summary>
+    /// Tests that shorteners can handle a large number of operations without producing duplicates.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
     [Theory]
     [MemberData(nameof(ShortenerData))]
     public void ShortUrl_is_not_same_after_1_million(IUrlShortener shortener)
@@ -166,6 +201,10 @@ public class ShortenerTests(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Tests that shorteners are thread-safe when used in parallel operations.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
     [Theory]
     [MemberData(nameof(ShortenerData))]
     public void ShortUrl_thread_safe(IUrlShortener shortener)

@@ -16,16 +16,25 @@ using Logic.Shorteners;
 // Get details about what the JIT is doing
 [JitStatsDiagnoser]
 [GcServer(true)]
+/// <summary>
+/// Benchmark class for testing URL repository performance.
+/// </summary>
 public class Repository
 {
     private IUrlShortener? _urlShortener;
 
+    /// <summary>
+    /// Gets or sets the type of URL shortener to use for generating short URLs.
+    /// </summary>
     [Params(
         // This is the fastest out of all of the shorteners
         typeof(IncrementingIntegerUrlShortener)
        )]
     public Type? ShortenerType;
 
+    /// <summary>
+    /// Gets or sets the type of URL repository to benchmark.
+    /// </summary>
     [Params(
                typeof(ConcurrentUrlRepository)
                , typeof(FastCacheUrlRepository)
@@ -38,6 +47,9 @@ public class Repository
 
     private const string LongUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
 
+    /// <summary>
+    /// Gets or sets the number of URLs to generate for benchmarking.
+    /// </summary>
     [Params(1, 1_000, 1_000_000)]
     public int NumberOfUrls;
 
@@ -46,6 +58,9 @@ public class Repository
     private IUrlRepository? _repo = null!;
     private HashSet<string>? _shortUrls;
 
+    /// <summary>
+    /// Sets up the benchmark by creating the specified shortener and repository instances and populating them with test data.
+    /// </summary>
     [GlobalSetup]
     public void Setup()
     {
@@ -61,6 +76,9 @@ public class Repository
         _rnd = new Random(0);
     }
 
+    /// <summary>
+    /// Cleans up resources used by the benchmark.
+    /// </summary>
     [GlobalCleanup]
     public void Cleanup()
     {
@@ -80,6 +98,10 @@ public class Repository
         _facade = null;
     }
 
+    /// <summary>
+    /// Benchmarks the random URL retrieval operation.
+    /// </summary>
+    /// <returns>The original URL for a randomly selected short URL.</returns>
     [Benchmark]
     public string Retrieve_Random()
     {

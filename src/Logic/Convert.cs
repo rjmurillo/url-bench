@@ -3,12 +3,20 @@ using System.Runtime.CompilerServices;
 
 namespace Logic;
 
+/// <summary>
+/// Provides utility methods for converting values to Base62 string representations.
+/// </summary>
 public static class Convert
 {
     private const string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private const ulong CharLength = 62UL;
 
 
+    /// <summary>
+    /// Converts a 64-bit unsigned integer to its Base62 string representation.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <returns>The Base62 string representation of the value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> AsBase62String(ulong value)
     {
@@ -52,6 +60,11 @@ public static class Convert
         return bufferLength;
     }
 
+    /// <summary>
+    /// Converts a 64-bit unsigned integer to its Base62 string representation and writes it to the provided buffer.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <param name="buffer">The buffer to write the result to.</param>
     public static void AsBase62String(ulong value, ref Span<char> buffer)
     {
         var bufferIndex = buffer.Length - 1;
@@ -62,6 +75,11 @@ public static class Convert
         } while (value > 0UL && bufferIndex >= 0);
     }
 
+    /// <summary>
+    /// Converts a byte span to its Base62 string representation.
+    /// </summary>
+    /// <param name="hash">The byte span to convert.</param>
+    /// <returns>The Base62 string representation of the hash.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> AsBase62String(Span<byte> hash)
     {
@@ -69,6 +87,11 @@ public static class Convert
         return AsBase62String(index);
     }
 
+    /// <summary>
+    /// Converts a byte span to its Base62 string representation and writes it to the provided buffer.
+    /// </summary>
+    /// <param name="hash">The byte span to convert.</param>
+    /// <param name="buffer">The buffer to write the result to.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AsBase62String(Span<byte> hash, ref Span<char> buffer)
     {

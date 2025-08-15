@@ -6,14 +6,32 @@ using Logic.Hashing;
 
 namespace Logic.Shorteners;
 
+/// <summary>
+/// A URL shortener that generates short URLs using the Murmur3 hash algorithm.
+/// </summary>
+/// <param name="seed">The seed value to use for the Murmur3 hash algorithm.</param>
 public class Murmur3HashUrlShortener(uint seed)
     : IUrlShortener
 {
+    /// <summary>
+    /// Initializes a new instance of the Murmur3HashUrlShortener class with a seed value of 0.
+    /// </summary>
     public Murmur3HashUrlShortener()
         : this(0U)
     {
     }
 
+    /// <summary>
+    /// Shortens the specified original URL by generating a unique short URL using the Murmur3 hash algorithm.
+    /// </summary>
+    /// <param name="originalUrl">The original (long) URL to shorten. May be any valid URL string.</param>
+    /// <returns>
+    /// A case-sensitive slug consisting exclusively of characters.
+    /// The value contains no scheme, host, or path prefix and has no leading or trailing slashes.
+    /// The slug is not URL-encoded and is intended to be used as a single path segment
+    /// (e.g., compose the full URL externally via $"https://sho.rt/{slug}").
+    /// Returns an empty string if <paramref name="originalUrl"/> is null, empty, or whitespace.
+    /// </returns>
     public string ShortenUrl(string originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))

@@ -17,10 +17,16 @@ using Logic.Shorteners;
 [JitStatsDiagnoser]
 [GcServer(true)]
 [SimpleJob(RunStrategy.Throughput)]
+/// <summary>
+/// Benchmark class for testing URL shortener performance.
+/// </summary>
 public class Shortener
 {
     private IUrlShortener? _urlShortener;
 
+    /// <summary>
+    /// Gets or sets the type of URL shortener to benchmark.
+    /// </summary>
     [Params(
         typeof(IncrementingIntegerUrlShortener)
         , typeof(SnowflakeUrlShortener)
@@ -30,17 +36,27 @@ public class Shortener
     )]
     public Type? ShortenerType;
 
+    /// <summary>
+    /// Gets or sets the long URL to use for benchmarking.
+    /// </summary>
     [Params(
         "https://jobs.careers.microsoft.com/us/en/job/1613473"
     )]
     public string? LongUrl;
 
+    /// <summary>
+    /// Sets up the benchmark by creating the specified URL shortener instance.
+    /// </summary>
     [GlobalSetup]
     public void Setup()
     {
         _urlShortener = Factory.CreateShortener(ShortenerType);
     }
 
+    /// <summary>
+    /// Benchmarks the URL shortening operation.
+    /// </summary>
+    /// <returns>The shortened URL.</returns>
     [Benchmark]
     public string Shorten()
     {

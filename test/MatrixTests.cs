@@ -3,10 +3,22 @@ using Logic;
 
 namespace UrlConverterPermutations;
 
+/// <summary>
+/// Test class for testing combinations of URL shorteners and repositories.
+/// </summary>
+/// <param name="output">The test output helper for writing test information.</param>
 public class MatrixTests(ITestOutputHelper output)
 {
+    /// <summary>
+    /// Gets the theory data containing all combinations of URL shorteners and repositories to test.
+    /// </summary>
     public static MatrixTheoryData MatrixData = new();
 
+    /// <summary>
+    /// Tests that the original URL can be retrieved after shortening and saving.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
+    /// <param name="repository">The URL repository to test.</param>
     [Theory]
     [MemberData(nameof(MatrixData))]
     public void RetrieveOriginalUrl_returns_original_url(IUrlShortener? shortener, IUrlRepository? repository)
@@ -26,6 +38,11 @@ public class MatrixTests(ITestOutputHelper output)
         originalUrl.ShouldBe(longUrl);
     }
 
+    /// <summary>
+    /// Tests that different short URLs are generated for the same input URL across multiple iterations.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
+    /// <param name="repository">The URL repository to test.</param>
     [Theory]
     [MemberData(nameof(MatrixData))]
     public void ShortUrl_is_not_same_after_2_iterations(IUrlShortener? shortener, IUrlRepository? repository)

@@ -8,12 +8,26 @@ using Contracts;
 
 namespace Logic.Shorteners;
 
+/// <summary>
+/// A URL shortener that generates short URLs using the SHA-256 hash algorithm.
+/// </summary>
 public class Sha256HashUrlShortener()
     : IUrlShortener, IDisposable
 {
     private SHA256 _sha256 = SHA256.Create();
     private bool _disposed;
 
+    /// <summary>
+    /// Shortens the specified original URL by generating a unique short URL using the SHA-256 hash algorithm.
+    /// </summary>
+    /// <param name="originalUrl">The original (long) URL to shorten. May be any valid URL string.</param>
+    /// <returns>
+    /// A case-sensitive slug consisting exclusively of characters.
+    /// The value contains no scheme, host, or path prefix and has no leading or trailing slashes.
+    /// The slug is not URL-encoded and is intended to be used as a single path segment
+    /// (e.g., compose the full URL externally via $"https://sho.rt/{slug}").
+    /// Returns an empty string if <paramref name="originalUrl"/> is null, empty, or whitespace.
+    /// </returns>
     public string ShortenUrl(string originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))
@@ -62,24 +76,15 @@ public class Sha256HashUrlShortener()
         return base62Buffer.ToString();
     }
 
-    protected virtual void Dispose(bool disposing)
+    /// <summary>
+    /// Releases the unmanaged resources used by the Sha256HashUrlShortener and optionally releases the managed resources.
+    /// </summary>
+    public void Dispose()
     {
         if (!_disposed)
         {
-            if (disposing)
-            {
-                _sha256.Dispose();
-                _sha256 = null!;
-            }
-
+            _sha256?.Dispose();
             _disposed = true;
         }
-    }
-
-    public void Dispose()
-    {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
     }
 }
