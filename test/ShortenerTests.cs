@@ -101,6 +101,7 @@ public class ShortenerTests(ITestOutputHelper output)
 
         output.WriteLine($"Shortened URL: {shortUrl}");
 
+        shortUrl.ShouldNotBeNullOrWhiteSpace();
         shortUrl.Length.ShouldBeLessThan(9);
         shortUrl.ShouldBeSubsetOf(Base62Chars);
     }
