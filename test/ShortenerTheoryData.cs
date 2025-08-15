@@ -8,7 +8,9 @@ public class ShortenerTheoryData : TheoryData<IUrlShortener>
 {
     public ShortenerTheoryData()
     {
-        var shorteners = UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>().ToArray();
+        var shorteners = UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>()
+                                        .OrderBy(t => t.Name, StringComparer.Ordinal)
+                                        .ToArray();
 
 
         foreach (var shortener in shorteners)
