@@ -1,7 +1,5 @@
 ﻿using Contracts;
 using Logic;
-using Shouldly;
-using Xunit.Abstractions;
 
 namespace UrlConverterPermutations;
 
