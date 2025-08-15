@@ -68,6 +68,7 @@ jobs:
       continue-on-error: true
 
     - name: Test
+      id: test-step
       run: dotnet test --no-build --configuration Release --settings ./build/targets/tests/test.runsettings
       continue-on-error: true
       env:
@@ -110,7 +111,7 @@ jobs:
         path: ./artifacts/TestResults/coverage/**
 
     - name: Publish coverage summary to GitHub
-      if: success() && ${{ hashFiles('artifacts/TestResults/coverage/SummaryGithub.md') != '' }}
+      if: success() && steps.test-step.outcome == 'success'
       run: cat artifacts/TestResults/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
       shell: bash
 
