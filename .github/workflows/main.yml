@@ -100,17 +100,17 @@ jobs:
       if: success() || failure()
       with:
         name: .NET Test Reports (${{ matrix.os }})
-        path: "artifacts/TestResults/**/*.trx"
+        path: ./artifacts/TestResults/**/*.trx
 
     - name: Upload Code Coverage Report
       uses: actions/upload-artifact@v4
       if: success() || failure()
       with:
         name: .NET Code Coverage Reports (${{ matrix.os }})
-        path: "artifacts/TestResults/coverage/**"
+        path: ./artifacts/TestResults/coverage/**
 
     - name: Publish coverage summary to GitHub
-      if: success()
+      if: success() && ${{ hashFiles('artifacts/TestResults/coverage/SummaryGithub.md') != '' }}
       run: cat artifacts/TestResults/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
       shell: bash
 
