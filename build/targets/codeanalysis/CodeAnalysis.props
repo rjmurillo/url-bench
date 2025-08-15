@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisMode>preview</AnalysisMode>
+    <WarningLevel>9999</WarningLevel>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)/stylecop.json" Visible="false" />
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)/.globalconfig" />
+  </ItemGroup>
+</Project>
