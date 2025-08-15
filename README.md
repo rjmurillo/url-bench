@@ -37,6 +37,14 @@ The code is split into the following:
 - `src/Benchmark` = BenchmarkDotNet project to benchmark shorteners and repositories
 - `test` = A suite of tests for the shorteners and repositories
 
+## Development Setup
+
+This project uses Git submodules. After cloning the repository, run the following command to initialize the submodules:
+
+```bash
+git submodule update --init
+```
+
 ## Running with console
 
 To run the console, it is recommended that you run `dotnet publish` with the runtime identifier needed as a single file and self contained.
