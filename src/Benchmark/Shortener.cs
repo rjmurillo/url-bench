@@ -61,6 +61,6 @@ public class Shortener
     [Benchmark]
     public string Shorten()
     {
-        return _urlShortener.ShortenUrl(LongUrl);
+        return _urlShortener!.ShortenUrl(LongUrl);
     }
 }

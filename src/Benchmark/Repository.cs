@@ -108,8 +108,8 @@ public class Repository
     [Benchmark]
     public string Retrieve_Random()
     {
-        var i = _rnd.Next(0, NumberOfUrls);
+        var i = _rnd!.Next(0, NumberOfUrls);
         var shortUrl = _shortUrls.ElementAt(i);
-        return _facade.GetOriginalUrl(shortUrl);
+        return _facade!.GetOriginalUrl(shortUrl);
     }
 }
