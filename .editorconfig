@@ -4,6 +4,8 @@
 dotnet_diagnostic.SA1309.severity = none
 # SA1101: Prefix local calls with this
 dotnet_diagnostic.SA1101.severity = none
+# SA1633: File header should have the required copyright text
+dotnet_diagnostic.SA1633.severity = none
 
 # CS8602: Dereference of a possibly null reference.
 dotnet_diagnostic.CS8602.severity = error
