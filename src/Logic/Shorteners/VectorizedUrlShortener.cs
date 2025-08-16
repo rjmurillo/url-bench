@@ -1,4 +1,10 @@
-﻿using System.Buffers;
+﻿using System.Text;
+using Contracts;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.InteropServices;
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
@@ -82,6 +88,7 @@ public class VectorizedUrlShortener : IUrlShortener
 #endif
             )
         {
+
             return ComputeHash256(data);
         }
 

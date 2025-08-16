@@ -19,6 +19,7 @@ public class ShortenerTheoryData : TheoryData<IUrlShortener>
                                         .OrderBy(t => t.Name, StringComparer.Ordinal)
                                         .ToArray();
 
+
         foreach (var shortener in shorteners)
         {
             var s = Factory.CreateShortener(shortener)
