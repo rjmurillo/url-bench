@@ -5,7 +5,9 @@ using static System.Numerics.BitOperations;
 
 namespace Logic.Hashing;
 
-/// <inheritdoc/>
+/// <summary>
+/// Provides hashing functionality using the MurmurHash3 x64 128-bit variant, simplified to return a 64-bit hash.
+/// </summary>
 public static class Murmur3
 {
     private const ulong C1 = 0x87c37b91114253d5;
