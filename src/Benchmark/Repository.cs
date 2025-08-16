@@ -7,7 +7,6 @@ using Logic.Repositories;
 using Logic.Shorteners;
 
 // [RPlotExporter]
-/// <inheritdoc/>
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
 
 // GC and Memory allocation
