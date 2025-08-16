@@ -7,6 +7,12 @@
       "orderingRules": {
         "systemUsingDirectivesFirst": true,
         "usingDirectivesPlacement": "outsideNamespace"
+      },
+      "documentationRules": {
+        "companyName": "",
+        "copyrightText": "",
+        "xmlHeader": false,
+        "fileHeader": "omit"
       }
     }
   }
