@@ -1,16 +1,17 @@
-﻿using System.Text;
-using Contracts;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
-using System.Runtime.Intrinsics.Arm;
-using System.Runtime.InteropServices;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
+using System.Text;
+using Contracts;
 
 namespace Logic.Shorteners;
 
 // TODO: Refactor this to separate classes for each of the hashing strategies
 // TODO: Refactor to become a facade based on capabilities detected at runtime
+
 /// <summary>
 /// A URL shortener that generates short URLs using vectorized hashing algorithms.
 /// </summary>
@@ -81,7 +82,6 @@ public class VectorizedUrlShortener : IUrlShortener
 #endif
             )
         {
-
             return ComputeHash256(data);
         }
 
@@ -120,8 +120,7 @@ public class VectorizedUrlShortener : IUrlShortener
                 BitConverter.ToUInt32(data.Slice(i + 16, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 20, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 24, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 28, 4))
-            );
+                BitConverter.ToUInt32(data.Slice(i + 28, 4)));
             hash = Avx2.Xor(hash, block);
         }
 
@@ -139,8 +138,7 @@ public class VectorizedUrlShortener : IUrlShortener
                 BitConverter.ToUInt32(data.Slice(i, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 4, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 8, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 12, 4))
-            );
+                BitConverter.ToUInt32(data.Slice(i + 12, 4)));
             hash = Sse2.Xor(hash, block);
         }
 
@@ -158,8 +156,7 @@ public class VectorizedUrlShortener : IUrlShortener
                 BitConverter.ToUInt32(data.Slice(i, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 4, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 8, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 12, 4))
-            );
+                BitConverter.ToUInt32(data.Slice(i + 12, 4)));
             hash = AdvSimd.Xor(hash, block);
         }
 
@@ -167,7 +164,8 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ReduceHashToUInt64<T>(T hash) where T : struct
+    private static ulong ReduceHashToUInt64<T>(T hash)
+        where T : struct
     {
         if (hash is Vector256<uint> v256)
         {

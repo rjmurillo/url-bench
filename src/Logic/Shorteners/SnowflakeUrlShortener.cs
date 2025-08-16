@@ -12,7 +12,7 @@ public class SnowflakeUrlShortener(int generatorId) : IUrlShortener
     private readonly IdGenerator _generator = new(generatorId, new IdGeneratorOptions(sequenceOverflowStrategy: SequenceOverflowStrategy.SpinWait));
 
     /// <summary>
-    /// Initializes a new instance of the SnowflakeUrlShortener class with a generator ID of 0.
+    /// Initializes a new instance of the <see cref="SnowflakeUrlShortener"/> class with a generator ID of 0.
     /// </summary>
     public SnowflakeUrlShortener()
         : this(0)

@@ -11,7 +11,6 @@ public static class Convert
     private const string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private const ulong CharLength = 62UL;
 
-
     /// <summary>
     /// Converts a 64-bit unsigned integer to its Base62 string representation.
     /// </summary>
@@ -31,7 +30,8 @@ public static class Convert
             {
                 buffer[bufferIndex--] = Base62Chars[(int)(value % CharLength)];
                 value /= CharLength;
-            } while (value > 0UL);
+            }
+            while (value > 0UL);
 
             return buffer[..bufferLength];
         }
@@ -55,7 +55,8 @@ public static class Convert
         {
             bufferLength++;
             size /= CharLength;
-        } while (size > 0UL);
+        }
+        while (size > 0UL);
 
         return bufferLength;
     }
@@ -72,7 +73,8 @@ public static class Convert
         {
             buffer[bufferIndex--] = Base62Chars[(int)(value % CharLength)];
             value /= CharLength;
-        } while (value > 0UL && bufferIndex >= 0);
+        }
+        while (value > 0UL && bufferIndex >= 0);
     }
 
     /// <summary>

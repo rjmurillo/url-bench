@@ -10,14 +10,14 @@ public class MemoryStringEqualityComparer(StringComparison comparison) : IEquali
     /// Gets a MemoryStringEqualityComparer that uses ordinal string comparison.
     /// </summary>
     public static MemoryStringEqualityComparer Ordinal { get; } = new(StringComparison.Ordinal);
-    
+
     /// <summary>
     /// Gets a MemoryStringEqualityComparer that uses ordinal case-insensitive string comparison.
     /// </summary>
     public static MemoryStringEqualityComparer OrdinalIgnoreCase { get; } = new(StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Initializes a new instance of the MemoryStringEqualityComparer class.
+    /// Initializes a new instance of the <see cref="MemoryStringEqualityComparer"/> class.
     /// </summary>
     /// <param name="ignoreCase">true to ignore case during comparison; otherwise, false.</param>
     public MemoryStringEqualityComparer(bool ignoreCase = false)

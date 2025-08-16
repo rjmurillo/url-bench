@@ -1,5 +1,6 @@
 ﻿namespace Contracts;
 
+/// <inheritdoc/>
 public interface IUrlShortener
 {
     /// <summary>

@@ -10,7 +10,7 @@ namespace UrlConverterPermutations;
 public class ShortenerTheoryData : TheoryData<IUrlShortener>
 {
     /// <summary>
-    /// Initializes a new instance of the ShortenerTheoryData class and populates it with all available URL shortener implementations.
+    /// Initializes a new instance of the <see cref="ShortenerTheoryData"/> class and populates it with all available URL shortener implementations.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when a shortener cannot be created due to missing parameterless constructor.</exception>
     public ShortenerTheoryData()
@@ -18,7 +18,6 @@ public class ShortenerTheoryData : TheoryData<IUrlShortener>
         var shorteners = UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>()
                                         .OrderBy(t => t.Name, StringComparer.Ordinal)
                                         .ToArray();
-
 
         foreach (var shortener in shorteners)
         {

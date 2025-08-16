@@ -64,4 +64,3 @@ static IConfig GetGlobalConfig()
 
     return config;
 }
-

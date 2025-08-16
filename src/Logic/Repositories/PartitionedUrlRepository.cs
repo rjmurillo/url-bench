@@ -9,15 +9,15 @@ public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
     private readonly ReaderWriterLockSlim[] _locks;
 
     /// <summary>
-    /// Initializes a new instance of the PartitionedUrlRepository class with default settings.
+    /// Initializes a new instance of the <see cref="PartitionedUrlRepository"/> class with default settings.
     /// </summary>
     public PartitionedUrlRepository()
-        : this(Environment.ProcessorCount, short.MaxValue)     // Default to number of cores
+        : this(Environment.ProcessorCount, short.MaxValue) // Default to number of cores
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the PartitionedUrlRepository class with the specified number of partitions and capacity.
+    /// Initializes a new instance of the <see cref="PartitionedUrlRepository"/> class with the specified number of partitions and capacity.
     /// </summary>
     /// <param name="numberOfPartitions">The number of partitions to use for improved concurrency.</param>
     /// <param name="capacity">The initial capacity for each partition dictionary.</param>

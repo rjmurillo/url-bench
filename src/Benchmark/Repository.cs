@@ -6,13 +6,16 @@ using Logic;
 using Logic.Repositories;
 using Logic.Shorteners;
 
-//[RPlotExporter]
+// [RPlotExporter]
+/// <inheritdoc/>
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
+
 // GC and Memory allocation
 [MemoryDiagnoser]
-//[DotTraceDiagnoser]
+
+// [DotTraceDiagnoser]
 // Profile the code
-//[EtwProfiler]
+// [EtwProfiler]
 // Get details about what the JIT is doing
 [JitStatsDiagnoser]
 [GcServer(true)]
@@ -27,22 +30,21 @@ public class Repository
     /// Gets or sets the type of URL shortener to use for generating short URLs.
     /// </summary>
     [Params(
+
         // This is the fastest out of all of the shorteners
-        typeof(IncrementingIntegerUrlShortener)
-       )]
+        typeof(IncrementingIntegerUrlShortener))]
     public Type? ShortenerType;
 
     /// <summary>
     /// Gets or sets the type of URL repository to benchmark.
     /// </summary>
     [Params(
-               typeof(ConcurrentUrlRepository)
-               , typeof(FastCacheUrlRepository)
-               , typeof(FASTERUrlRepository)
-               , typeof(MemoryCacheUrlRepository)
-               , typeof(PartitionedUrlRepository)
-               , typeof(ReaderWriterLockSlimUrlRepository)
-                  )]
+               typeof(ConcurrentUrlRepository),
+               typeof(FastCacheUrlRepository),
+               typeof(FASTERUrlRepository),
+               typeof(MemoryCacheUrlRepository),
+               typeof(PartitionedUrlRepository),
+               typeof(ReaderWriterLockSlimUrlRepository))]
     public Type? RepositoryType;
 
     private const string LongUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
@@ -66,13 +68,14 @@ public class Repository
     {
         _urlShortener = Factory.CreateShortener(ShortenerType);
         _repo = Factory.CreateRepository(RepositoryType);
-        _shortUrls = new HashSet<string>(NumberOfUrls);
+        _shortUrls = new HashSet<string>(NumberOfUrls, StringComparer.Ordinal);
         _facade = new UrlManager(_urlShortener, _repo);
 
         for (var i = 0; i <= NumberOfUrls; i++)
         {
             _shortUrls.Add(_facade.ShortenAndSave(LongUrl + i));
         }
+
         _rnd = new Random(0);
     }
 

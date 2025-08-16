@@ -11,7 +11,7 @@ public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
     private static readonly MemoryCacheEntryOptions Options = new() { Size = 1 };
 
     /// <summary>
-    /// Initializes a new instance of the MemoryCacheUrlRepository class with default size limit.
+    /// Initializes a new instance of the <see cref="MemoryCacheUrlRepository"/> class with default size limit.
     /// </summary>
     public MemoryCacheUrlRepository()
         : this(Constants.Base62Power8)
@@ -19,7 +19,7 @@ public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
     }
 
     /// <summary>
-    /// Initializes a new instance of the MemoryCacheUrlRepository class with the specified size limit.
+    /// Initializes a new instance of the <see cref="MemoryCacheUrlRepository"/> class with the specified size limit.
     /// </summary>
     /// <param name="sizeLimit">The maximum number of entries the cache can hold.</param>
     public MemoryCacheUrlRepository(long sizeLimit)

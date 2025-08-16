@@ -15,8 +15,7 @@ using Convert = Logic.Convert;
 var app = new CommandApp();
 app.Configure(config =>
 {
-    //config.ValidateExamples();
-
+    // config.ValidateExamples();
     config.AddCommand<BenchmarkCommand>("bench")
         .WithExample($"bench -s {nameof(ReaderWriterLockSlimUrlRepository)}")
         .WithExample($"bench -s {nameof(ConcurrentUrlRepository)}")
@@ -78,7 +77,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 ShortenerType = Defaults.ShortenerType.Name;
             }
 
-
             var typesImplementingIUrlRepository = UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>();
 
             var storageValidationResult = UrlRepositoryHelper.GetRepositoryType(StorageType) != null
@@ -97,7 +95,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 ? ValidationResult.Success()
                 : ValidationResult.Error(
                     $"Unrecognized URL shortener type '{ShortenerType}'. Use: {string.Join(", ", typesImplementingIUrlShortener.Select(t => t.Name))}");
-
 
             return shortenerValidationResult;
         }
@@ -142,7 +139,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 .Spinner(Spinner.Known.Dots)
                 .Start("Generating...", ctx =>
                 {
-
                     sw.Start();
 
                     if (settings.MaxDegreeOfParallelism == 1)
@@ -219,7 +215,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                     // So random is repeatable
                     var rnd = new Random(0);
 
-
                     if (settings.MaxDegreeOfParallelism == 1)
                     {
                         for (var j = 1; j <= settings.Iterations; j++)
@@ -246,7 +241,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
                             sw.Stop();
                             readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0)):N0} reads/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({ settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} reads/sec)");
                             sw.Reset();
                         }
                     }

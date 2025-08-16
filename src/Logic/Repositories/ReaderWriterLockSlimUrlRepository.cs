@@ -12,7 +12,7 @@ public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase
     private readonly Dictionary<string, string> _urlMappings = new(capacity, StringComparer.Ordinal);
 
     /// <summary>
-    /// Initializes a new instance of the ReaderWriterLockSlimUrlRepository class with default capacity.
+    /// Initializes a new instance of the <see cref="ReaderWriterLockSlimUrlRepository"/> class with default capacity.
     /// </summary>
     public ReaderWriterLockSlimUrlRepository()
         : this(short.MaxValue)

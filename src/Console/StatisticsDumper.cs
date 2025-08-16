@@ -43,7 +43,6 @@ public static class StatisticsDumper
                     ?.Replace("]", "]]");
             }
 
-
             table.AddRow(
                 property.Name,
                 displayValue ?? "[grey]null[/]");
@@ -57,12 +56,12 @@ public static class StatisticsDumper
             true));
 
         var allOutliers = statistics.AllOutliers;
+
         // TODO: Improve
         var actualOutliers = statistics.GetActualOutliers(OutlierMode.RemoveAll);
 
         if (allOutliers.Any())
         {
-
             AnsiConsole.WriteLine(GetMessage(actualOutliers, allOutliers, statistics.LowerOutliers, statistics.UpperOutliers, CultureInfo.CurrentUICulture));
 
             statistics = new Statistics(statistics.OriginalValues.Except(allOutliers));
@@ -82,7 +81,9 @@ public static class StatisticsDumper
     public static string GetMessage(double[] actualOutliers, double[] allOutliers, double[] lowerOutliers, double[] upperOutliers, CultureInfo cultureInfo)
     {
         if (allOutliers.Length == 0)
+        {
             return string.Empty;
+        }
 
         string Format(int n, string verb)
         {
@@ -97,9 +98,15 @@ public static class StatisticsDumper
             : string.Empty;
 
         if (actualOutliers.Length == allOutliers.Length)
+        {
             return Format(actualOutliers.Length, "removed") + rangeMessage;
+        }
+
         if (actualOutliers.Length == 0)
+        {
             return Format(allOutliers.Length, "detected") + rangeMessage;
+        }
+
         return Format(actualOutliers.Length, "removed") + ", " + Format(allOutliers.Length, "detected") + rangeMessage;
     }
 
@@ -112,7 +119,7 @@ public static class StatisticsDumper
             0 => null,
             1 => Format(values.First()),
             2 => Format(values.Min()) + ", " + Format(values.Max()),
-            _ => Format(values.Min()) + ".." + Format(values.Max())
+            _ => Format(values.Min()) + ".." + Format(values.Max()),
         };
     }
 }

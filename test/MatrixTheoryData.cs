@@ -9,6 +9,7 @@ namespace UrlConverterPermutations;
 /// </summary>
 public class MatrixTheoryData : IEnumerable<object[]>
 {
+    /// <inheritdoc/>
     public IEnumerator<object[]> GetEnumerator()
     {
         var shortenerTypes = UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>().ToArray();

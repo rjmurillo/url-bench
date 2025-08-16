@@ -11,7 +11,7 @@ public interface IUrlRepository
     /// <param name="shortUrl">The short URL to look up.</param>
     /// <returns>The original URL if found; otherwise, null.</returns>
     string GetOriginalUrl(string shortUrl);
-    
+
     /// <summary>
     /// Saves a mapping between a short URL and its original URL.
     /// </summary>

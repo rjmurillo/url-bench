@@ -21,7 +21,7 @@ public class FastCacheUrlRepository : UrlRepositoryBase, IDisposable
 
         return string.Empty;
     }
-    
+
     /// <summary>
     /// Saves a mapping between a short URL and its original URL with no expiration.
     /// </summary>

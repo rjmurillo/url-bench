@@ -14,7 +14,7 @@ public class Murmur3HashUrlShortener(uint seed)
     : IUrlShortener
 {
     /// <summary>
-    /// Initializes a new instance of the Murmur3HashUrlShortener class with a seed value of 0.
+    /// Initializes a new instance of the <see cref="Murmur3HashUrlShortener"/> class with a seed value of 0.
     /// </summary>
     public Murmur3HashUrlShortener()
         : this(0U)

@@ -7,12 +7,15 @@ using Contracts;
 using Logic;
 using Logic.Shorteners;
 
+/// <inheritdoc/>
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
+
 // GC and Memory allocation
 [MemoryDiagnoser]
-//[DotTraceDiagnoser]
+
+// [DotTraceDiagnoser]
 // Profile the code
-//[EtwProfiler]
+// [EtwProfiler]
 // Get details about what the JIT is doing
 [JitStatsDiagnoser]
 [GcServer(true)]
@@ -28,20 +31,18 @@ public class Shortener
     /// Gets or sets the type of URL shortener to benchmark.
     /// </summary>
     [Params(
-        typeof(IncrementingIntegerUrlShortener)
-        , typeof(SnowflakeUrlShortener)
-        , typeof(Sha256HashUrlShortener)
-        , typeof(Murmur3HashUrlShortener)
-        , typeof(VectorizedUrlShortener)
-    )]
+        typeof(IncrementingIntegerUrlShortener),
+        typeof(SnowflakeUrlShortener),
+        typeof(Sha256HashUrlShortener),
+        typeof(Murmur3HashUrlShortener),
+        typeof(VectorizedUrlShortener))]
     public Type? ShortenerType;
 
     /// <summary>
     /// Gets or sets the long URL to use for benchmarking.
     /// </summary>
     [Params(
-        "https://jobs.careers.microsoft.com/us/en/job/1613473"
-    )]
+        "https://jobs.careers.microsoft.com/us/en/job/1613473")]
     public string? LongUrl;
 
     /// <summary>

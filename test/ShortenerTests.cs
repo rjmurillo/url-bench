@@ -1,7 +1,7 @@
-﻿using Contracts;
-using NonBlocking;
-using System.Text;
+﻿using System.Text;
 using System.Web;
+using Contracts;
+using NonBlocking;
 
 namespace UrlConverterPermutations;
 
@@ -66,7 +66,7 @@ public class ShortenerTests(ITestOutputHelper output)
             return $"{baseUrl}?{query}#{hash}";
         }
 
-        var Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
+        var base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
 
         var longUrl = CreateTestUrl();
         var shortUrl = shortener.ShortenUrl(longUrl);
@@ -76,7 +76,7 @@ public class ShortenerTests(ITestOutputHelper output)
         shortUrl.ShouldNotBeNull();
         shortUrl.ShouldNotBeEmpty();
         shortUrl.Length.ShouldBeLessThan(9);
-        shortUrl.ShouldBeSubsetOf(Base62Chars);
+        shortUrl.ShouldBeSubsetOf(base62Chars);
     }
 
     /// <summary>
@@ -100,7 +100,7 @@ public class ShortenerTests(ITestOutputHelper output)
             return sb.ToString();
         }
 
-        var Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
+        var base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
 
         var longUrl = CreateTestUrl();
         var shortUrl = shortener.ShortenUrl(longUrl);
@@ -110,7 +110,7 @@ public class ShortenerTests(ITestOutputHelper output)
         shortUrl.ShouldNotBeNull();
         shortUrl.ShouldNotBeEmpty();
         shortUrl.Length.ShouldBeLessThan(9);
-        shortUrl.ShouldBeSubsetOf(Base62Chars);
+        shortUrl.ShouldBeSubsetOf(base62Chars);
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ public class ShortenerTests(ITestOutputHelper output)
     public void Shorten(IUrlShortener shortener)
     {
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
-        var Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
+        var base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
 
         var shortUrl = shortener.ShortenUrl(longUrl);
 
@@ -130,7 +130,7 @@ public class ShortenerTests(ITestOutputHelper output)
 
         shortUrl.ShouldNotBeNullOrWhiteSpace();
         shortUrl.Length.ShouldBeLessThan(9);
-        shortUrl.ShouldBeSubsetOf(Base62Chars);
+        shortUrl.ShouldBeSubsetOf(base62Chars);
     }
 
     /// <summary>
@@ -151,7 +151,7 @@ public class ShortenerTests(ITestOutputHelper output)
         Skip.If(Utilities.IsDeterministicHashShortener(shortener));
 
         // For non-deterministic shorteners, different outputs are expected
-        shortUrl1.ShouldNotBe(shortUrl2);        
+        shortUrl1.ShouldNotBe(shortUrl2);
     }
 
     /// <summary>
@@ -171,7 +171,7 @@ public class ShortenerTests(ITestOutputHelper output)
             // For deterministic hash functions, test that the same input produces consistent output
             var firstResult = shortener.ShortenUrl(longUrl);
             firstResult.ShouldNotBeNullOrWhiteSpace();
-            
+
             for (var i = 0UL; i < upper; i++)
             {
                 var result = shortener.ShortenUrl(longUrl);

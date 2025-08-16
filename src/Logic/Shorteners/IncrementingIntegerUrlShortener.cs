@@ -9,7 +9,7 @@ namespace Logic.Shorteners;
 public class IncrementingIntegerUrlShortener(ulong initialValue) : IUrlShortener
 {
     /// <summary>
-    /// Initializes a new instance of the IncrementingIntegerUrlShortener class with an initial value of 0.
+    /// Initializes a new instance of the <see cref="IncrementingIntegerUrlShortener"/> class with an initial value of 0.
     /// </summary>
     public IncrementingIntegerUrlShortener()
         : this(0UL)

@@ -19,7 +19,6 @@ public static class UrlRepositoryHelper
             .GetTypes()
             .Where(t => typeof(T).IsAssignableFrom(t) &&
                         t is { IsInterface: false, IsAbstract: false });
-
     }
 
     /// <summary>

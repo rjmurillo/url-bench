@@ -12,7 +12,7 @@ public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRe
     private readonly ConcurrentDictionary<string, string> _urlMappings = new(concurrencyLevel, capacity, StringComparer.Ordinal);
 
     /// <summary>
-    /// Initializes a new instance of the ConcurrentUrlRepository class with default concurrency level and capacity.
+    /// Initializes a new instance of the <see cref="ConcurrentUrlRepository"/> class with default concurrency level and capacity.
     /// </summary>
     public ConcurrentUrlRepository()
         : this(Environment.ProcessorCount, short.MaxValue)

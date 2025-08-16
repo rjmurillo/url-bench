@@ -18,7 +18,7 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     private readonly ClientSession<string, string, string, string, Empty, SimpleFunctions<string, string>> _session;
 
     /// <summary>
-    /// Initializes a new instance of the FASTERUrlRepository class with default settings.
+    /// Initializes a new instance of the <see cref="FASTERUrlRepository"/> class with default settings.
     /// </summary>
     public FASTERUrlRepository()
     {
