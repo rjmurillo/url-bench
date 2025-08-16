@@ -62,7 +62,6 @@ public class Sha256HashUrlShortener()
 
         // SHA256 outputs 32 bytes, 256 bits
         Span<byte> hashBuffer = stackalloc byte[32];
-        var success = _sha256.TryComputeHash(inputBuffer[..bytesUsed], hashBuffer, out _);
 
 #if NET8_0_OR_GREATER
         var success = SHA256.TryHashData(inputBuffer[..bytesUsed], hashBuffer, out var written);
@@ -78,26 +77,5 @@ public class Sha256HashUrlShortener()
         Convert.AsBase62String(hashBuffer, ref base62Buffer);
 
         return base62Buffer.ToString();
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                _sha256.Dispose();
-                _sha256 = null!;
-            }
-
-            _disposed = true;
-        }
-    }
-
-    public void Dispose()
-    {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
     }
 }
