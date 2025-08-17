@@ -1,4 +1,6 @@
 ﻿using Contracts;
+using Logic.Retry;
+using Polly;
 
 namespace Logic;
 
@@ -16,7 +18,7 @@ public sealed class UrlManager(IUrlShortener? shortener, IUrlRepository? reposit
     private readonly IUrlRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     private readonly int _maxRetries = maxRetries > 0 ? maxRetries : throw new ArgumentOutOfRangeException(nameof(maxRetries), "Max retries must be positive.");
     private readonly int _baseRetryDelayMs = baseRetryDelayMs > 0 ? baseRetryDelayMs : throw new ArgumentOutOfRangeException(nameof(baseRetryDelayMs), "Base retry delay must be positive.");
-    private readonly Random _random = new();
+    private readonly ResiliencePipeline _retryPolicy = RetryPolicyFactory.CreateRetryPolicy(maxRetries, baseRetryDelayMs);
 
     /// <summary>
     /// Shortens the specified long URL and saves the mapping to the repository using optimistic concurrency control.
@@ -24,7 +26,7 @@ public sealed class UrlManager(IUrlShortener? shortener, IUrlRepository? reposit
     ///
     /// Key features:
     /// - Optimistic concurrency control for high throughput
-    /// - Exponential backoff with jitter for retry attempts
+    /// - Exponential backoff with jitter for retry attempts using Polly v8
     /// - Automatic collision resolution using unique shortener
     /// - Strong consistency guarantees within regions
     /// - Idempotent behavior for the same input URL
@@ -40,40 +42,41 @@ public sealed class UrlManager(IUrlShortener? shortener, IUrlRepository? reposit
             return string.Empty;
         }
 
-        // Try optimistic save with exponential backoff and collision resolution
-        for (int attempt = 0; attempt <= _maxRetries; attempt++)
-        {
-            try
-            {
-                var result = TryShortenAndSaveOptimistic(longUrl, attempt);
-                if (!string.IsNullOrEmpty(result))
-                {
-                    return result;
-                }
-            }
-            catch (Exception) when (attempt < _maxRetries)
-            {
-                // Continue to retry on transient failures
-            }
-
-            // Exponential backoff with jitter (except on last attempt)
-            if (attempt < _maxRetries)
-            {
-                var delayMs = (_baseRetryDelayMs * (1 << attempt)) + _random.Next(_baseRetryDelayMs);
-                Thread.Sleep(delayMs);
-            }
-        }
-
-        throw new InvalidOperationException($"Failed to shorten URL after {_maxRetries + 1} attempts. Repository may be unavailable or experiencing high contention.");
+        // Use Polly v8 retry policy for robust retry logic
+        return _retryPolicy.Execute(() => TryShortenAndSaveOptimistic(longUrl));
     }
 
     /// <summary>
     /// Attempts to shorten and save a URL using optimistic concurrency control.
+    /// Handles collision resolution internally and throws for transient failures that Polly should retry.
+    /// </summary>
+    /// <param name="longUrl">The long URL to shorten.</param>
+    /// <returns>The generated short URL.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the operation fails and should be retried by Polly.</exception>
+    private string TryShortenAndSaveOptimistic(string longUrl)
+    {
+        // Try optimistic save with collision resolution
+        for (int attempt = 0; attempt <= _maxRetries; attempt++)
+        {
+            var result = TryShortenAndSaveSingleAttempt(longUrl, attempt);
+            if (!string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+        }
+
+        // If we get here, all collision resolution attempts failed
+        // This indicates a transient failure (repository unavailable, etc.) that Polly should retry
+        throw new InvalidOperationException($"Failed to shorten URL after {_maxRetries + 1} collision resolution attempts. Repository may be unavailable or experiencing high contention.");
+    }
+
+    /// <summary>
+    /// Attempts to shorten and save a URL using optimistic concurrency control for a single attempt.
     /// </summary>
     /// <param name="longUrl">The long URL to shorten.</param>
     /// <param name="attempt">The current attempt number (used for unique shortener).</param>
     /// <returns>The generated short URL if successful; otherwise, empty string.</returns>
-    private string TryShortenAndSaveOptimistic(string longUrl, int attempt)
+    private string TryShortenAndSaveSingleAttempt(string longUrl, int attempt)
     {
         // Generate short URL using unique shortener for collision resolution
         var shortUrl = GenerateUniqueShortUrl(longUrl, attempt);

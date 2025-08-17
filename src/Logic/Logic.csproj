@@ -5,6 +5,7 @@
     <PackageReference Include="IdGen" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
     <PackageReference Include="Microsoft.FASTER.Core" />
+    <PackageReference Include="Polly" />
   </ItemGroup>
 
 </Project>
