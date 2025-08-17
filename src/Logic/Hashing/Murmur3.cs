@@ -29,12 +29,12 @@ public static class Murmur3
         int pos = 0;
 
         ref var dataRef = ref MemoryMarshal.GetReference(data);
-        var nBlocks = len / 16;
+        int nBlocks = len / 16;
 
-        for (var i = 0; i < nBlocks; i++)
+        for (int i = 0; i < nBlocks; i++)
         {
-            var k1 = ReadUInt64(ref dataRef, pos);
-            var k2 = ReadUInt64(ref dataRef, pos + 8);
+            ulong k1 = ReadUInt64(ref dataRef, pos);
+            ulong k2 = ReadUInt64(ref dataRef, pos + 8);
 
             k1 *= C1;
             k1 = RotateLeft(k1, 31);

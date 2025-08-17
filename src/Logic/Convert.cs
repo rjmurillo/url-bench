@@ -21,7 +21,7 @@ public static class Convert
     {
         var bufferLength = DetermineBufferLength(value);
 
-        var bufferIndex = bufferLength - 1;
+        int bufferIndex = bufferLength - 1;
         var arrayToReturnToPool = ArrayPool<char>.Shared.Rent(bufferLength);
         Span<char> buffer = arrayToReturnToPool;
         try
@@ -68,7 +68,7 @@ public static class Convert
     /// <param name="buffer">The buffer to write the result to.</param>
     public static void AsBase62String(ulong value, ref Span<char> buffer)
     {
-        var bufferIndex = buffer.Length - 1;
+        int bufferIndex = buffer.Length - 1;
         do
         {
             buffer[bufferIndex--] = Base62Chars[(int)(value % CharLength)];
@@ -85,7 +85,7 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> AsBase62String(Span<byte> hash)
     {
-        var index = BitConverter.ToUInt64(hash) % Constants.Base62Power8;
+        ulong index = BitConverter.ToUInt64(hash) % Constants.Base62Power8;
         return AsBase62String(index);
     }
 
@@ -97,7 +97,7 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AsBase62String(Span<byte> hash, ref Span<char> buffer)
     {
-        var index = BitConverter.ToUInt64(hash) % Constants.Base62Power8;
+        ulong index = BitConverter.ToUInt64(hash) % Constants.Base62Power8;
         AsBase62String(index, ref buffer);
     }
 }
