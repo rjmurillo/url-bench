@@ -1,9 +1,10 @@
 ﻿using Contracts;
+using Logic.Contracts;
 
 namespace Logic;
 
 /// <summary>
-/// Provides helper methods for working with URL repository and shortener types.
+/// Provides helper methods for working with URL repository, shortener, and collision resolution strategy types.
 /// </summary>
 public static class UrlRepositoryHelper
 {
@@ -59,6 +60,29 @@ public static class UrlRepositoryHelper
         var typesImplementingIUrlShortener = GetConcreteTypes<IUrlShortener>();
 
         return typesImplementingIUrlShortener.FirstOrDefault(t =>
+                       t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Gets the collision resolution strategy type by name.
+    /// </summary>
+    /// <param name="typeName">The name of the collision resolution strategy type to find.</param>
+    /// <returns>The collision resolution strategy type if found; otherwise, null.</returns>
+    /// <exception cref="ArgumentException">Thrown when typeName is null, empty, or whitespace.</exception>
+    public static Type? GetCollisionResolutionStrategyType(string? typeName)
+    {
+#if NET8_0_OR_GREATER
+        ArgumentException.ThrowIfNullOrWhiteSpace(typeName);
+#else
+        if (string.IsNullOrWhiteSpace(typeName))
+        {
+            throw new ArgumentNullException(nameof(typeName));
+        }
+#endif
+
+        var typesImplementingICollisionResolutionStrategy = GetConcreteTypes<ICollisionResolutionStrategy>();
+
+        return typesImplementingICollisionResolutionStrategy.FirstOrDefault(t =>
                        t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
     }
 }

@@ -1,10 +1,11 @@
 using System.Diagnostics;
 using Contracts;
+using Logic.Contracts;
 
 namespace Logic;
 
 /// <summary>
-/// Provides factory methods for creating URL shorteners and repositories.
+/// Provides factory methods for creating URL shorteners, repositories, and collision resolution strategies.
 /// </summary>
 public static class Factory
 {
@@ -44,5 +45,15 @@ public static class Factory
     public static IUrlRepository? CreateRepository(Type repositoryType)
     {
         return Activator.CreateInstance(repositoryType) as IUrlRepository;
+    }
+
+    /// <summary>
+    /// Creates a collision resolution strategy instance from the specified type.
+    /// </summary>
+    /// <param name="strategyType">The type of collision resolution strategy to create.</param>
+    /// <returns>The created collision resolution strategy instance, or null if creation fails.</returns>
+    public static ICollisionResolutionStrategy? CreateCollisionResolutionStrategy(Type strategyType)
+    {
+        return Activator.CreateInstance(strategyType) as ICollisionResolutionStrategy;
     }
 }
