@@ -54,7 +54,7 @@ public class Repository
     [Params(1, 1_000, 1_000_000)]
     public int NumberOfUrls;
 
-    private UrlManager? _facade;
+    private UrlManager? _urlManager;
     private Random? _rnd;
     private IUrlRepository? _repo = null!;
     private HashSet<string>? _shortUrls;
@@ -68,11 +68,11 @@ public class Repository
         _urlShortener = Factory.CreateShortener(ShortenerType);
         _repo = Factory.CreateRepository(RepositoryType);
         _shortUrls = new HashSet<string>(NumberOfUrls, StringComparer.Ordinal);
-        _facade = new UrlManager(_urlShortener, _repo);
+        _urlManager = new UrlManager(_urlShortener, _repo);
 
         for (var i = 0; i <= NumberOfUrls; i++)
         {
-            _shortUrls.Add(_facade.ShortenAndSave(LongUrl + i));
+            _shortUrls.Add(_urlManager.ShortenAndSave(LongUrl + i));
         }
 
         _rnd = new Random(0);
@@ -97,7 +97,7 @@ public class Repository
         }
 
         _repo = null;
-        _facade = null;
+        _urlManager = null;
     }
 
     /// <summary>
@@ -109,6 +109,6 @@ public class Repository
     {
         var i = _rnd!.Next(0, NumberOfUrls);
         var shortUrl = _shortUrls.ElementAt(i);
-        return _facade!.GetOriginalUrl(shortUrl);
+        return _urlManager!.GetOriginalUrl(shortUrl);
     }
 }
