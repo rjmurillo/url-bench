@@ -5,8 +5,6 @@ using Console;
 using Contracts;
 
 using Logic;
-using Logic.CollisionResolution;
-using Logic.Contracts;
 using Logic.Repositories;
 using Logic.Shorteners;
 using Spectre.Console;
@@ -63,9 +61,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         [CommandOption("-t|--urlshortener")]
         public string? ShortenerType { get; private set; }
 
-        [CommandOption("-c|--collision")]
-        public string? CollisionStrategyType { get; private set; }
-
         [CommandOption("-p|--maxdop")]
         [DefaultValue(1)]
         public int MaxDegreeOfParallelism { get; init; }
@@ -80,11 +75,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             if (string.IsNullOrWhiteSpace(ShortenerType))
             {
                 ShortenerType = Defaults.ShortenerType.Name;
-            }
-
-            if (string.IsNullOrWhiteSpace(CollisionStrategyType))
-            {
-                CollisionStrategyType = nameof(NullCollisionResolutionStrategy);
             }
 
             var typesImplementingIUrlRepository = UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>();
@@ -106,19 +96,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 : ValidationResult.Error(
                     $"Unrecognized URL shortener type '{ShortenerType}'. Use: {string.Join(", ", typesImplementingIUrlShortener.Select(t => t.Name))}");
 
-            if (!shortenerValidationResult.Successful)
-            {
-                return shortenerValidationResult;
-            }
-
-            var typesImplementingICollisionResolutionStrategy = UrlRepositoryHelper.GetConcreteTypes<ICollisionResolutionStrategy>();
-
-            var collisionStrategyValidationResult = UrlRepositoryHelper.GetCollisionResolutionStrategyType(CollisionStrategyType) != null
-                ? ValidationResult.Success()
-                : ValidationResult.Error(
-                    $"Unrecognized collision resolution strategy type '{CollisionStrategyType}'. Use: {string.Join(", ", typesImplementingICollisionResolutionStrategy.Select(t => t.Name))}");
-
-            return collisionStrategyValidationResult;
+            return shortenerValidationResult;
         }
     }
 
@@ -134,9 +112,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             var repo = Factory.CreateRepository(repoType!);
             var shortenerType = UrlRepositoryHelper.GetShortenerType(settings.ShortenerType);
             var shortener = Factory.CreateShortener(shortenerType!);
-            var collisionStrategyType = UrlRepositoryHelper.GetCollisionResolutionStrategyType(settings.CollisionStrategyType);
-            var collisionStrategy = Factory.CreateCollisionResolutionStrategy(collisionStrategyType!);
-            var facade = new UrlManager(shortener, repo, collisionStrategy);
+            var facade = new UrlManager(shortener, repo);
             var sw = new Stopwatch();
             long workingSet;
 

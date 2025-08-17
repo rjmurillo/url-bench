@@ -1,5 +1,4 @@
 using Logic;
-using Logic.CollisionResolution;
 using Logic.Repositories;
 using Logic.Shorteners;
 using Xunit;
@@ -7,7 +6,7 @@ using Xunit;
 namespace UrlConverterPermutations;
 
 /// <summary>
-/// Tests for the refactored UrlManager that uses Polly's built-in retry mechanism.
+/// Tests for the refactored UrlManager that uses simplified collision handling.
 /// </summary>
 public class UrlManagerTests
 {
@@ -17,8 +16,7 @@ public class UrlManagerTests
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
         var repository = new ConcurrentUrlRepository();
-        var collisionStrategy = new NullCollisionResolutionStrategy();
-        var urlManager = new UrlManager(shortener, repository, collisionStrategy);
+        var urlManager = new UrlManager(shortener, repository);
 
         var longUrl = "https://example.com/very/long/url/that/needs/shortening";
 
@@ -41,8 +39,7 @@ public class UrlManagerTests
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
         var repository = new ConcurrentUrlRepository();
-        var collisionStrategy = new NullCollisionResolutionStrategy();
-        var urlManager = new UrlManager(shortener, repository, collisionStrategy);
+        var urlManager = new UrlManager(shortener, repository);
 
         var longUrl = "https://example.com/very/long/url/that/needs/shortening";
 
@@ -60,8 +57,7 @@ public class UrlManagerTests
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
         var repository = new ConcurrentUrlRepository();
-        var collisionStrategy = new NullCollisionResolutionStrategy();
-        var urlManager = new UrlManager(shortener, repository, collisionStrategy);
+        var urlManager = new UrlManager(shortener, repository);
 
         var longUrl1 = "https://example.com/very/long/url/that/needs/shortening";
         var longUrl2 = "https://example.com/another/very/long/url/that/needs/shortening";
@@ -75,36 +71,12 @@ public class UrlManagerTests
     }
 
     [Fact]
-    public void ShortenAndSave_WithSuffixCollisionStrategy_AppendsSuffixOnRetry()
-    {
-        // Arrange
-        var shortener = new Murmur3HashUrlShortener();
-        var repository = new ConcurrentUrlRepository();
-        var collisionStrategy = new SuffixCollisionResolutionStrategy();
-        var urlManager = new UrlManager(shortener, repository, collisionStrategy);
-
-        var longUrl = "https://example.com/very/long/url/that/needs/shortening";
-
-        // Act
-        var shortUrl = urlManager.ShortenAndSave(longUrl);
-
-        // Assert
-        Assert.NotNull(shortUrl);
-        Assert.NotEmpty(shortUrl);
-        
-        // Verify the mapping was saved
-        var retrievedUrl = urlManager.GetOriginalUrl(shortUrl);
-        Assert.Equal(longUrl, retrievedUrl);
-    }
-
-    [Fact]
     public void ShortenAndSave_WithNullUrl_ThrowsArgumentNullException()
     {
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
         var repository = new ConcurrentUrlRepository();
-        var collisionStrategy = new NullCollisionResolutionStrategy();
-        var urlManager = new UrlManager(shortener, repository, collisionStrategy);
+        var urlManager = new UrlManager(shortener, repository);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => urlManager.ShortenAndSave(null!));
@@ -116,11 +88,10 @@ public class UrlManagerTests
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
         var repository = new ConcurrentUrlRepository();
-        var collisionStrategy = new NullCollisionResolutionStrategy();
-        var urlManager = new UrlManager(shortener, repository, collisionStrategy);
+        var urlManager = new UrlManager(shortener, repository);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => urlManager.ShortenAndSave(""));
+        Assert.Throws<ArgumentException>(() => urlManager.ShortenAndSave(string.Empty));
     }
 
     [Fact]
@@ -129,26 +100,78 @@ public class UrlManagerTests
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
         var repository = new ConcurrentUrlRepository();
-        var collisionStrategy = new NullCollisionResolutionStrategy();
-        var urlManager = new UrlManager(shortener, repository, collisionStrategy);
+        var urlManager = new UrlManager(shortener, repository);
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => urlManager.ShortenAndSave("   "));
     }
 
     [Fact]
-    public void GetOriginalUrl_WithNonExistentShortUrl_ReturnsEmptyString()
+    public void GetOriginalUrl_WithExistingUrl_ReturnsOriginalUrl()
     {
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
         var repository = new ConcurrentUrlRepository();
-        var collisionStrategy = new NullCollisionResolutionStrategy();
-        var urlManager = new UrlManager(shortener, repository, collisionStrategy);
+        var urlManager = new UrlManager(shortener, repository);
+
+        var longUrl = "https://example.com/very/long/url/that/needs/shortening";
+        var shortUrl = urlManager.ShortenAndSave(longUrl);
 
         // Act
-        var result = urlManager.GetOriginalUrl("nonexistent");
+        var retrievedUrl = urlManager.GetOriginalUrl(shortUrl);
 
         // Assert
-        Assert.Equal(string.Empty, result);
+        Assert.Equal(longUrl, retrievedUrl);
+    }
+
+    [Fact]
+    public void GetOriginalUrl_WithNonExistentUrl_ReturnsEmptyString()
+    {
+        // Arrange
+        var shortener = new Murmur3HashUrlShortener();
+        var repository = new ConcurrentUrlRepository();
+        var urlManager = new UrlManager(shortener, repository);
+
+        // Act
+        var retrievedUrl = urlManager.GetOriginalUrl("nonexistent");
+
+        // Assert
+        Assert.Equal(string.Empty, retrievedUrl);
+    }
+
+    [Fact]
+    public void GetOriginalUrl_WithNullUrl_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var shortener = new Murmur3HashUrlShortener();
+        var repository = new ConcurrentUrlRepository();
+        var urlManager = new UrlManager(shortener, repository);
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => urlManager.GetOriginalUrl(null!));
+    }
+
+    [Fact]
+    public void GetOriginalUrl_WithEmptyUrl_ThrowsArgumentException()
+    {
+        // Arrange
+        var shortener = new Murmur3HashUrlShortener();
+        var repository = new ConcurrentUrlRepository();
+        var urlManager = new UrlManager(shortener, repository);
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => urlManager.GetOriginalUrl(string.Empty));
+    }
+
+    [Fact]
+    public void GetOriginalUrl_WithWhitespaceUrl_ThrowsArgumentException()
+    {
+        // Arrange
+        var shortener = new Murmur3HashUrlShortener();
+        var repository = new ConcurrentUrlRepository();
+        var urlManager = new UrlManager(shortener, repository);
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => urlManager.GetOriginalUrl("   "));
     }
 }

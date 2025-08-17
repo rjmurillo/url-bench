@@ -18,8 +18,9 @@ public class MatrixTheoryData : IEnumerable<object[]>
         {
             foreach (var repositoryType in repositoryTypes)
             {
-                var (s, r) = Factory.TypeFactory(repositoryType, shortenerType);
-                yield return new object[] { s, r };
+                var shortener = Factory.CreateShortener(shortenerType);
+                var repository = Factory.CreateRepository(repositoryType);
+                yield return new object[] { shortener!, repository! };
             }
         }
     }

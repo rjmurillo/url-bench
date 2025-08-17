@@ -1,25 +1,25 @@
 ﻿using Contracts;
-using Logic.Contracts;
+using Logic.Repositories;
+using Logic.Shorteners;
 
 namespace Logic;
 
 /// <summary>
-/// Provides helper methods for working with URL repository, shortener, and collision resolution strategy types.
+/// Helper class for working with URL repositories and shorteners.
 /// </summary>
 public static class UrlRepositoryHelper
 {
     /// <summary>
-    /// Gets all concrete types that implement the specified interface type.
+    /// Gets all concrete types that implement the specified interface.
     /// </summary>
     /// <typeparam name="T">The interface type to find implementations for.</typeparam>
-    /// <returns>An enumerable of concrete types that implement the specified interface.</returns>
-    public static IEnumerable<Type> GetConcreteTypes<T>()
+    /// <returns>An array of concrete types that implement the specified interface.</returns>
+    public static Type[] GetConcreteTypes<T>()
     {
-        var a = typeof(T).Assembly;
-        return a
-            .GetTypes()
-            .Where(t => typeof(T).IsAssignableFrom(t) &&
-                        t is { IsInterface: false, IsAbstract: false });
+        var interfaceType = typeof(T);
+        var types = interfaceType.Assembly.GetTypes();
+
+        return types.Where(t => !t.IsAbstract && !t.IsInterface && interfaceType.IsAssignableFrom(t)).ToArray();
     }
 
     /// <summary>
@@ -32,12 +32,17 @@ public static class UrlRepositoryHelper
     {
 #if NET8_0_OR_GREATER
         ArgumentException.ThrowIfNullOrWhiteSpace(typeName);
+#else
+        if (string.IsNullOrWhiteSpace(typeName))
+        {
+            throw new ArgumentNullException(nameof(typeName));
+        }
 #endif
 
         var typesImplementingIUrlRepository = GetConcreteTypes<IUrlRepository>();
 
         return typesImplementingIUrlRepository.FirstOrDefault(t =>
-            t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
+                       t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -60,29 +65,6 @@ public static class UrlRepositoryHelper
         var typesImplementingIUrlShortener = GetConcreteTypes<IUrlShortener>();
 
         return typesImplementingIUrlShortener.FirstOrDefault(t =>
-                       t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
-    }
-
-    /// <summary>
-    /// Gets the collision resolution strategy type by name.
-    /// </summary>
-    /// <param name="typeName">The name of the collision resolution strategy type to find.</param>
-    /// <returns>The collision resolution strategy type if found; otherwise, null.</returns>
-    /// <exception cref="ArgumentException">Thrown when typeName is null, empty, or whitespace.</exception>
-    public static Type? GetCollisionResolutionStrategyType(string? typeName)
-    {
-#if NET8_0_OR_GREATER
-        ArgumentException.ThrowIfNullOrWhiteSpace(typeName);
-#else
-        if (string.IsNullOrWhiteSpace(typeName))
-        {
-            throw new ArgumentNullException(nameof(typeName));
-        }
-#endif
-
-        var typesImplementingICollisionResolutionStrategy = GetConcreteTypes<ICollisionResolutionStrategy>();
-
-        return typesImplementingICollisionResolutionStrategy.FirstOrDefault(t =>
                        t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
     }
 }
