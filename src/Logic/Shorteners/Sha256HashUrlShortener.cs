@@ -32,7 +32,7 @@ public class Sha256HashUrlShortener()
             return string.Empty;
         }
 
-        var byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
+        int byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
 
         // Decide between stackalloc and ArrayPool
         if (byteCount <= Constants.MaxStackSize)
@@ -44,7 +44,7 @@ public class Sha256HashUrlShortener()
         var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
-            var poolBuffer = arrayFromPool.AsSpan(0, byteCount);
+            Span<byte> poolBuffer = arrayFromPool.AsSpan(0, byteCount);
             return ProcessUrl(originalUrl, poolBuffer);
         }
         finally
@@ -58,7 +58,7 @@ public class Sha256HashUrlShortener()
     private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
     {
         // Copy the original URL into the buffer
-        var bytesUsed = Encoding.Unicode.GetBytes(originalUrl, inputBuffer);
+        int bytesUsed = Encoding.Unicode.GetBytes(originalUrl, inputBuffer);
 
         // SHA256 outputs 32 bytes, 256 bits
         Span<byte> hashBuffer = stackalloc byte[32];
