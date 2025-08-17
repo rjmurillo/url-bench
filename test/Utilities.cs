@@ -7,9 +7,8 @@ internal static class Utilities
 {
     internal static bool IsDeterministicHashShortener(IUrlShortener shortener)
     {
-        var shortenerType = shortener.GetType();
-        return shortenerType == typeof(VectorizedUrlShortener) ||
-               shortenerType == typeof(Murmur3HashUrlShortener) ||
-               shortenerType == typeof(Sha256HashUrlShortener);
+        return shortener is VectorizedUrlShortener or
+               Murmur3HashUrlShortener or
+               Sha256HashUrlShortener;
     }
 }
