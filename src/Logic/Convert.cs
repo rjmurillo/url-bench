@@ -8,8 +8,8 @@ namespace Logic;
 /// </summary>
 public static class Convert
 {
-    private const string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private const ulong CharLength = 62UL;
+    private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static readonly ulong CharLength = 62UL;
 
     /// <summary>
     /// Converts a 64-bit unsigned integer to its Base62 string representation.

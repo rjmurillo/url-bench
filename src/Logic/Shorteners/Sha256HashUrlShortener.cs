@@ -41,7 +41,7 @@ public class Sha256HashUrlShortener()
             return ProcessUrl(originalUrl, inputBuffer);
         }
 
-        var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
+        byte[] arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
             Span<byte> poolBuffer = arrayFromPool.AsSpan(0, byteCount);

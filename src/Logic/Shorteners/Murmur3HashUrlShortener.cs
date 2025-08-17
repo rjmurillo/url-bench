@@ -48,7 +48,7 @@ public class Murmur3HashUrlShortener(uint seed)
             return ProcessUrl(originalUrl, inputBuffer);
         }
 
-        var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
+        byte[] arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
             Span<byte> poolBuffer = arrayFromPool.AsSpan(0, byteCount);
