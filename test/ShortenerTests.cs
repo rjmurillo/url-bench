@@ -210,7 +210,7 @@ public class ShortenerTests(ITestOutputHelper output)
         if (Utilities.IsDeterministicHashShortener(shortener))
         {
             // For deterministic hash functions, test thread safety by ensuring consistent output
-            var expectedResult = shortener.ShortenUrl(longUrl);
+            string expectedResult = shortener.ShortenUrl(longUrl);
             expectedResult.ShouldNotBeNullOrWhiteSpace();
 
             Parallel.For(0, upper, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, i =>

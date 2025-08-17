@@ -70,7 +70,7 @@ public class Repository
         _shortUrls = new HashSet<string>(NumberOfUrls, StringComparer.Ordinal);
         _urlManager = new UrlManager(_urlShortener, _repo);
 
-        for (var i = 0; i <= NumberOfUrls; i++)
+        for (int i = 0; i <= NumberOfUrls; i++)
         {
             _shortUrls.Add(_urlManager.ShortenAndSave(LongUrl + i));
         }
@@ -107,7 +107,7 @@ public class Repository
     [Benchmark]
     public string Retrieve_Random()
     {
-        var i = _rnd!.Next(0, NumberOfUrls);
+        int i = _rnd!.Next(0, NumberOfUrls);
         var shortUrl = _shortUrls.ElementAt(i);
         return _urlManager!.GetOriginalUrl(shortUrl);
     }
