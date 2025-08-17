@@ -22,7 +22,20 @@ public class ConfigurationException : Exception
     /// Initializes a new instance of the <see cref="ConfigurationException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    public ConfigurationException(string message) : base(message)
+    public ConfigurationException(string message)
+        : base(message)
+    {
+        ParameterName = string.Empty;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConfigurationException"/> class with a specified error message
+    /// and a reference to the inner exception that is the cause of this exception.
+    /// </summary>
+    /// <param name="message">The error message that explains the reason for the exception.</param>
+    /// <param name="innerException">The exception that is the cause of the current exception.</param>
+    public ConfigurationException(string message, Exception innerException)
+        : base(message, innerException)
     {
         ParameterName = string.Empty;
     }
@@ -36,17 +49,6 @@ public class ConfigurationException : Exception
     /// Gets the value of the configuration parameter that caused the exception.
     /// </summary>
     public string? ParameterValue { get; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ConfigurationException"/> class with a specified error message
-    /// and a reference to the inner exception that is the cause of this exception.
-    /// </summary>
-    /// <param name="message">The error message that explains the reason for the exception.</param>
-    /// <param name="innerException">The exception that is the cause of the current exception.</param>
-    public ConfigurationException(string message, Exception innerException) : base(message, innerException)
-    {
-        ParameterName = string.Empty;
-    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationException"/> class with parameter details.
@@ -81,7 +83,8 @@ public class ConfigurationException : Exception
     /// <param name="info">The <see cref="SerializationInfo"/> that holds the serialized object data about the exception being thrown.</param>
     /// <param name="context">The <see cref="StreamingContext"/> that contains contextual information about the source or destination.</param>
     [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.")]
-    protected ConfigurationException(SerializationInfo info, StreamingContext context) : base(info, context)
+    protected ConfigurationException(SerializationInfo info, StreamingContext context)
+        : base(info, context)
     {
         ParameterName = info.GetString(nameof(ParameterName)) ?? string.Empty;
         ParameterValue = info.GetString(nameof(ParameterValue));

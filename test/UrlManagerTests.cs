@@ -27,7 +27,7 @@ public class UrlManagerTests
         Assert.NotNull(shortUrl);
         Assert.NotEmpty(shortUrl);
         Assert.NotEqual(longUrl, shortUrl);
-        
+
         // Verify the mapping was saved
         var retrievedUrl = urlManager.GetOriginalUrl(shortUrl);
         Assert.Equal(longUrl, retrievedUrl);
