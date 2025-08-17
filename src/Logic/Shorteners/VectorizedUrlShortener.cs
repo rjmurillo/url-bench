@@ -6,6 +6,7 @@ using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
 using Contracts;
+using Logic.Exceptions;
 
 namespace Logic.Shorteners;
 
@@ -102,7 +103,7 @@ public class VectorizedUrlShortener : IUrlShortener
             }
         }
 
-        throw new PlatformNotSupportedException("Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
+        throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -199,6 +200,6 @@ public class VectorizedUrlShortener : IUrlShortener
             }
         }
 
-        throw new ArgumentException("Unsupported vector type for hashing.");
+        throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Unsupported vector type for hashing.");
     }
 }

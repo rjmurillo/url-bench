@@ -1,3 +1,4 @@
+using Logic.Exceptions;
 using Polly;
 using Polly.Retry;
 
@@ -23,17 +24,17 @@ public static class RetryPolicyFactory
 
         if (maxRetries <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(maxRetries), "Max retries must be positive.");
+            throw new ConfigurationException(nameof(maxRetries), maxRetries.ToString(), "Max retries must be positive.");
         }
 
         if (baseDelay <= TimeSpan.Zero)
         {
-            throw new ArgumentOutOfRangeException(nameof(baseDelayMs), "Base delay must be positive.");
+            throw new ConfigurationException(nameof(baseDelayMs), baseDelayMs.ToString(), "Base delay must be positive.");
         }
 
         if (maxDelay < baseDelay)
         {
-            throw new ArgumentOutOfRangeException(nameof(maxDelayMs), "Max delay must be greater than base delay.");
+            throw new ConfigurationException(nameof(maxDelayMs), maxDelayMs.ToString(), "Max delay must be greater than base delay.");
         }
 
         var retry = new RetryStrategyOptions

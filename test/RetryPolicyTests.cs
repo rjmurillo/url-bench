@@ -162,33 +162,33 @@ public class RetryPolicyTests
     }
 
     [Fact]
-    public void CreateRetryPolicy_WithInvalidParameters_ThrowsArgumentOutOfRangeException()
+    public void CreateRetryPolicy_WithInvalidParameters_ThrowsConfigurationException()
     {
         // Test invalid maxRetries
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateRetryPolicy(0, 10));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateRetryPolicy(-1, 10));
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateRetryPolicy(0, 10));
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateRetryPolicy(-1, 10));
 
         // Test invalid baseDelayMs
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateRetryPolicy(3, 0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateRetryPolicy(3, -1));
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateRetryPolicy(3, 0));
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateRetryPolicy(3, -1));
 
         // Test invalid maxDelayMs
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateRetryPolicy(3, 10, 5)); // maxDelay < baseDelay
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateRetryPolicy(3, 10, 5)); // maxDelay < baseDelay
     }
 
     [Fact]
-    public void CreateAsyncRetryPolicy_WithInvalidParameters_ThrowsArgumentOutOfRangeException()
+    public void CreateAsyncRetryPolicy_WithInvalidParameters_ThrowsConfigurationException()
     {
         // Test invalid maxRetries
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(0, 10));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(-1, 10));
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(0, 10));
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(-1, 10));
 
         // Test invalid baseDelayMs
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(3, 0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(3, -1));
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(3, 0));
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(3, -1));
 
         // Test invalid maxDelayMs
-        Assert.Throws<ArgumentOutOfRangeException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(3, 10, 5)); // maxDelay < baseDelay
+        Assert.Throws<Logic.Exceptions.ConfigurationException>(() => RetryPolicyFactory.CreateAsyncRetryPolicy(3, 10, 5)); // maxDelay < baseDelay
     }
 
     [Fact]

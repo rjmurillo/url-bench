@@ -1,6 +1,7 @@
 ﻿using Contracts;
 using Logic.CollisionResolution;
 using Logic.Contracts;
+using Logic.Exceptions;
 using Logic.Retry;
 using Polly;
 
@@ -83,7 +84,7 @@ public sealed class UrlManager(
 
         // Collision with different URL - this is expected in distributed systems
         // Throw exception to trigger Polly retry with different unique shortener
-        throw new InvalidOperationException($"Collision detected for short URL '{shortUrl}'. Retry with different collision resolution strategy.");
+        throw new CollisionException(shortUrl, longUrl, currentValue);
     }
 
     /// <summary>
