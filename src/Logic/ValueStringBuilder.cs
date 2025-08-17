@@ -23,7 +23,7 @@ internal ref struct ValueStringBuilder
 {
     private char[]? _arrayToReturnToPool;
     private Span<char> _chars;
-    private int _pos;
+    private int _pos = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValueStringBuilder"/> struct with the specified initial capacity.
@@ -33,7 +33,6 @@ internal ref struct ValueStringBuilder
     {
         _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
         _chars = _arrayToReturnToPool;
-        _pos = 0;
     }
 
     /// <summary>
