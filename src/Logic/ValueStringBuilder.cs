@@ -51,7 +51,7 @@ internal ref struct ValueStringBuilder
     {
         int pos = _pos;
         Span<char> chars = _chars;
-        if ((uint)pos < (uint)chars.Length)
+        if (pos < chars.Length)
         {
             chars[pos] = c;
             _pos = pos + 1;
@@ -103,7 +103,7 @@ internal ref struct ValueStringBuilder
 
         char[]? toReturn = _arrayToReturnToPool;
         _chars = _arrayToReturnToPool = poolArray;
-        if (toReturn != null)
+        if (toReturn is not null)
         {
             ArrayPool<char>.Shared.Return(toReturn);
         }
@@ -117,7 +117,7 @@ internal ref struct ValueStringBuilder
     {
         char[]? toReturn = _arrayToReturnToPool;
         this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
-        if (toReturn != null)
+        if (toReturn is not null)
         {
             ArrayPool<char>.Shared.Return(toReturn);
         }
