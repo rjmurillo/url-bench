@@ -7,8 +7,15 @@ using Spectre.Console;
 
 namespace Console;
 
+/// <summary>
+/// Provides utility methods for displaying benchmark statistics in a formatted manner.
+/// </summary>
 public static class StatisticsDumper
 {
+    /// <summary>
+    /// Displays the benchmark statistics in a formatted table and handles outlier detection.
+    /// </summary>
+    /// <param name="statistics">The statistics to display.</param>
     public static void Dump(Statistics statistics)
     {
         var table = new Table().RoundedBorder();
@@ -36,7 +43,6 @@ public static class StatisticsDumper
                     ?.Replace("]", "]]");
             }
 
-
             table.AddRow(
                 property.Name,
                 displayValue ?? "[grey]null[/]");
@@ -50,12 +56,12 @@ public static class StatisticsDumper
             true));
 
         var allOutliers = statistics.AllOutliers;
+
         // TODO: Improve
         var actualOutliers = statistics.GetActualOutliers(OutlierMode.RemoveAll);
 
         if (allOutliers.Any())
         {
-
             AnsiConsole.WriteLine(GetMessage(actualOutliers, allOutliers, statistics.LowerOutliers, statistics.UpperOutliers, CultureInfo.CurrentUICulture));
 
             statistics = new Statistics(statistics.OriginalValues.Except(allOutliers));
@@ -63,10 +69,21 @@ public static class StatisticsDumper
         }
     }
 
+    /// <summary>
+    /// Generates a message describing the outlier detection and removal process.
+    /// </summary>
+    /// <param name="actualOutliers">The actual outliers that were removed.</param>
+    /// <param name="allOutliers">All detected outliers.</param>
+    /// <param name="lowerOutliers">Lower outliers.</param>
+    /// <param name="upperOutliers">Upper outliers.</param>
+    /// <param name="cultureInfo">The culture information for formatting.</param>
+    /// <returns>A formatted message describing the outlier processing.</returns>
     public static string GetMessage(double[] actualOutliers, double[] allOutliers, double[] lowerOutliers, double[] upperOutliers, CultureInfo cultureInfo)
     {
         if (allOutliers.Length == 0)
+        {
             return string.Empty;
+        }
 
         string Format(int n, string verb)
         {
@@ -81,9 +98,15 @@ public static class StatisticsDumper
             : string.Empty;
 
         if (actualOutliers.Length == allOutliers.Length)
+        {
             return Format(actualOutliers.Length, "removed") + rangeMessage;
+        }
+
         if (actualOutliers.Length == 0)
+        {
             return Format(allOutliers.Length, "detected") + rangeMessage;
+        }
+
         return Format(actualOutliers.Length, "removed") + ", " + Format(allOutliers.Length, "detected") + rangeMessage;
     }
 
@@ -96,7 +119,7 @@ public static class StatisticsDumper
             0 => null,
             1 => Format(values.First()),
             2 => Format(values.Min()) + ", " + Format(values.Max()),
-            _ => Format(values.Min()) + ".." + Format(values.Max())
+            _ => Format(values.Min()) + ".." + Format(values.Max()),
         };
     }
 }

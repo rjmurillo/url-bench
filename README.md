@@ -33,6 +33,11 @@ The code is split into the following:
     - `IMemoryCache` using [ASP.NET Core's built in memory-based cache](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/memory?view=aspnetcore-8.0)
     - `Partitioned` using a naive array of `Dictionary<string,string>` and `ReaderWriterLockSlim`.
     - `ReaderWriterLockSlim` using a single `Diction<string,string>` and `ReaderWriterLockSlim`
+  - Collision Resolution Strategies
+    - `NullCollisionResolutionStrategy` - No collision resolution (default, suitable for single-instance deployments)
+    - `SuffixCollisionResolutionStrategy` - Simple suffix-based approach for single-instance deployments
+    - `UuidCollisionResolutionStrategy` - UUID-based approach for distributed systems
+    - `TimestampCollisionResolutionStrategy` - Timestamp-based approach for time-ordered systems
 - `src/Console` = Console application for running throughput benchmarks
 - `src/Benchmark` = BenchmarkDotNet project to benchmark shorteners and repositories
 - `test` = A suite of tests for the shorteners and repositories
@@ -65,6 +70,7 @@ The console program has options:
 -n <NUMBER OF URLS>
 -u <URL TO USE FOR BENCHMARK>
 -s <STORAGE TYPE>
+-c <COLLISION RESOLUTION STRATEGY>
 -p <DEGREES OF PARALLELISM>
 ```
 
@@ -73,7 +79,7 @@ The console program has options:
 Running the console will provide output similar to the following vectorized shortener:
 
 ```sh
-./Console -t VectorizedUrlShortener -s ConcurrentUrlRepository
+./Console -t VectorizedUrlShortener -s ConcurrentUrlRepository -c UuidCollisionResolutionStrategy
 ```
 
 ### Console Output
@@ -83,6 +89,7 @@ If no options are specified, the defaults are the following:
 ```
 -t IncrementingIntegerUrlShortener
 -s FASTERUrlRepository
+-c NullCollisionResolutionStrategy
 -i 3
 -n 10000000
 -u https://www.microsoft.com/en-us/security/business/endpoint-security/microsoft-defender-endpoint
@@ -100,6 +107,7 @@ Output of Console is similar to the following:
 │                        │ point                                                                                      │
 │ StorageType            │ FASTERUrlRepository                                                                        │
 │ ShortenerType          │ IncrementingIntegerUrlShortener                                                            │
+│ CollisionStrategyType  │ NullCollisionResolutionStrategy                                                            │
 │ MaxDegreeOfParallelism │ 1                                                                                          │
 ╰────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────╯
 Iteration 1: Total time to upsert 10,000,000 elements: 0.012 secs (833,333,333 inserts/sec)

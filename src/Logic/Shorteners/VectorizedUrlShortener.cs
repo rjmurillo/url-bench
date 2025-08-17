@@ -1,18 +1,34 @@
-﻿using System.Text;
-using Contracts;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
-using System.Runtime.Intrinsics.Arm;
-using System.Runtime.InteropServices;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
+using System.Text;
+using Contracts;
+using Logic.Exceptions;
 
 namespace Logic.Shorteners;
 
 // TODO: Refactor this to separate classes for each of the hashing strategies
 // TODO: Refactor to become a facade based on capabilities detected at runtime
+
+/// <summary>
+/// A URL shortener that generates short URLs using vectorized hashing algorithms.
+/// </summary>
 public class VectorizedUrlShortener : IUrlShortener
 {
+    /// <summary>
+    /// Shortens the specified original URL by generating a unique short URL using vectorized hashing.
+    /// </summary>
+    /// <param name="originalUrl">The original (long) URL to shorten. May be any valid URL string.</param>
+    /// <returns>
+    /// A case-sensitive slug consisting exclusively of characters.
+    /// The value contains no scheme, host, or path prefix and has no leading or trailing slashes.
+    /// The slug is not URL-encoded and is intended to be used as a single path segment
+    /// (e.g., compose the full URL externally via $"https://sho.rt/{slug}").
+    /// Returns an empty string if <paramref name="originalUrl"/> is null, empty, or whitespace.
+    /// </returns>
     public string ShortenUrl(string originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))
@@ -20,20 +36,21 @@ public class VectorizedUrlShortener : IUrlShortener
             return string.Empty;
         }
 
-        var byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
+        int charCount = originalUrl.Length;
+        int byteCount = charCount * sizeof(char); // exact byte count
 
         // Decide between stackalloc and ArrayPool
         if (byteCount <= Constants.MaxStackSize)
         {
             Span<byte> inputBuffer = stackalloc byte[byteCount];
-            return ProcessUrl(originalUrl, inputBuffer);
+            return ProcessUrl(originalUrl, inputBuffer, charCount, byteCount);
         }
 
         var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
             var poolBuffer = arrayFromPool.AsSpan(0, byteCount);
-            return ProcessUrl(originalUrl, poolBuffer);
+            return ProcessUrl(originalUrl, poolBuffer, charCount, byteCount);
         }
         finally
         {
@@ -42,14 +59,14 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
+    private string ProcessUrl(string originalUrl, Span<byte> bytes, int charCount, int byteCount)
     {
-        Span<char> charBuffer = MemoryMarshal.Cast<byte, char>(inputBuffer); // Reinterpret the byte buffer as char buffer
+        // Reinterpret as char[] of EXACT length, then back to bytes of EXACT length
+        var chars = MemoryMarshal.Cast<byte, char>(bytes)[..charCount];
+        originalUrl.AsSpan().CopyTo(chars);
 
-        originalUrl.AsSpan().CopyTo(charBuffer); // Copy the original URL into the char buffer
-        Span<byte> byteBuffer = MemoryMarshal.Cast<char, byte>(charBuffer); // Reinterpret the byte buffer as char buffer
-
-        var value = FlexibleHash(byteBuffer);
+        // Only hash the bytes written
+        var value = FlexibleHash(bytes[..byteCount]);
 
         Span<char> base62Buffer = stackalloc char[Math.Min(Convert.DetermineBufferLength(value), Constants.MaxSlugLength)];
         Convert.AsBase62String(value, ref base62Buffer);
@@ -66,7 +83,6 @@ public class VectorizedUrlShortener : IUrlShortener
 #endif
             )
         {
-
             return ComputeHash256(data);
         }
 
@@ -87,7 +103,7 @@ public class VectorizedUrlShortener : IUrlShortener
             }
         }
 
-        throw new PlatformNotSupportedException("Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
+        throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -105,8 +121,7 @@ public class VectorizedUrlShortener : IUrlShortener
                 BitConverter.ToUInt32(data.Slice(i + 16, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 20, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 24, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 28, 4))
-            );
+                BitConverter.ToUInt32(data.Slice(i + 28, 4)));
             hash = Avx2.Xor(hash, block);
         }
 
@@ -124,8 +139,7 @@ public class VectorizedUrlShortener : IUrlShortener
                 BitConverter.ToUInt32(data.Slice(i, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 4, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 8, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 12, 4))
-            );
+                BitConverter.ToUInt32(data.Slice(i + 12, 4)));
             hash = Sse2.Xor(hash, block);
         }
 
@@ -143,8 +157,7 @@ public class VectorizedUrlShortener : IUrlShortener
                 BitConverter.ToUInt32(data.Slice(i, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 4, 4)),
                 BitConverter.ToUInt32(data.Slice(i + 8, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 12, 4))
-            );
+                BitConverter.ToUInt32(data.Slice(i + 12, 4)));
             hash = AdvSimd.Xor(hash, block);
         }
 
@@ -152,7 +165,8 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ReduceHashToUInt64<T>(T hash) where T : struct
+    private static ulong ReduceHashToUInt64<T>(T hash)
+        where T : struct
     {
         if (hash is Vector256<uint> v256)
         {
@@ -186,6 +200,6 @@ public class VectorizedUrlShortener : IUrlShortener
             }
         }
 
-        throw new ArgumentException("Unsupported vector type for hashing.");
+        throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Unsupported vector type for hashing.");
     }
 }

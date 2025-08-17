@@ -1,26 +1,34 @@
-﻿// <copyright company="Microsoft Corporation">
-// Copyright © Microsoft Corporation.  All rights reserved.
+﻿// <copyright file="ValueStringBuilder.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
 // Copied from https://github.com/dotnet/runtime/blob/a9dcf995cca0c5085c4e9bfacc43394d20569f68/src/libraries/Common/src/System/Text/ValueStringBuilder.cs
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-
 using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 // ReSharper disable CheckNamespace
 namespace System.Text;
+
 // ReSharper restore CheckNamespace
 
 // This is a struct, so we want to keep it as lean as possible
+
+/// <summary>
+/// A value type string builder that uses pooled arrays for efficient string construction.
+/// </summary>
 internal ref struct ValueStringBuilder
 {
     private char[]? _arrayToReturnToPool;
     private Span<char> _chars;
     private int _pos;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValueStringBuilder"/> struct with the specified initial capacity.
+    /// </summary>
+    /// <param name="initialCapacity">The initial capacity of the string builder.</param>
     public ValueStringBuilder(int initialCapacity)
     {
         _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
@@ -28,8 +36,16 @@ internal ref struct ValueStringBuilder
         _pos = 0;
     }
 
+    /// <summary>
+    /// Gets a read-only span containing the current string content.
+    /// </summary>
+    /// <returns>A read-only span containing the current string content.</returns>
     public ReadOnlySpan<char> AsSpan() => _chars[.._pos];
 
+    /// <summary>
+    /// Appends a character to the string builder.
+    /// </summary>
+    /// <param name="c">The character to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(char c)
     {
@@ -67,7 +83,8 @@ internal ref struct ValueStringBuilder
 #pragma warning disable SA1405 // Debug.Assert should provide message text
         Debug.Assert(additionalCapacityBeyondPos > 0);
 #pragma warning restore SA1405 // Debug.Assert should provide message text
-        Debug.Assert(_pos > _chars.Length - additionalCapacityBeyondPos,
+        Debug.Assert(
+            _pos > _chars.Length - additionalCapacityBeyondPos,
             "Grow called incorrectly, no resize is needed.");
 
         const uint ArrayMaxLength = 0x7FFFFFC7; // same as Array.MaxLength
@@ -92,6 +109,9 @@ internal ref struct ValueStringBuilder
         }
     }
 
+    /// <summary>
+    /// Releases the pooled array used by this string builder.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {

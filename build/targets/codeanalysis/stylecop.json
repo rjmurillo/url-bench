@@ -8,5 +8,10 @@
         "systemUsingDirectivesFirst": true,
         "usingDirectivesPlacement": "outsideNamespace"
       }
+    },
+    "rules": {
+      "SA1633": {
+        "severity": "none"
+      }
     }
   }

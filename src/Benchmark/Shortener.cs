@@ -8,42 +8,58 @@ using Logic;
 using Logic.Shorteners;
 
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
+
 // GC and Memory allocation
 [MemoryDiagnoser]
-//[DotTraceDiagnoser]
+
+// [DotTraceDiagnoser]
 // Profile the code
-//[EtwProfiler]
+// [EtwProfiler]
 // Get details about what the JIT is doing
 [JitStatsDiagnoser]
 [GcServer(true)]
 [SimpleJob(RunStrategy.Throughput)]
+/// <summary>
+/// Benchmark class for testing URL shortener performance.
+/// </summary>
 public class Shortener
 {
     private IUrlShortener? _urlShortener;
 
+    /// <summary>
+    /// Gets or sets the type of URL shortener to benchmark.
+    /// </summary>
     [Params(
-        typeof(IncrementingIntegerUrlShortener)
-        , typeof(SnowflakeUrlShortener)
-        , typeof(Sha256HashUrlShortener)
-        , typeof(Murmur3HashUrlShortener)
-        , typeof(VectorizedUrlShortener)
-    )]
+        typeof(IncrementingIntegerUrlShortener),
+        typeof(SnowflakeUrlShortener),
+        typeof(Sha256HashUrlShortener),
+        typeof(Murmur3HashUrlShortener),
+        typeof(VectorizedUrlShortener))]
     public Type? ShortenerType;
 
+    /// <summary>
+    /// Gets or sets the long URL to use for benchmarking.
+    /// </summary>
     [Params(
-        "https://jobs.careers.microsoft.com/us/en/job/1613473"
-    )]
+        "https://jobs.careers.microsoft.com/us/en/job/1613473")]
     public string? LongUrl;
 
+    /// <summary>
+    /// Sets up the benchmark by creating the specified URL shortener instance.
+    /// </summary>
     [GlobalSetup]
     public void Setup()
     {
         _urlShortener = Factory.CreateShortener(ShortenerType);
     }
 
+    /// <summary>
+    /// Benchmarks the URL shortening operation.
+    /// </summary>
+    /// <returns>The shortened URL.</returns>
     [Benchmark]
     public string Shorten()
     {
-        return _urlShortener.ShortenUrl(LongUrl);
+        return _urlShortener!.ShortenUrl(LongUrl);
     }
 }
