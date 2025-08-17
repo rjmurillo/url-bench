@@ -11,16 +11,6 @@ namespace Logic.Exceptions;
 public class ConfigurationException : Exception
 {
     /// <summary>
-    /// Gets the name of the configuration parameter that caused the exception.
-    /// </summary>
-    public string ParameterName { get; }
-
-    /// <summary>
-    /// Gets the value of the configuration parameter that caused the exception.
-    /// </summary>
-    public string? ParameterValue { get; }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationException"/> class.
     /// </summary>
     public ConfigurationException()
@@ -36,6 +26,16 @@ public class ConfigurationException : Exception
     {
         ParameterName = string.Empty;
     }
+
+    /// <summary>
+    /// Gets the name of the configuration parameter that caused the exception.
+    /// </summary>
+    public string ParameterName { get; }
+
+    /// <summary>
+    /// Gets the value of the configuration parameter that caused the exception.
+    /// </summary>
+    public string? ParameterValue { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationException"/> class with a specified error message

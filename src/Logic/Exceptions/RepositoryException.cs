@@ -11,16 +11,6 @@ namespace Logic.Exceptions;
 public class RepositoryException : Exception
 {
     /// <summary>
-    /// Gets the operation that was being performed when the exception occurred.
-    /// </summary>
-    public string Operation { get; }
-
-    /// <summary>
-    /// Gets the key that was being operated on (e.g., short URL).
-    /// </summary>
-    public string? Key { get; }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="RepositoryException"/> class.
     /// </summary>
     public RepositoryException()
@@ -36,6 +26,16 @@ public class RepositoryException : Exception
     {
         Operation = string.Empty;
     }
+
+    /// <summary>
+    /// Gets the operation that was being performed when the exception occurred.
+    /// </summary>
+    public string Operation { get; }
+
+    /// <summary>
+    /// Gets the key that was being operated on (e.g., short URL).
+    /// </summary>
+    public string? Key { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RepositoryException"/> class with a specified error message

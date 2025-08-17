@@ -11,16 +11,6 @@ namespace Logic.Exceptions;
 public class ShortenerException : Exception
 {
     /// <summary>
-    /// Gets the original URL that was being shortened when the exception occurred.
-    /// </summary>
-    public string OriginalUrl { get; }
-
-    /// <summary>
-    /// Gets the shortener type that was being used.
-    /// </summary>
-    public string ShortenerType { get; }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="ShortenerException"/> class.
     /// </summary>
     public ShortenerException()
@@ -38,6 +28,16 @@ public class ShortenerException : Exception
         OriginalUrl = string.Empty;
         ShortenerType = string.Empty;
     }
+
+    /// <summary>
+    /// Gets the original URL that was being shortened when the exception occurred.
+    /// </summary>
+    public string OriginalUrl { get; }
+
+    /// <summary>
+    /// Gets the shortener type that was being used.
+    /// </summary>
+    public string ShortenerType { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ShortenerException"/> class with a specified error message
