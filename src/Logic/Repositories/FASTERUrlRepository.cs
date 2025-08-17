@@ -69,13 +69,13 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
             // Check if key already exists
             var existingValue = string.Empty;
             var readStatus = _session.Read(ref shortUrl, ref existingValue);
-            
+
             if (readStatus.IsCompletedSuccessfully && !string.IsNullOrEmpty(existingValue))
             {
                 currentValue = existingValue;
                 return false;
             }
-            
+
             // Key doesn't exist, save it
             var status = _session.Upsert(ref shortUrl, ref originalUrl);
             currentValue = null;
@@ -85,7 +85,7 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
         // Check if current value matches expected
         var current = string.Empty;
         var readResult = _session.Read(ref shortUrl, ref current);
-        
+
         if (readResult.IsCompletedSuccessfully && !string.IsNullOrEmpty(current))
         {
             if (string.Equals(current, expectedValue, StringComparison.Ordinal))

@@ -78,7 +78,7 @@ public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
                 currentValue = existing;
                 return false;
             }
-            
+
             // Key doesn't exist, save it
             _cache.Set(shortUrl, originalUrl, Options);
             currentValue = null;

@@ -1,8 +1,8 @@
-﻿using Contracts;
-using NonBlocking;
-using System.Text;
+﻿using System.Text;
 using System.Web;
 using Contracts;
+using Contracts;
+using NonBlocking;
 using NonBlocking;
 
 namespace UrlConverterPermutations;
@@ -174,8 +174,8 @@ public class ShortenerTests(ITestOutputHelper output)
             var firstResult = shortener.ShortenUrl(longUrl);
             firstResult.ShouldNotBeNullOrWhiteSpace();
 
-        for (var i = 0UL; i < upper; i++)
-        {
+            for (var i = 0UL; i < upper; i++)
+            {
                 var result = shortener.ShortenUrl(longUrl);
                 result.ShouldNotBeNullOrWhiteSpace();
                 result.ShouldBe(firstResult); // Should always be the same for deterministic hash functions
@@ -186,12 +186,12 @@ public class ShortenerTests(ITestOutputHelper output)
             // For non-deterministic shorteners, test for uniqueness across many iterations
             for (var i = 0UL; i < upper; i++)
             {
-            var a = shortener.ShortenUrl(longUrl);
+                var a = shortener.ShortenUrl(longUrl);
 
-            a.ShouldNotBeNullOrWhiteSpace();
-            hs.Add(a).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
+                a.ShouldNotBeNullOrWhiteSpace();
+                hs.Add(a).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
+            }
         }
-    }
     }
 
     /// <summary>
@@ -213,8 +213,8 @@ public class ShortenerTests(ITestOutputHelper output)
             var expectedResult = shortener.ShortenUrl(longUrl);
             expectedResult.ShouldNotBeNullOrWhiteSpace();
 
-        Parallel.For(0, upper, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, i =>
-        {
+            Parallel.For(0, upper, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, i =>
+            {
                 var result = shortener.ShortenUrl(longUrl);
                 result.ShouldNotBeNullOrWhiteSpace();
                 result.ShouldBe(expectedResult); // Should always be the same for deterministic hash functions
@@ -225,11 +225,11 @@ public class ShortenerTests(ITestOutputHelper output)
             // For non-deterministic shorteners, test for uniqueness in parallel execution
             Parallel.For(0, upper, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, i =>
             {
-            var a = shortener.ShortenUrl(longUrl);
+                var a = shortener.ShortenUrl(longUrl);
 
-            a.ShouldNotBeNullOrWhiteSpace();
-            hs.TryAdd(a, byte.MinValue).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
-        });
+                a.ShouldNotBeNullOrWhiteSpace();
+                hs.TryAdd(a, byte.MinValue).ShouldBeTrue($"Duplicate detected after {i} iterations: {a}");
+            });
+        }
     }
-}
 }

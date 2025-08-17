@@ -1,16 +1,16 @@
-﻿using System.Text;
-using Contracts;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
-using System.Runtime.Intrinsics.Arm;
-using System.Runtime.InteropServices;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
+using System.Text;
+using Contracts;
 using Contracts;
 
 namespace Logic.Shorteners;
@@ -88,7 +88,6 @@ public class VectorizedUrlShortener : IUrlShortener
 #endif
             )
         {
-
             return ComputeHash256(data);
         }
 

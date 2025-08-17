@@ -54,7 +54,7 @@ public class FastCacheUrlRepository : UrlRepositoryBase, IDisposable
                 currentValue = existing.Value;
                 return false;
             }
-            
+
             // Key doesn't exist, save it
             Cached<string>.Save(shortUrl, originalUrl, TimeSpan.MaxValue);
             currentValue = null;

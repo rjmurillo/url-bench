@@ -84,7 +84,7 @@ public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase
                     currentValue = existing;
                     return false;
                 }
-                
+
                 // Key doesn't exist, add it
                 _urlMappings[shortUrl] = originalUrl;
                 currentValue = null;

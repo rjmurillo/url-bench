@@ -241,7 +241,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
                             sw.Stop();
                             readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({ settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} reads/sec)");
+                            AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} reads/sec)");
                             sw.Reset();
                         }
                     }

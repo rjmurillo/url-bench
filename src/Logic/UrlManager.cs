@@ -21,14 +21,14 @@ public sealed class UrlManager(IUrlShortener? shortener, IUrlRepository? reposit
     /// <summary>
     /// Shortens the specified long URL and saves the mapping to the repository using optimistic concurrency control.
     /// This method is optimized for distributed systems with high throughput while maintaining shortening safety.
-    /// 
+    ///
     /// Key features:
     /// - Optimistic concurrency control for high throughput
     /// - Exponential backoff with jitter for retry attempts
     /// - Automatic collision resolution using unique shortener
     /// - Strong consistency guarantees within regions
     /// - Idempotent behavior for the same input URL
-    /// - Preserves original URL integrity (no modification)
+    /// - Preserves original URL integrity (no modification).
     /// </summary>
     /// <param name="longUrl">The long URL to shorten.</param>
     /// <returns>The generated short URL.</returns>
@@ -59,7 +59,7 @@ public sealed class UrlManager(IUrlShortener? shortener, IUrlRepository? reposit
             // Exponential backoff with jitter (except on last attempt)
             if (attempt < _maxRetries)
             {
-                var delayMs = _baseRetryDelayMs * (1 << attempt) + _random.Next(_baseRetryDelayMs);
+                var delayMs = (_baseRetryDelayMs * (1 << attempt)) + _random.Next(_baseRetryDelayMs);
                 Thread.Sleep(delayMs);
             }
         }
@@ -117,7 +117,7 @@ public sealed class UrlManager(IUrlShortener? shortener, IUrlRepository? reposit
         // This could be a distributed counter, UUID-based shortener, or timestamp-based approach
         // For now, we'll use a simple approach with attempt number as a suffix
         var baseShortUrl = _shortener.ShortenUrl(longUrl);
-        
+
         // Append a unique suffix to avoid collisions while preserving the base shortener's output
         // This maintains the relationship to the original URL while ensuring uniqueness
         return $"{baseShortUrl}{attempt}";

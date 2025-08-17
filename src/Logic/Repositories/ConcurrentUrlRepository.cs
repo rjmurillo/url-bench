@@ -64,7 +64,7 @@ public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRe
                 currentValue = null;
                 return true;
             }
-            
+
             currentValue = _urlMappings[shortUrl];
             return false;
         }
@@ -81,7 +81,7 @@ public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRe
                     currentValue = null;
                     return true;
                 }
-                
+
                 currentValue = existingValue;
                 return false;
             }
