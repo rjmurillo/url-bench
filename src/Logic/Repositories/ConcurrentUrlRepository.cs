@@ -46,6 +46,61 @@ public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRe
     }
 
     /// <summary>
+    /// Attempts to save a URL mapping using optimistic concurrency control.
+    /// </summary>
+    /// <param name="shortUrl">The short URL to use as the key.</param>
+    /// <param name="originalUrl">The original URL to associate with the short URL.</param>
+    /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
+    /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
+    /// <returns>true if the save operation was successful; otherwise, false.</returns>
+    public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
+    {
+        // If expectedValue is null, we expect the key to not exist
+        if (expectedValue is null)
+        {
+            var success = _urlMappings.TryAdd(shortUrl, originalUrl);
+            if (success)
+            {
+                currentValue = null;
+                return true;
+            }
+            
+            currentValue = _urlMappings[shortUrl];
+            return false;
+        }
+
+        // If expectedValue is provided, we need to check if the current value matches
+        if (_urlMappings.TryGetValue(shortUrl, out var existingValue))
+        {
+            if (string.Equals(existingValue, expectedValue, StringComparison.Ordinal))
+            {
+                // Current value matches expected, update to new value
+                var success = _urlMappings.TryUpdate(shortUrl, originalUrl, expectedValue);
+                if (success)
+                {
+                    currentValue = null;
+                    return true;
+                }
+                
+                currentValue = existingValue;
+                return false;
+            }
+            else
+            {
+                // Current value doesn't match expected
+                currentValue = existingValue;
+                return false;
+            }
+        }
+        else
+        {
+            // Key doesn't exist, but we expected it to exist with expectedValue
+            currentValue = null;
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Releases the unmanaged resources used by the ConcurrentUrlRepository and optionally releases the managed resources.
     /// </summary>
     public void Dispose()

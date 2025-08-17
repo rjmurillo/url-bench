@@ -64,6 +64,64 @@ public class ReaderWriterLockSlimUrlRepository(int capacity) : UrlRepositoryBase
     }
 
     /// <summary>
+    /// Attempts to save a URL mapping using optimistic concurrency control.
+    /// </summary>
+    /// <param name="shortUrl">The short URL to use as the key.</param>
+    /// <param name="originalUrl">The original URL to associate with the short URL.</param>
+    /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
+    /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
+    /// <returns>true if the save operation was successful; otherwise, false.</returns>
+    public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
+    {
+        _lock.EnterWriteLock();
+        try
+        {
+            // If expectedValue is null, we expect the key to not exist
+            if (expectedValue is null)
+            {
+                if (_urlMappings.TryGetValue(shortUrl, out var existing))
+                {
+                    currentValue = existing;
+                    return false;
+                }
+                
+                // Key doesn't exist, add it
+                _urlMappings[shortUrl] = originalUrl;
+                currentValue = null;
+                return true;
+            }
+
+            // If expectedValue is provided, we need to check if the current value matches
+            if (_urlMappings.TryGetValue(shortUrl, out var current))
+            {
+                if (string.Equals(current, expectedValue, StringComparison.Ordinal))
+                {
+                    // Current value matches expected, update to new value
+                    _urlMappings[shortUrl] = originalUrl;
+                    currentValue = null;
+                    return true;
+                }
+                else
+                {
+                    // Current value doesn't match expected
+                    currentValue = current;
+                    return false;
+                }
+            }
+            else
+            {
+                // Key doesn't exist, but we expected it to exist with expectedValue
+                currentValue = null;
+                return false;
+            }
+        }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
+    }
+
+    /// <summary>
     /// Releases the unmanaged resources used by the ReaderWriterLockSlimUrlRepository and optionally releases the managed resources.
     /// </summary>
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>

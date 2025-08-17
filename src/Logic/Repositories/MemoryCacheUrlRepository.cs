@@ -59,6 +59,58 @@ public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
     }
 
     /// <summary>
+    /// Attempts to save a URL mapping using optimistic concurrency control.
+    /// Note: MemoryCache doesn't support conditional operations, so this is a simplified implementation.
+    /// </summary>
+    /// <param name="shortUrl">The short URL to use as the key.</param>
+    /// <param name="originalUrl">The original URL to associate with the short URL.</param>
+    /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
+    /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
+    /// <returns>true if the save operation was successful; otherwise, false.</returns>
+    public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
+    {
+        // MemoryCache doesn't support conditional operations, so we implement a simplified version
+        if (expectedValue is null)
+        {
+            // Check if key already exists
+            if (_cache.TryGetValue(shortUrl, out string? existing))
+            {
+                currentValue = existing;
+                return false;
+            }
+            
+            // Key doesn't exist, save it
+            _cache.Set(shortUrl, originalUrl, Options);
+            currentValue = null;
+            return true;
+        }
+
+        // Check if current value matches expected
+        if (_cache.TryGetValue(shortUrl, out string? current))
+        {
+            if (string.Equals(current, expectedValue, StringComparison.Ordinal))
+            {
+                // Update the value
+                _cache.Set(shortUrl, originalUrl, Options);
+                currentValue = null;
+                return true;
+            }
+            else
+            {
+                // Value doesn't match expected
+                currentValue = current;
+                return false;
+            }
+        }
+        else
+        {
+            // Key doesn't exist but we expected it to
+            currentValue = null;
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Releases the unmanaged resources used by the MemoryCacheUrlRepository and optionally releases the managed resources.
     /// </summary>
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>

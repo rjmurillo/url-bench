@@ -35,6 +35,58 @@ public class FastCacheUrlRepository : UrlRepositoryBase, IDisposable
     }
 
     /// <summary>
+    /// Attempts to save a URL mapping using optimistic concurrency control.
+    /// Note: FastCache doesn't support conditional operations, so this is a simplified implementation.
+    /// </summary>
+    /// <param name="shortUrl">The short URL to use as the key.</param>
+    /// <param name="originalUrl">The original URL to associate with the short URL.</param>
+    /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
+    /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
+    /// <returns>true if the save operation was successful; otherwise, false.</returns>
+    public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
+    {
+        // FastCache doesn't support conditional operations, so we implement a simplified version
+        if (expectedValue is null)
+        {
+            // Check if key already exists
+            if (Cached<string>.TryGet(shortUrl, out var existing))
+            {
+                currentValue = existing.Value;
+                return false;
+            }
+            
+            // Key doesn't exist, save it
+            Cached<string>.Save(shortUrl, originalUrl, TimeSpan.MaxValue);
+            currentValue = null;
+            return true;
+        }
+
+        // Check if current value matches expected
+        if (Cached<string>.TryGet(shortUrl, out var current))
+        {
+            if (string.Equals(current.Value, expectedValue, StringComparison.Ordinal))
+            {
+                // Update the value
+                Cached<string>.Save(shortUrl, originalUrl, TimeSpan.MaxValue);
+                currentValue = null;
+                return true;
+            }
+            else
+            {
+                // Value doesn't match expected
+                currentValue = current.Value;
+                return false;
+            }
+        }
+        else
+        {
+            // Key doesn't exist but we expected it to
+            currentValue = null;
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Releases the unmanaged resources used by the FastCacheUrlRepository and optionally releases the managed resources.
     /// </summary>
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>

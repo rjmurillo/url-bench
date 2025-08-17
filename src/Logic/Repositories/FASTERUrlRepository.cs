@@ -28,30 +28,6 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     }
 
     /// <summary>
-    /// Releases the unmanaged resources used by the FASTERUrlRepository and optionally releases the managed resources.
-    /// </summary>
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Releases the unmanaged resources used by the FASTERUrlRepository and optionally releases the managed resources.
-    /// </summary>
-    /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            // Dispose managed resources
-            _session.Dispose();
-            _settings.Dispose();
-            _store.Dispose();
-        }
-    }
-
-    /// <summary>
     /// Retrieves the original URL associated with the specified short URL.
     /// </summary>
     /// <param name="shortUrl">The short URL to look up.</param>
@@ -74,5 +50,87 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     {
         var status = _session.Upsert(ref shortUrl, ref originalUrl);
         return status.IsCompletedSuccessfully;
+    }
+
+    /// <summary>
+    /// Attempts to save a URL mapping using optimistic concurrency control.
+    /// Note: FASTER doesn't support conditional operations, so this is a simplified implementation.
+    /// </summary>
+    /// <param name="shortUrl">The short URL to use as the key.</param>
+    /// <param name="originalUrl">The original URL to associate with the short URL.</param>
+    /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
+    /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
+    /// <returns>true if the save operation was successful; otherwise, false.</returns>
+    public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
+    {
+        // FASTER doesn't support conditional operations, so we implement a simplified version
+        if (expectedValue is null)
+        {
+            // Check if key already exists
+            var existingValue = string.Empty;
+            var readStatus = _session.Read(ref shortUrl, ref existingValue);
+            
+            if (readStatus.IsCompletedSuccessfully && !string.IsNullOrEmpty(existingValue))
+            {
+                currentValue = existingValue;
+                return false;
+            }
+            
+            // Key doesn't exist, save it
+            var status = _session.Upsert(ref shortUrl, ref originalUrl);
+            currentValue = null;
+            return status.IsCompletedSuccessfully;
+        }
+
+        // Check if current value matches expected
+        var current = string.Empty;
+        var readResult = _session.Read(ref shortUrl, ref current);
+        
+        if (readResult.IsCompletedSuccessfully && !string.IsNullOrEmpty(current))
+        {
+            if (string.Equals(current, expectedValue, StringComparison.Ordinal))
+            {
+                // Update the value
+                var status = _session.Upsert(ref shortUrl, ref originalUrl);
+                currentValue = null;
+                return status.IsCompletedSuccessfully;
+            }
+            else
+            {
+                // Value doesn't match expected
+                currentValue = current;
+                return false;
+            }
+        }
+        else
+        {
+            // Key doesn't exist but we expected it to
+            currentValue = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Releases the unmanaged resources used by the FASTERUrlRepository and optionally releases the managed resources.
+    /// </summary>
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases the unmanaged resources used by the FASTERUrlRepository and optionally releases the managed resources.
+    /// </summary>
+    /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // Dispose managed resources
+            _session.Dispose();
+            _settings.Dispose();
+            _store.Dispose();
+        }
     }
 }

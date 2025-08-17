@@ -82,6 +82,69 @@ public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Attempts to save a URL mapping using optimistic concurrency control.
+    /// </summary>
+    /// <param name="shortUrl">The short URL to use as the key.</param>
+    /// <param name="originalUrl">The original URL to associate with the short URL.</param>
+    /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
+    /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
+    /// <returns>true if the save operation was successful; otherwise, false.</returns>
+    public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
+    {
+        var partition = GetPartition(shortUrl.AsMemory());
+        var l = _locks[partition];
+
+        l.EnterWriteLock();
+        try
+        {
+            var partitionDict = _partitions[partition];
+
+            // If expectedValue is null, we expect the key to not exist
+            if (expectedValue is null)
+            {
+                if (partitionDict.TryGetValue(shortUrl, out var existing))
+                {
+                    currentValue = existing;
+                    return false;
+                }
+                
+                // Key doesn't exist, add it
+                partitionDict[shortUrl] = originalUrl;
+                currentValue = null;
+                return true;
+            }
+
+            // If expectedValue is provided, we need to check if the current value matches
+            if (partitionDict.TryGetValue(shortUrl, out var current))
+            {
+                if (string.Equals(current, expectedValue, StringComparison.Ordinal))
+                {
+                    // Current value matches expected, update to new value
+                    partitionDict[shortUrl] = originalUrl;
+                    currentValue = null;
+                    return true;
+                }
+                else
+                {
+                    // Current value doesn't match expected
+                    currentValue = current;
+                    return false;
+                }
+            }
+            else
+            {
+                // Key doesn't exist, but we expected it to exist with expectedValue
+                currentValue = null;
+                return false;
+            }
+        }
+        finally
+        {
+            l.ExitWriteLock();
+        }
+    }
+
     private int GetPartition(ReadOnlyMemory<char> key) => Math.Abs(MemoryStringEqualityComparer.Ordinal.GetHashCode(key) % _partitions.Length);
 
     /// <summary>
