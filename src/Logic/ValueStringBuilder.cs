@@ -49,8 +49,8 @@ internal ref struct ValueStringBuilder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(char c)
     {
-        var pos = _pos;
-        var chars = _chars;
+        int pos = _pos;
+        Span<char> chars = _chars;
         if ((uint)pos < (uint)chars.Length)
         {
             chars[pos] = c;
@@ -91,17 +91,17 @@ internal ref struct ValueStringBuilder
 
         // Increase to at least the required size (_pos + additionalCapacityBeyondPos), but try
         // to double the size if possible, bounding the doubling to not go beyond the max array length.
-        var newCapacity = (int)Math.Max(
+        int newCapacity = (int)Math.Max(
             (uint)(_pos + additionalCapacityBeyondPos),
             Math.Min((uint)_chars.Length * 2, ArrayMaxLength));
 
         // Make sure to let Rent throw an exception if the caller has a bug and the desired capacity is negative.
         // This could also go negative if the actual required length wraps around.
-        var poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
+        char[] poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
 
         _chars[.._pos].CopyTo(poolArray);
 
-        var toReturn = _arrayToReturnToPool;
+        char[]? toReturn = _arrayToReturnToPool;
         _chars = _arrayToReturnToPool = poolArray;
         if (toReturn != null)
         {
@@ -115,7 +115,7 @@ internal ref struct ValueStringBuilder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        var toReturn = _arrayToReturnToPool;
+        char[]? toReturn = _arrayToReturnToPool;
         this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
         if (toReturn != null)
         {

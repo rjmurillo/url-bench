@@ -19,7 +19,7 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> AsBase62String(ulong value)
     {
-        var bufferLength = DetermineBufferLength(value);
+        int bufferLength = DetermineBufferLength(value);
 
         int bufferIndex = bufferLength - 1;
         var arrayToReturnToPool = ArrayPool<char>.Shared.Rent(bufferLength);
@@ -49,8 +49,8 @@ public static class Convert
         // We don't always need the full Length as a buffer
         // and if we know the length we can build the buffer
         // in the correct order and avoid the reversal at the end
-        var size = value;
-        var bufferLength = 0;
+        ulong size = value;
+        int bufferLength = 0;
         do
         {
             bufferLength++;
