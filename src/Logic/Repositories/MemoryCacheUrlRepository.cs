@@ -22,11 +22,11 @@ public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
     /// Initializes a new instance of the <see cref="MemoryCacheUrlRepository"/> class with the specified size limit.
     /// </summary>
     /// <param name="sizeLimit">The maximum number of entries the cache can hold.</param>
-    public MemoryCacheUrlRepository(long sizeLimit)
+    public MemoryCacheUrlRepository(ulong sizeLimit)
     {
         var options = new MemoryCacheOptions()
         {
-            SizeLimit = sizeLimit,
+            SizeLimit = (long)sizeLimit,
             TrackLinkedCacheEntries = false,
             TrackStatistics = false,
             ExpirationScanFrequency = TimeSpan.MaxValue,

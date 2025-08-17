@@ -10,8 +10,8 @@ namespace Logic.Hashing;
 /// </summary>
 public static class Murmur3
 {
-    private const ulong C1 = 0x87c37b91114253d5;
-    private const ulong C2 = 0x4cf5ad432745937f;
+    private static readonly ulong C1 = 0x87c37b91114253d5;
+    private static readonly ulong C2 = 0x4cf5ad432745937f;
 
     /// <summary>
     /// Hashes the <paramref name="data"/> using MurmurHash3 x64 128-bit variant, simplified to return 64-bit hash.
