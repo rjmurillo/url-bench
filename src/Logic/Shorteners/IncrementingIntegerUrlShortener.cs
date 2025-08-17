@@ -9,6 +9,16 @@ namespace Logic.Shorteners;
 public class IncrementingIntegerUrlShortener(ulong initialValue) : IUrlShortener
 {
     /// <summary>
+    /// The initial value to start incrementing from. This is immutable after construction.
+    /// </summary>
+    private readonly ulong _initialValue = initialValue;
+
+    /// <summary>
+    /// The current value for incrementing. This field is thread-safe and gets atomically incremented.
+    /// </summary>
+    private ulong _currentValue = initialValue;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="IncrementingIntegerUrlShortener"/> class with an initial value of 0.
     /// </summary>
     public IncrementingIntegerUrlShortener()
@@ -34,13 +44,13 @@ public class IncrementingIntegerUrlShortener(ulong initialValue) : IUrlShortener
             return string.Empty;
         }
 
-        // Safely increment the initialValue using thread-safe operation to ensure that
+        // Safely increment the current value using thread-safe operation to ensure that
         // no two threads can get the same value at the same time.
         // This is crucial in a multithreaded environment to prevent duplicate values.
-        // The 'Interlocked.Increment' method increments initialValue atomically and returns the new value.
+        // The 'Interlocked.Increment' method increments _currentValue atomically and returns the new value.
         // We subtract 1 because 'Interlocked.Increment' returns the incremented value,
         // but we need the starting index value for this operation.
-        var value = Interlocked.Increment(ref initialValue) - 1UL;
+        var value = Interlocked.Increment(ref _currentValue) - 1UL;
 
         // Convert the numeric value to a base62 string. Base62 encoding uses characters 0-9, A-Z, and a-z.
         // This encoding helps in generating a shorter URL identifier from large numeric values.
