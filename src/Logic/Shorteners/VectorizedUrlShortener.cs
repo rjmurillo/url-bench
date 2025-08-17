@@ -109,8 +109,8 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeHash256(Span<byte> data)
     {
-        var hash = Vector256<uint>.Zero;
-        var i = 0;
+        Vector256<uint> hash = Vector256<uint>.Zero;
+        int i = 0;
         for (; i <= data.Length - 32; i += 32)
         {
             var block = Vector256.Create(
@@ -131,8 +131,8 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeSseHash128(Span<byte> data)
     {
-        var hash = Vector128<uint>.Zero;
-        var i = 0;
+        Vector128<uint> hash = Vector128<uint>.Zero;
+        int i = 0;
         for (; i <= data.Length - 16; i += 16)
         {
             var block = Vector128.Create(
@@ -149,8 +149,8 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeAdvSimdHash128(Span<byte> data)
     {
-        var hash = Vector128<uint>.Zero;
-        var i = 0;
+        Vector128<uint> hash = Vector128<uint>.Zero;
+        int i = 0;
         for (; i <= data.Length - 16; i += 16)
         {
             var block = Vector128.Create(

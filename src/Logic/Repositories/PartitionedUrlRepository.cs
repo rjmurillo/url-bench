@@ -39,8 +39,8 @@ public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
     /// <returns>The original URL if found; otherwise, an empty string.</returns>
     public override string GetOriginalUrl(string shortUrl)
     {
-        var partition = GetPartition(shortUrl.AsMemory());
-        var l = _locks[partition];
+        int partition = GetPartition(shortUrl.AsMemory());
+        ReaderWriterLockSlim l = _locks[partition];
 
         l.EnterReadLock();
         try
@@ -66,8 +66,8 @@ public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
     /// <returns>true if the mapping was successfully added; otherwise, false.</returns>
     public override bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
-        var partition = GetPartition(shortUrl.AsMemory());
-        var l = _locks[partition];
+        int partition = GetPartition(shortUrl.AsMemory());
+        ReaderWriterLockSlim l = _locks[partition];
 
         l.EnterWriteLock();
         try
@@ -92,13 +92,13 @@ public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
     /// <returns>true if the save operation was successful; otherwise, false.</returns>
     public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
     {
-        var partition = GetPartition(shortUrl.AsMemory());
-        var l = _locks[partition];
+        int partition = GetPartition(shortUrl.AsMemory());
+        ReaderWriterLockSlim l = _locks[partition];
 
         l.EnterWriteLock();
         try
         {
-            var partitionDict = _partitions[partition];
+            Dictionary<string, string> partitionDict = _partitions[partition];
 
             // If expectedValue is null, we expect the key to not exist
             if (expectedValue is null)
