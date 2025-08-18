@@ -42,6 +42,26 @@ The code is split into the following:
 
 This repository targets modern .NET SDKs (see `global.json` for the exact version). Ensure the required SDK is installed before building and running benchmarks.
 
+## Build and test
+
+Prerequisite: .NET SDK 9.0.304 (as pinned in `global.json`).
+
+From the repository root:
+
+```pwsh
+# Build (Release)
+dotnet build -c Release
+
+# Optional: enable stricter build
+dotnet build -c Release /p:PedanticMode=true
+
+# Check formatting
+dotnet format --verify-no-changes
+
+# Run unit tests (Release)
+dotnet test -c Release
+```
+
 ## Running with console
 
 To run the console, it is recommended that you run `dotnet publish` with the runtime identifier needed as a single file and self contained.
@@ -309,7 +329,7 @@ Skewness = 0.86, Kurtosis = 2.22, MValue = 2.96
 
 ## Running with Benchmark
 
-Also included is a BenchmarkDotNet suite that takes about 20 minutes to run for each batch of shortener and repository. 
+Also included is a BenchmarkDotNet suite that takes about 20 minutes to run for each batch of shortener and repository.
 
 ```sh
 dotnet run -c Release --framework net8.0 --project ./src/Benchmark/Benchmark.csproj
