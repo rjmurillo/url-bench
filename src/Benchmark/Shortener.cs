@@ -7,9 +7,7 @@ using Contracts;
 using Logic;
 using Logic.Shorteners;
 
-/// <inheritdoc/>
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
-
 // GC and Memory allocation
 [MemoryDiagnoser]
 
