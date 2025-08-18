@@ -77,6 +77,21 @@ dotnet format --verify-no-changes
 dotnet test -c Release
 ```
 
+## Quick start (5 minutes)
+
+Run a small, safe benchmark to see the app working end-to-end.
+
+```pwsh
+# From the repo root
+dotnet run --project ./src/Console -- bench -n 10000 -i 1 -t IncrementingIntegerUrlShortener -s ConcurrentUrlRepository
+```
+
+What this does
+
+- Builds and runs the console app.
+- Shortens and stores 10,000 URLs one time (i = 1).
+- Prints how many inserts/reads per second it achieved and shows basic stats.
+
 ## Running with console
 
 To run the console, it is recommended that you run `dotnet publish` with the runtime identifier needed as a single file and self contained.
