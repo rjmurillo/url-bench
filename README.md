@@ -74,7 +74,7 @@ dotnet build -c Release /p:PedanticMode=true
 dotnet format --verify-no-changes
 
 # Run unit tests (Release)
-dotnet test -c Release
+dotnet test --configuration Release --settings ./build/targets/tests/test.runsettings
 ```
 
 ## Quick start (5 minutes)
