@@ -35,7 +35,7 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     public override string GetOriginalUrl(string shortUrl)
     {
         var retVal = string.Empty;
-        var status = _session.Read(ref shortUrl, ref retVal);
+        _ = _session.Read(ref shortUrl, ref retVal);
 
         return retVal;
     }
