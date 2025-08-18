@@ -1,5 +1,4 @@
 ﻿using Contracts;
-using Logic.Exceptions;
 
 namespace Logic;
 

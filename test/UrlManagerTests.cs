@@ -1,7 +1,6 @@
 using Logic;
 using Logic.Repositories;
 using Logic.Shorteners;
-using Xunit;
 
 namespace UrlConverterPermutations;
 

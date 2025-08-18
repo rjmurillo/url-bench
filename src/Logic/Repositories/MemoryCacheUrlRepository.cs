@@ -1,6 +1,4 @@
-﻿using Logic;
-using Logic.Repositories;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 
 namespace Logic.Repositories;
 
