@@ -2,6 +2,8 @@
 using Logic.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 
+namespace Logic.Repositories;
+
 /// <summary>
 /// A URL repository implementation using ASP.NET Core's IMemoryCache for storing URL mappings.
 /// </summary>
