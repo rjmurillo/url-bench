@@ -83,7 +83,7 @@ Run a small, safe benchmark to see the app working end-to-end.
 
 ```pwsh
 # From the repo root
-dotnet run --project ./src/Console -- bench -n 10000 -i 1 -t IncrementingIntegerUrlShortener -s ConcurrentUrlRepository
+dotnet run --project ./src/Console --framework net9.0 -- bench -n 10000 -i 1 -t IncrementingIntegerUrlShortener -s ConcurrentUrlRepository
 ```
 
 What this does
