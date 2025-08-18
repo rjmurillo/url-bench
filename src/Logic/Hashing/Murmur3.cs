@@ -19,8 +19,7 @@ public static class Murmur3
     /// <param name="data">The data to hash.</param>
     /// <param name="seed">The seed value for the hash.</param>
     /// <returns>A 64-bit hash result.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Meziantou.Analyzer", "MA0051:Method is too long", Justification = "MurmurHash3 implementation requires this length for performance")]
     public static ulong Hash64(ref ReadOnlySpan<byte> data, ulong seed)
     {
