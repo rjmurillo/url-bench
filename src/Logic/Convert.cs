@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 
 namespace Logic;
@@ -85,7 +86,7 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> AsBase62String(Span<byte> hash)
     {
-        ulong index = BitConverter.ToUInt64(hash) % Constants.Base62Power8;
+        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % (ulong)Constants.Base62Power8;
         return AsBase62String(index);
     }
 
@@ -97,7 +98,7 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AsBase62String(Span<byte> hash, ref Span<char> buffer)
     {
-        ulong index = BitConverter.ToUInt64(hash) % Constants.Base62Power8;
+        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % (ulong)Constants.Base62Power8;
         AsBase62String(index, ref buffer);
     }
 }

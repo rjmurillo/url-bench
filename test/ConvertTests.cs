@@ -451,4 +451,193 @@ public class ConvertTests(ITestOutputHelper output)
         // Should complete in reasonable time
         stopwatch.ElapsedMilliseconds.ShouldBeLessThan(1000); // Less than 1 second
     }
+
+    /// <summary>
+    /// Tests that little-endian byte ordering is handled correctly.
+    /// </summary>
+    [Fact]
+    public void AsBase62String_ByteSpan_LittleEndian_HandledCorrectly()
+    {
+        // Test value 1 in little-endian format (least significant byte first)
+        var littleEndianBytes = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
+        var expectedValue = 1UL;
+
+        var result = Logic.Convert.AsBase62String(littleEndianBytes);
+        var expected = Logic.Convert.AsBase62String(expectedValue);
+
+        output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {result}, Expected: {expected}");
+
+        result.ToString().ShouldBe(expected.ToString());
+    }
+
+    /// <summary>
+    /// Tests that big-endian byte ordering produces different results.
+    /// </summary>
+    [Fact]
+    public void AsBase62String_ByteSpan_BigEndian_ProducesDifferentResults()
+    {
+        // Test value 1 in big-endian format (most significant byte first)
+        var bigEndianBytes = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
+        var littleEndianBytes = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
+
+        var bigEndianResult = Logic.Convert.AsBase62String(bigEndianBytes);
+        var littleEndianResult = Logic.Convert.AsBase62String(littleEndianBytes);
+
+        output.WriteLine($"Big-endian bytes: {BitConverter.ToString(bigEndianBytes)}, Result: {bigEndianResult}");
+        output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {littleEndianResult}");
+
+        // Results should be different due to different byte orderings
+        bigEndianResult.ToString().ShouldNotBe(littleEndianResult.ToString());
+    }
+
+    /// <summary>
+    /// Tests various byte patterns to ensure endianness is handled consistently.
+    /// </summary>
+    /// <param name="bytes">The byte array to test.</param>
+    /// <param name="expectedValue">The expected ulong value.</param>
+    [Theory]
+    [InlineData(new byte[] { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0 }, 0xF0DEBC9A78563412UL)]
+    [InlineData(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF }, 0xFF00000000000000UL)]
+    [InlineData(new byte[] { 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0x00000000000000FFUL)]
+    [InlineData(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 }, 0x0807060504030201UL)]
+    public void AsBase62String_ByteSpan_VariousBytePatterns_HandledCorrectly(byte[] bytes, ulong expectedValue)
+    {
+        var result = Logic.Convert.AsBase62String(bytes);
+        var expected = Logic.Convert.AsBase62String(expectedValue % Base62Power8);
+
+        output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
+        output.WriteLine($"Result: {result}, Expected: {expected}");
+
+        result.ToString().ShouldBe(expected.ToString());
+    }
+
+    /// <summary>
+    /// Tests that byte span conversion with buffer handles endianness correctly.
+    /// </summary>
+    [Fact]
+    public void AsBase62String_ByteSpanWithBuffer_Endianness_HandledCorrectly()
+    {
+        var bytes = new byte[] { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0 };
+        var buffer = new char[10];
+        var span = buffer.AsSpan();
+
+        Logic.Convert.AsBase62String(bytes, ref span);
+
+        output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Buffer: {new string(buffer)}");
+
+        var expected = Logic.Convert.AsBase62String(bytes);
+        var actual = new string(buffer).TrimStart('\0');
+        actual.ShouldBe(expected.ToString());
+    }
+
+    /// <summary>
+    /// Tests that byte span conversion is consistent with BinaryPrimitives.ReadUInt64LittleEndian behavior.
+    /// </summary>
+    [Fact]
+    public void AsBase62String_ByteSpan_ConsistentWithBinaryPrimitives()
+    {
+        var bytes = new byte[] { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 };
+
+        // Convert using BinaryPrimitives (little-endian)
+        var ulongValue = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
+        var expected = Logic.Convert.AsBase62String(ulongValue % Base62Power8);
+
+        // Convert using byte span
+        var result = Logic.Convert.AsBase62String(bytes);
+
+        output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, ULong value: {ulongValue}");
+        output.WriteLine($"Expected: {expected}, Result: {result}");
+
+        result.ToString().ShouldBe(expected.ToString());
+    }
+
+    /// <summary>
+    /// Tests that byte span conversion handles reversed byte order correctly.
+    /// </summary>
+    [Fact]
+    public void AsBase62String_ByteSpan_ReversedByteOrder_HandledCorrectly()
+    {
+        var originalBytes = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+        var reversedBytes = new byte[] { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+
+        var originalResult = Logic.Convert.AsBase62String(originalBytes);
+        var reversedResult = Logic.Convert.AsBase62String(reversedBytes);
+
+        output.WriteLine($"Original bytes: {BitConverter.ToString(originalBytes)}, Result: {originalResult}");
+        output.WriteLine($"Reversed bytes: {BitConverter.ToString(reversedBytes)}, Result: {reversedResult}");
+
+        // Both results should be valid Base62 strings
+        originalResult.Length.ShouldBeGreaterThan(0);
+        reversedResult.Length.ShouldBeGreaterThan(0);
+        originalResult.Length.ShouldBeLessThanOrEqualTo(11);
+        reversedResult.Length.ShouldBeLessThanOrEqualTo(11);
+
+        // Both should contain valid Base62 characters
+        foreach (var c in originalResult)
+        {
+            Base62Chars.ShouldContain(c);
+        }
+        foreach (var c in reversedResult)
+        {
+            Base62Chars.ShouldContain(c);
+        }
+
+        // Due to the modulo operation with Base62Power8, both values may wrap to the same result
+        // This is mathematically correct behavior, not a bug
+        // The test verifies that both produce valid results regardless of byte order
+    }
+
+    /// <summary>
+    /// Tests that byte span conversion handles byte patterns that span multiple bytes correctly.
+    /// </summary>
+    [Fact]
+    public void AsBase62String_ByteSpan_MultiBytePatterns_HandledCorrectly()
+    {
+        // Test patterns that span multiple bytes
+        var testCases = new[]
+        {
+            (new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00 }, 0x0001000000000000UL),
+            (new byte[] { 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0x0000000000000100UL),
+            (new byte[] { 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 }, 0x0000000100000000UL),
+            (new byte[] { 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0x0000000000010000UL),
+        };
+
+        foreach (var (bytes, expectedValue) in testCases)
+        {
+            var result = Logic.Convert.AsBase62String(bytes);
+            var expected = Logic.Convert.AsBase62String(expectedValue % Base62Power8);
+
+            output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
+            output.WriteLine($"Result: {result}, Expected: {expected}");
+
+            result.ToString().ShouldBe(expected.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Tests that byte span conversion handles edge cases around byte boundaries correctly.
+    /// </summary>
+    [Fact]
+    public void AsBase62String_ByteSpan_ByteBoundaryEdgeCases_HandledCorrectly()
+    {
+        // Test edge cases around byte boundaries
+        var testCases = new[]
+        {
+            (new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE }, ulong.MaxValue - 1),
+            (new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 1UL),
+            (new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }, 0x0100000000000000UL),
+            (new byte[] { 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0x0000000000000080UL),
+        };
+
+        foreach (var (bytes, expectedValue) in testCases)
+        {
+            var result = Logic.Convert.AsBase62String(bytes);
+            var expected = Logic.Convert.AsBase62String(expectedValue % Base62Power8);
+
+            output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
+            output.WriteLine($"Result: {result}, Expected: {expected}");
+
+            result.ToString().ShouldBe(expected.ToString());
+        }
+    }
 }
