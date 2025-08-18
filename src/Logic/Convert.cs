@@ -43,31 +43,6 @@ public static class Convert
     }
 
     /// <summary>
-    /// Determines the required buffer length for converting a value to Base62 string representation.
-    /// </summary>
-    /// <param name="value">The value to determine buffer length for.</param>
-    /// <returns>The required buffer length.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int DetermineBufferLength(ulong value)
-    {
-        // Let's be a little smarter about the allocation
-        //
-        // We don't always need the full Length as a buffer
-        // and if we know the length we can build the buffer
-        // in the correct order and avoid the reversal at the end
-        ulong size = value;
-        int bufferLength = 0;
-        do
-        {
-            bufferLength++;
-            size /= CharLength;
-        }
-        while (size > 0UL);
-
-        return bufferLength;
-    }
-
-    /// <summary>
     /// Converts a 64-bit unsigned integer to its Base62 string representation and writes it to the provided buffer.
     /// </summary>
     /// <param name="value">The value to convert.</param>
@@ -105,5 +80,30 @@ public static class Convert
     {
         ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
         AsBase62String(index, ref buffer);
+    }
+
+    /// <summary>
+    /// Determines the required buffer length for converting a value to Base62 string representation.
+    /// </summary>
+    /// <param name="value">The value to determine buffer length for.</param>
+    /// <returns>The required buffer length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int DetermineBufferLength(ulong value)
+    {
+        // Let's be a little smarter about the allocation
+        //
+        // We don't always need the full Length as a buffer
+        // and if we know the length we can build the buffer
+        // in the correct order and avoid the reversal at the end
+        ulong size = value;
+        int bufferLength = 0;
+        do
+        {
+            bufferLength++;
+            size /= CharLength;
+        }
+        while (size > 0UL);
+
+        return bufferLength;
     }
 }
