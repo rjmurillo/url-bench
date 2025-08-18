@@ -92,6 +92,20 @@ What this does
 - Shortens and stores 10,000 URLs one time (i = 1).
 - Prints how many inserts/reads per second it achieved and shows basic stats.
 
+## Key terms
+
+- Runtime Identifier (RID): A name that tells .NET what OS/CPU you target. See the [RID catalog](https://learn.microsoft.com/en-us/dotnet/core/rid-catalog).
+- Publish: Create files to run your app on another machine. See [dotnet publish](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-publish).
+- Self-contained: A published app that includes the .NET runtime so users do not need to install .NET. See [deploying apps](https://learn.microsoft.com/en-us/dotnet/core/deploying/#publish-framework-dependent-or-self-contained).
+- Single-file: Publish your app as one executable file. See [single-file deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview).
+- BenchmarkDotNet: A library that runs performance tests the right way. See [benchmarkdotnet.org](https://benchmarkdotnet.org/).
+- SIMD / vectorization: CPU features that process many values in one step. See [SIMD in .NET](https://learn.microsoft.com/en-us/dotnet/standard/simd) and [hardware intrinsics](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.intrinsics?view=net-9.0).
+  - AVX2 (x86/x64): [System.Runtime.Intrinsics.X86.Avx2](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.intrinsics.x86.avx2?view=net-9.0)
+  - SSE2 (x86/x64): [System.Runtime.Intrinsics.X86.Sse2](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.intrinsics.x86.sse2?view=net-9.0)
+  - AdvSimd (ARM/ARM64): [System.Runtime.Intrinsics.Arm.AdvSimd](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.intrinsics.arm.advsimd?view=net-9.0)
+- Throughput: How many operations happen per second (higher is better).
+- Working set: The process memory currently in use. See [.NET Process.WorkingSet64](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.workingset64?view=net-9.0).
+
 ## Running with console
 
 To run the console, it is recommended that you run `dotnet publish` with the runtime identifier needed as a single file and self contained.
