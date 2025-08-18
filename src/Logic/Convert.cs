@@ -42,6 +42,11 @@ public static class Convert
         }
     }
 
+    /// <summary>
+    /// Determines the required buffer length for converting a value to Base62 string representation.
+    /// </summary>
+    /// <param name="value">The value to determine buffer length for.</param>
+    /// <returns>The required buffer length.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int DetermineBufferLength(ulong value)
     {
@@ -86,7 +91,7 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> AsBase62String(Span<byte> hash)
     {
-        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % (ulong)Constants.Base62Power8;
+        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
         return AsBase62String(index);
     }
 
@@ -98,7 +103,7 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AsBase62String(Span<byte> hash, ref Span<char> buffer)
     {
-        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % (ulong)Constants.Base62Power8;
+        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
         AsBase62String(index, ref buffer);
     }
 }
