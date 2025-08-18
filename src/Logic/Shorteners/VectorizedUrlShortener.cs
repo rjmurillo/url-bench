@@ -81,7 +81,7 @@ public class VectorizedUrlShortener : IUrlShortener
 #if NET8_0_OR_GREATER
             && Vector256.IsHardwareAccelerated
 #endif
-            )
+        )
         {
             return ComputeHash256(data);
         }
@@ -90,7 +90,7 @@ public class VectorizedUrlShortener : IUrlShortener
 #if NET8_0_OR_GREATER
             && Vector128.IsHardwareAccelerated
 #endif
-            )
+        )
         {
             if (Sse2.IsSupported)
             {
@@ -186,18 +186,15 @@ public class VectorizedUrlShortener : IUrlShortener
             return result;
         }
 
-        if (hash is Vector128<uint> v128)
+        if (hash is Vector128<uint> v128 && Sse2.IsSupported)
         {
-            if (Sse2.IsSupported)
-            {
-                // Reduce Vector128<uint> by XOR folding it down to 64 bits
-                var shuffled = Sse2.Shuffle(v128, 0b_00_00_00_01);
-                var reduced = Sse2.Xor(v128, shuffled);
+            // Reduce Vector128<uint> by XOR folding it down to 64 bits
+            var shuffled = Sse2.Shuffle(v128, 0b_00_00_00_01);
+            var reduced = Sse2.Xor(v128, shuffled);
 
-                // Convert to Vector128<ulong> and extract the final result
-                var reduced64 = reduced.AsUInt64();
-                return reduced64.GetElement(0) ^ Sse2.Extract(reduced.AsUInt16(), 1);
-            }
+            // Convert to Vector128<ulong> and extract the final result
+            var reduced64 = reduced.AsUInt64();
+            return reduced64.GetElement(0) ^ Sse2.Extract(reduced.AsUInt16(), 1);
         }
 
         throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Unsupported vector type for hashing.");
