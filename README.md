@@ -92,6 +92,25 @@ What this does
 - Shortens and stores 10,000 URLs one time (i = 1).
 - Prints how many inserts/reads per second it achieved and shows basic stats.
 
+## Choosing a shortener and storage
+
+Pick based on your goal. Use these type names with -t (shortener) and -s (storage):
+
+- Shorteners
+  - IncrementingIntegerUrlShortener: Fastest; unique per run; great for pure throughput demos.
+  - SnowflakeUrlShortener: Unique, time-ordered IDs; reasonable speed; good for multi-machine scenarios.
+  - VectorizedUrlShortener: Non-cryptographic; uses SIMD (AVX2/SSE2/AdvSimd); fastest hashing on supported CPUs.
+  - Murmur3HashUrlShortener: Non-cryptographic hash; deterministic; slower than vectorized.
+  - Sha256HashUrlShortener: Cryptographic hash; slowest; use when you need strong hash properties.
+
+- Repositories
+  - ConcurrentUrlRepository: Simple, thread-safe, uses ConcurrentDictionary; easy baseline.
+  - ReaderWriterLockSlimUrlRepository: Single dictionary with RW lock; better write throughput than Concurrent in some cases.
+  - PartitionedUrlRepository: Sharded dictionaries with per-shard locks; scales across cores.
+  - MemoryCacheUrlRepository: ASP.NET Core IMemoryCache; time-based eviction; adds policy overhead.
+  - FastCacheUrlRepository: fast-cache with TTL support; very fast lookups; includes expiration semantics.
+  - FASTERUrlRepository: Hybrid log + cache; optimized for high-throughput reads/writes; heavier dependency.
+
 ## Key terms
 
 - Runtime Identifier (RID): A name that tells .NET what OS/CPU you target. See the [RID catalog](https://learn.microsoft.com/en-us/dotnet/core/rid-catalog).
