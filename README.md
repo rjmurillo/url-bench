@@ -415,3 +415,18 @@ This will give the menu to select which set of bencharks to run (Repository or S
 ## Tests
 
 Unit tests are provided for the shorteners and repositories through xUnit's `TheoryData<,>` construct: each implementation of `IUrlShortener` and `IUrlRepository` is automatically detected and placed into respective theory-based tests.
+
+## Troubleshooting
+
+- Unrecognized type 'X' for -t or -s
+  - List valid names: run without args to see the defaults, or check source under `src/Logic/Shorteners` and `src/Logic/Repositories` for class names.
+  - Example: -t IncrementingIntegerUrlShortener -s ConcurrentUrlRepository
+- Very slow or huge memory usage
+  - Reduce -n and/or -i (for a quick check: -n 100000 -i 1).
+  - Set -p 1 to remove multi-thread noise when comparing algorithms.
+  - Prefer ConcurrentUrlRepository for a simple baseline.
+- Vectorized shortener fails on this CPU
+  - Your CPU may lack AVX2/SSE2/AdvSimd. Use Murmur3HashUrlShortener or Sha256HashUrlShortener instead.
+- Coverage report task missing
+  - Restore local tools first: dotnet tool restore
+  - Then rerun tests: dotnet test -c Release --settings ./build/targets/tests/test.runsettings
