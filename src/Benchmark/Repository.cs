@@ -7,7 +7,6 @@ using Logic.Repositories;
 using Logic.Shorteners;
 
 // [RPlotExporter]
-/// <inheritdoc/>
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
 
 // GC and Memory allocation
@@ -52,7 +51,9 @@ public class Repository
     /// <summary>
     /// Gets or sets the number of URLs to generate for benchmarking.
     /// </summary>
+#pragma warning disable ECS0900 // false positive
     [Params(1, 1_000, 1_000_000)]
+#pragma warning restore ECS0900
     public int NumberOfUrls;
 
     private UrlManager? _urlManager;
@@ -66,8 +67,8 @@ public class Repository
     [GlobalSetup]
     public void Setup()
     {
-        _urlShortener = Factory.CreateShortener(ShortenerType);
-        _repo = Factory.CreateRepository(RepositoryType);
+        _urlShortener = Factory.CreateShortener(ShortenerType!);
+        _repo = Factory.CreateRepository(RepositoryType!);
         _shortUrls = new HashSet<string>(NumberOfUrls, StringComparer.Ordinal);
         _urlManager = new UrlManager(_urlShortener, _repo);
 
@@ -109,7 +110,7 @@ public class Repository
     public string Retrieve_Random()
     {
         int i = _rnd!.Next(0, NumberOfUrls);
-        var shortUrl = _shortUrls.ElementAt(i);
+        var shortUrl = _shortUrls!.ElementAt(i);
         return _urlManager!.GetOriginalUrl(shortUrl);
     }
 }

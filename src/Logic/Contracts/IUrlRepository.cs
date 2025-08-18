@@ -29,5 +29,5 @@ public interface IUrlRepository
     /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
     /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
     /// <returns>true if the save operation was successful; otherwise, false.</returns>
-    bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue);
+    bool TrySaveUrlMapping(string shortUrl, string? originalUrl, string? expectedValue, out string? currentValue);
 }

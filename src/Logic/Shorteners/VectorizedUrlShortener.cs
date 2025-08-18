@@ -103,7 +103,7 @@ public class VectorizedUrlShortener : IUrlShortener
             }
         }
 
-        throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
+        throw new ShortenerException(string.Empty, nameof(VectorizedUrlShortener), "Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

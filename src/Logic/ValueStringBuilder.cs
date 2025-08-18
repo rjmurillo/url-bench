@@ -98,7 +98,9 @@ internal ref struct ValueStringBuilder
         // This could also go negative if the actual required length wraps around.
         char[] poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
 
+#pragma warning disable ECS0900 // false positive
         _chars[.._pos].CopyTo(poolArray);
+#pragma warning restore ECS0900
 
         char[]? toReturn = _arrayToReturnToPool;
         _chars = _arrayToReturnToPool = poolArray;

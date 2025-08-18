@@ -49,7 +49,7 @@ public class Shortener
     [GlobalSetup]
     public void Setup()
     {
-        _urlShortener = Factory.CreateShortener(ShortenerType);
+        _urlShortener = Factory.CreateShortener(ShortenerType!);
     }
 
     /// <summary>
@@ -59,6 +59,6 @@ public class Shortener
     [Benchmark]
     public string Shorten()
     {
-        return _urlShortener!.ShortenUrl(LongUrl);
+        return _urlShortener!.ShortenUrl(LongUrl!);
     }
 }

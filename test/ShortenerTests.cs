@@ -202,7 +202,7 @@ public class ShortenerTests(ITestOutputHelper output)
     {
         const int upper = 1_000_000;
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
-        var processorCount = Environment.ProcessorCount; // Number of logical CPUs
+        int processorCount = Environment.ProcessorCount; // Number of logical CPUs
         var hs = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
 
         if (Utilities.IsDeterministicHashShortener(shortener))
