@@ -22,9 +22,11 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     /// </summary>
     public FASTERUrlRepository()
     {
+#pragma warning disable ECS1200
         _settings = new FasterKVSettings<string, string>(null);
         _store = new FasterKV<string, string>(_settings);
         _session = _store.For(new SimpleFunctions<string, string>()).NewSession<SimpleFunctions<string, string>>();
+#pragma warning restore ECS1200
     }
 
     /// <summary>
@@ -35,7 +37,7 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     public override string GetOriginalUrl(string shortUrl)
     {
         var retVal = string.Empty;
-        var status = _session.Read(ref shortUrl, ref retVal);
+        _ = _session.Read(ref shortUrl, ref retVal);
 
         return retVal;
     }
@@ -77,9 +79,9 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
             }
 
             // Key doesn't exist, save it
-            var status = _session.Upsert(ref shortUrl, ref originalUrl);
+            var retVal = SaveUrlMapping(shortUrl, originalUrl);
             currentValue = null;
-            return status.IsCompletedSuccessfully;
+            return retVal;
         }
 
         // Check if current value matches expected

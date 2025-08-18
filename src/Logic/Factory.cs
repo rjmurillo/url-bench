@@ -1,6 +1,4 @@
 using Contracts;
-using Logic.Repositories;
-using Logic.Shorteners;
 
 namespace Logic;
 

@@ -9,11 +9,6 @@ namespace Logic.Shorteners;
 public class IncrementingIntegerUrlShortener(ulong initialValue) : IUrlShortener
 {
     /// <summary>
-    /// The initial value to start incrementing from. This is immutable after construction.
-    /// </summary>
-    private readonly ulong _initialValue = initialValue;
-
-    /// <summary>
     /// The current value for incrementing. This field is thread-safe and gets atomically incremented.
     /// </summary>
     private ulong _currentValue = initialValue;
@@ -37,7 +32,7 @@ public class IncrementingIntegerUrlShortener(ulong initialValue) : IUrlShortener
     /// (e.g., compose the full URL externally via $"https://sho.rt/{slug}").
     /// Returns an empty string if <paramref name="originalUrl"/> is null, empty, or whitespace.
     /// </returns>
-    public string ShortenUrl(string originalUrl)
+    public string ShortenUrl(string? originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))
         {

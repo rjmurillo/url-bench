@@ -1,9 +1,10 @@
 using Logic;
 using Logic.Repositories;
 using Logic.Shorteners;
-using Xunit;
 
 namespace UrlConverterPermutations;
+
+#pragma warning disable HAA0301
 
 /// <summary>
 /// Tests for the refactored UrlManager that uses simplified collision handling.
@@ -27,7 +28,7 @@ public class UrlManagerTests
         Assert.NotNull(shortUrl);
         Assert.NotEmpty(shortUrl);
         Assert.NotEqual(longUrl, shortUrl);
-        
+
         // Verify the mapping was saved
         var retrievedUrl = urlManager.GetOriginalUrl(shortUrl);
         Assert.Equal(longUrl, retrievedUrl);
@@ -71,7 +72,7 @@ public class UrlManagerTests
     }
 
     [Fact]
-    public void ShortenAndSave_WithNullUrl_ThrowsArgumentNullException()
+    public void ShortenAndSave_WithNullUrl_ShouldBeEmpty()
     {
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
@@ -79,11 +80,11 @@ public class UrlManagerTests
         var urlManager = new UrlManager(shortener, repository);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => urlManager.ShortenAndSave(null!));
+        urlManager.ShortenAndSave(null!).ShouldBe(string.Empty);
     }
 
     [Fact]
-    public void ShortenAndSave_WithEmptyUrl_ThrowsArgumentException()
+    public void ShortenAndSave_WithEmptyUrl_ShouldBeEmpty()
     {
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
@@ -91,11 +92,11 @@ public class UrlManagerTests
         var urlManager = new UrlManager(shortener, repository);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => urlManager.ShortenAndSave(string.Empty));
+        urlManager.ShortenAndSave(string.Empty).ShouldBe(string.Empty);
     }
 
     [Fact]
-    public void ShortenAndSave_WithWhitespaceUrl_ThrowsArgumentException()
+    public void ShortenAndSave_WithWhitespaceUrl_ShouldBeEmpty()
     {
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
@@ -103,7 +104,7 @@ public class UrlManagerTests
         var urlManager = new UrlManager(shortener, repository);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => urlManager.ShortenAndSave("   "));
+        urlManager.ShortenAndSave("   ").ShouldBe(string.Empty);
     }
 
     [Fact]

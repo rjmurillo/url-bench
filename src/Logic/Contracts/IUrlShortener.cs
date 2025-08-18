@@ -24,5 +24,5 @@ public interface IUrlShortener
     /// - Implementations should be pure and side effect free (no I/O) and safe for concurrent use.
     /// - Implementations are expected to produce compact slugs (typically ≤ 8 characters), but the exact length is implementation-defined.
     /// </remarks>
-    string ShortenUrl(string originalUrl);
+    string ShortenUrl(string? originalUrl);
 }

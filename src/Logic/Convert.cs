@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 
 namespace Logic;
@@ -8,8 +9,8 @@ namespace Logic;
 /// </summary>
 public static class Convert
 {
-    private const string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private const ulong CharLength = 62UL;
+    private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static readonly ulong CharLength = 62UL;
 
     /// <summary>
     /// Converts a 64-bit unsigned integer to its Base62 string representation.
@@ -19,11 +20,13 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> AsBase62String(ulong value)
     {
-        var bufferLength = DetermineBufferLength(value);
+        int bufferLength = DetermineBufferLength(value);
 
-        var bufferIndex = bufferLength - 1;
+        int bufferIndex = bufferLength - 1;
         var arrayToReturnToPool = ArrayPool<char>.Shared.Rent(bufferLength);
+#pragma warning disable ECS0900 // false positive
         Span<char> buffer = arrayToReturnToPool;
+#pragma warning restore ECS0900
         try
         {
             do
@@ -41,26 +44,6 @@ public static class Convert
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int DetermineBufferLength(ulong value)
-    {
-        // Let's be a little smarter about the allocation
-        //
-        // We don't always need the full Length as a buffer
-        // and if we know the length we can build the buffer
-        // in the correct order and avoid the reversal at the end
-        var size = value;
-        var bufferLength = 0;
-        do
-        {
-            bufferLength++;
-            size /= CharLength;
-        }
-        while (size > 0UL);
-
-        return bufferLength;
-    }
-
     /// <summary>
     /// Converts a 64-bit unsigned integer to its Base62 string representation and writes it to the provided buffer.
     /// </summary>
@@ -68,7 +51,7 @@ public static class Convert
     /// <param name="buffer">The buffer to write the result to.</param>
     public static void AsBase62String(ulong value, ref Span<char> buffer)
     {
-        var bufferIndex = buffer.Length - 1;
+        int bufferIndex = buffer.Length - 1;
         do
         {
             buffer[bufferIndex--] = Base62Chars[(int)(value % CharLength)];
@@ -85,7 +68,7 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> AsBase62String(Span<byte> hash)
     {
-        var index = BitConverter.ToUInt64(hash) % Constants.Base62Power8;
+        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
         return AsBase62String(index);
     }
 
@@ -97,7 +80,32 @@ public static class Convert
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AsBase62String(Span<byte> hash, ref Span<char> buffer)
     {
-        var index = BitConverter.ToUInt64(hash) % Constants.Base62Power8;
+        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
         AsBase62String(index, ref buffer);
+    }
+
+    /// <summary>
+    /// Determines the required buffer length for converting a value to Base62 string representation.
+    /// </summary>
+    /// <param name="value">The value to determine buffer length for.</param>
+    /// <returns>The required buffer length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int DetermineBufferLength(ulong value)
+    {
+        // Let's be a little smarter about the allocation
+        //
+        // We don't always need the full Length as a buffer
+        // and if we know the length we can build the buffer
+        // in the correct order and avoid the reversal at the end
+        ulong size = value;
+        int bufferLength = 0;
+        do
+        {
+            bufferLength++;
+            size /= CharLength;
+        }
+        while (size > 0UL);
+
+        return bufferLength;
     }
 }

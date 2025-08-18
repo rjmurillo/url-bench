@@ -1,6 +1,4 @@
 ﻿using Contracts;
-using Logic.Repositories;
-using Logic.Shorteners;
 
 namespace Logic;
 
@@ -16,10 +14,20 @@ public static class UrlRepositoryHelper
     /// <returns>An array of concrete types that implement the specified interface.</returns>
     public static Type[] GetConcreteTypes<T>()
     {
-        var interfaceType = typeof(T);
-        var types = interfaceType.Assembly.GetTypes();
+        Type interfaceType = typeof(T);
+        Type[] types = interfaceType.Assembly.GetTypes();
+        var result = new List<Type>();
 
-        return types.Where(t => !t.IsAbstract && !t.IsInterface && interfaceType.IsAssignableFrom(t)).ToArray();
+        for (int i = 0; i < types.Length; i++)
+        {
+            Type type = types[i];
+            if (!type.IsAbstract && !type.IsInterface && interfaceType.IsAssignableFrom(type))
+            {
+                result.Add(type);
+            }
+        }
+
+        return result.ToArray();
     }
 
     /// <summary>
@@ -39,10 +47,18 @@ public static class UrlRepositoryHelper
         }
 #endif
 
-        var typesImplementingIUrlRepository = GetConcreteTypes<IUrlRepository>();
+        Type[] typesImplementingIUrlRepository = GetConcreteTypes<IUrlRepository>();
 
-        return typesImplementingIUrlRepository.FirstOrDefault(t =>
-                       t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
+        for (int i = 0; i < typesImplementingIUrlRepository.Length; i++)
+        {
+            Type type = typesImplementingIUrlRepository[i];
+            if (type.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                return type;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -62,9 +78,17 @@ public static class UrlRepositoryHelper
         }
 #endif
 
-        var typesImplementingIUrlShortener = GetConcreteTypes<IUrlShortener>();
+        Type[] typesImplementingIUrlShortener = GetConcreteTypes<IUrlShortener>();
 
-        return typesImplementingIUrlShortener.FirstOrDefault(t =>
-                       t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
+        for (int i = 0; i < typesImplementingIUrlShortener.Length; i++)
+        {
+            Type type = typesImplementingIUrlShortener[i];
+            if (type.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                return type;
+            }
+        }
+
+        return null;
     }
 }

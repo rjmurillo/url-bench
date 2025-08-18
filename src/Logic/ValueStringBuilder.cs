@@ -23,7 +23,9 @@ internal ref struct ValueStringBuilder
 {
     private char[]? _arrayToReturnToPool;
     private Span<char> _chars;
-    private int _pos;
+#pragma warning disable ECS1200 // Prefer member initializers to assignment statements
+    private int _pos = 0;
+#pragma warning restore ECS1200 // Prefer member initializers to assignment statements
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValueStringBuilder"/> struct with the specified initial capacity.
@@ -32,15 +34,10 @@ internal ref struct ValueStringBuilder
     public ValueStringBuilder(int initialCapacity)
     {
         _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
+#pragma warning disable ECS0900 // false positive
         _chars = _arrayToReturnToPool;
-        _pos = 0;
+#pragma warning restore ECS0900
     }
-
-    /// <summary>
-    /// Gets a read-only span containing the current string content.
-    /// </summary>
-    /// <returns>A read-only span containing the current string content.</returns>
-    public ReadOnlySpan<char> AsSpan() => _chars[.._pos];
 
     /// <summary>
     /// Appends a character to the string builder.
@@ -49,8 +46,8 @@ internal ref struct ValueStringBuilder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(char c)
     {
-        var pos = _pos;
-        var chars = _chars;
+        int pos = _pos;
+        Span<char> chars = _chars;
         if ((uint)pos < (uint)chars.Length)
         {
             chars[pos] = c;
@@ -62,11 +59,23 @@ internal ref struct ValueStringBuilder
         }
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private void GrowAndAppend(char c)
+    /// <summary>
+    /// Gets a read-only span containing the current string content.
+    /// </summary>
+    /// <returns>A read-only span containing the current string content.</returns>
+    public ReadOnlySpan<char> AsSpan() => _chars[.._pos];
+    /// <summary>
+    /// Releases the pooled array used by this string builder.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Dispose()
     {
-        Grow(1);
-        Append(c);
+        char[]? toReturn = _arrayToReturnToPool;
+        this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
+        if (toReturn is not null)
+        {
+            ArrayPool<char>.Shared.Return(toReturn);
+        }
     }
 
     /// <summary>
@@ -91,35 +100,32 @@ internal ref struct ValueStringBuilder
 
         // Increase to at least the required size (_pos + additionalCapacityBeyondPos), but try
         // to double the size if possible, bounding the doubling to not go beyond the max array length.
-        var newCapacity = (int)Math.Max(
+        int newCapacity = (int)Math.Max(
             (uint)(_pos + additionalCapacityBeyondPos),
             Math.Min((uint)_chars.Length * 2, ArrayMaxLength));
 
         // Make sure to let Rent throw an exception if the caller has a bug and the desired capacity is negative.
         // This could also go negative if the actual required length wraps around.
-        var poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
+        char[] poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
 
+#pragma warning disable ECS0900 // false positive
         _chars[.._pos].CopyTo(poolArray);
+#pragma warning restore ECS0900
 
-        var toReturn = _arrayToReturnToPool;
+        char[]? toReturn = _arrayToReturnToPool;
+#pragma warning disable ECS0900 // false positive
         _chars = _arrayToReturnToPool = poolArray;
-        if (toReturn != null)
+#pragma warning restore ECS0900
+        if (toReturn is not null)
         {
             ArrayPool<char>.Shared.Return(toReturn);
         }
     }
 
-    /// <summary>
-    /// Releases the pooled array used by this string builder.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Dispose()
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void GrowAndAppend(char c)
     {
-        var toReturn = _arrayToReturnToPool;
-        this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
-        if (toReturn != null)
-        {
-            ArrayPool<char>.Shared.Return(toReturn);
-        }
+        Grow(1);
+        Append(c);
     }
 }

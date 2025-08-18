@@ -1,6 +1,6 @@
-﻿using Logic;
-using Logic.Repositories;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
+
+namespace Logic.Repositories;
 
 /// <summary>
 /// A URL repository implementation using ASP.NET Core's IMemoryCache for storing URL mappings.
@@ -22,17 +22,19 @@ public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
     /// Initializes a new instance of the <see cref="MemoryCacheUrlRepository"/> class with the specified size limit.
     /// </summary>
     /// <param name="sizeLimit">The maximum number of entries the cache can hold.</param>
-    public MemoryCacheUrlRepository(long sizeLimit)
+    public MemoryCacheUrlRepository(ulong sizeLimit)
     {
         var options = new MemoryCacheOptions()
         {
-            SizeLimit = sizeLimit,
+            SizeLimit = (long)sizeLimit,
             TrackLinkedCacheEntries = false,
             TrackStatistics = false,
             ExpirationScanFrequency = TimeSpan.MaxValue,
         };
 
+#pragma warning disable ECS1200
         _cache = new MemoryCache(options);
+#pragma warning restore ECS1200
     }
 
     /// <summary>
@@ -80,9 +82,9 @@ public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
             }
 
             // Key doesn't exist, save it
-            _cache.Set(shortUrl, originalUrl, Options);
+            var retVal = SaveUrlMapping(shortUrl, originalUrl);
             currentValue = null;
-            return true;
+            return retVal;
         }
 
         // Check if current value matches expected

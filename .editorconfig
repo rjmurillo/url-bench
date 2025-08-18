@@ -11,7 +11,10 @@ dotnet_diagnostic.SA1633.severity = none
 
 # CS8602: Dereference of a possibly null reference.
 dotnet_diagnostic.CS8602.severity = error
-+# CS8603: Possible null reference return.
-+dotnet_diagnostic.CS8603.severity = error
-+# CS8618: Non-nullable field is uninitialized.
-+dotnet_diagnostic.CS8618.severity = error
+# CS8603: Possible null reference return.
+dotnet_diagnostic.CS8603.severity = error
+# CS8618: Non-nullable field is uninitialized.
+dotnet_diagnostic.CS8618.severity = error
+
+# SA1648: inheritdoc should be sued with inheriting class
+dotnet_diagnostic.SA1648.severity = error

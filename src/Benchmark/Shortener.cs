@@ -1,14 +1,13 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Engines;
-
 using Contracts;
-
 using Logic;
 using Logic.Shorteners;
 
-[InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
+namespace Benchmark;
 
+[InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
 // GC and Memory allocation
 [MemoryDiagnoser]
 
@@ -19,9 +18,6 @@ using Logic.Shorteners;
 [JitStatsDiagnoser]
 [GcServer(true)]
 [SimpleJob(RunStrategy.Throughput)]
-/// <summary>
-/// Benchmark class for testing URL shortener performance.
-/// </summary>
 public class Shortener
 {
     private IUrlShortener? _urlShortener;
@@ -50,7 +46,7 @@ public class Shortener
     [GlobalSetup]
     public void Setup()
     {
-        _urlShortener = Factory.CreateShortener(ShortenerType);
+        _urlShortener = Factory.CreateShortener(ShortenerType!);
     }
 
     /// <summary>
@@ -60,6 +56,6 @@ public class Shortener
     [Benchmark]
     public string Shorten()
     {
-        return _urlShortener!.ShortenUrl(LongUrl);
+        return _urlShortener!.ShortenUrl(LongUrl!);
     }
 }

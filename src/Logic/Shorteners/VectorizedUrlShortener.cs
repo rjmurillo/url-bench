@@ -29,7 +29,7 @@ public class VectorizedUrlShortener : IUrlShortener
     /// (e.g., compose the full URL externally via $"https://sho.rt/{slug}").
     /// Returns an empty string if <paramref name="originalUrl"/> is null, empty, or whitespace.
     /// </returns>
-    public string ShortenUrl(string originalUrl)
+    public string ShortenUrl(string? originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))
         {
@@ -81,7 +81,9 @@ public class VectorizedUrlShortener : IUrlShortener
 #if NET8_0_OR_GREATER
             && Vector256.IsHardwareAccelerated
 #endif
-            )
+#pragma warning disable SA1009
+           )
+#pragma warning restore SA1009
         {
             return ComputeHash256(data);
         }
@@ -90,7 +92,7 @@ public class VectorizedUrlShortener : IUrlShortener
 #if NET8_0_OR_GREATER
             && Vector128.IsHardwareAccelerated
 #endif
-            )
+        )
         {
             if (Sse2.IsSupported)
             {
@@ -103,14 +105,14 @@ public class VectorizedUrlShortener : IUrlShortener
             }
         }
 
-        throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
+        throw new ShortenerException(string.Empty, nameof(VectorizedUrlShortener), "Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeHash256(Span<byte> data)
     {
-        var hash = Vector256<uint>.Zero;
-        var i = 0;
+        Vector256<uint> hash = Vector256<uint>.Zero;
+        int i = 0;
         for (; i <= data.Length - 32; i += 32)
         {
             var block = Vector256.Create(
@@ -131,8 +133,8 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeSseHash128(Span<byte> data)
     {
-        var hash = Vector128<uint>.Zero;
-        var i = 0;
+        Vector128<uint> hash = Vector128<uint>.Zero;
+        int i = 0;
         for (; i <= data.Length - 16; i += 16)
         {
             var block = Vector128.Create(
@@ -149,8 +151,8 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeAdvSimdHash128(Span<byte> data)
     {
-        var hash = Vector128<uint>.Zero;
-        var i = 0;
+        Vector128<uint> hash = Vector128<uint>.Zero;
+        int i = 0;
         for (; i <= data.Length - 16; i += 16)
         {
             var block = Vector128.Create(
@@ -186,18 +188,15 @@ public class VectorizedUrlShortener : IUrlShortener
             return result;
         }
 
-        if (hash is Vector128<uint> v128)
+        if (hash is Vector128<uint> v128 && Sse2.IsSupported)
         {
-            if (Sse2.IsSupported)
-            {
-                // Reduce Vector128<uint> by XOR folding it down to 64 bits
-                var shuffled = Sse2.Shuffle(v128, 0b_00_00_00_01);
-                var reduced = Sse2.Xor(v128, shuffled);
+            // Reduce Vector128<uint> by XOR folding it down to 64 bits
+            var shuffled = Sse2.Shuffle(v128, 0b_00_00_00_01);
+            var reduced = Sse2.Xor(v128, shuffled);
 
-                // Convert to Vector128<ulong> and extract the final result
-                var reduced64 = reduced.AsUInt64();
-                return reduced64.GetElement(0) ^ Sse2.Extract(reduced.AsUInt16(), 1);
-            }
+            // Convert to Vector128<ulong> and extract the final result
+            var reduced64 = reduced.AsUInt64();
+            return reduced64.GetElement(0) ^ Sse2.Extract(reduced.AsUInt16(), 1);
         }
 
         throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Unsupported vector type for hashing.");

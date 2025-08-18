@@ -58,7 +58,7 @@ public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRe
         // If expectedValue is null, we expect the key to not exist
         if (expectedValue is null)
         {
-            var success = _urlMappings.TryAdd(shortUrl, originalUrl);
+            var success = SaveUrlMapping(shortUrl, originalUrl);
             if (success)
             {
                 currentValue = null;

@@ -1,5 +1,4 @@
 ﻿using Contracts;
-using Logic.Exceptions;
 
 namespace Logic;
 
@@ -32,8 +31,6 @@ public sealed class UrlManager(
     /// <exception cref="InvalidOperationException">Thrown when the operation fails.</exception>
     public string ShortenAndSave(string longUrl)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(longUrl);
-
         // Generate short URL
         var shortUrl = _shortener.ShortenUrl(longUrl);
 

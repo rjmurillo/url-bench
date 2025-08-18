@@ -11,16 +11,6 @@ namespace Logic.Exceptions;
 public class ShortenerException : Exception
 {
     /// <summary>
-    /// Gets the original URL that was being shortened when the exception occurred.
-    /// </summary>
-    public string OriginalUrl { get; }
-
-    /// <summary>
-    /// Gets the shortener type that was being used.
-    /// </summary>
-    public string ShortenerType { get; }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="ShortenerException"/> class.
     /// </summary>
     public ShortenerException()
@@ -33,7 +23,8 @@ public class ShortenerException : Exception
     /// Initializes a new instance of the <see cref="ShortenerException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    public ShortenerException(string message) : base(message)
+    public ShortenerException(string message)
+        : base(message)
     {
         OriginalUrl = string.Empty;
         ShortenerType = string.Empty;
@@ -45,11 +36,22 @@ public class ShortenerException : Exception
     /// </summary>
     /// <param name="message">The error message that explains the reason for the exception.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
-    public ShortenerException(string message, Exception innerException) : base(message, innerException)
+    public ShortenerException(string message, Exception innerException)
+        : base(message, innerException)
     {
         OriginalUrl = string.Empty;
         ShortenerType = string.Empty;
     }
+
+    /// <summary>
+    /// Gets the original URL that was being shortened when the exception occurred.
+    /// </summary>
+    public string OriginalUrl { get; }
+
+    /// <summary>
+    /// Gets the shortener type that was being used.
+    /// </summary>
+    public string ShortenerType { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ShortenerException"/> class with shortening details.
@@ -83,7 +85,9 @@ public class ShortenerException : Exception
     /// </summary>
     /// <param name="info">The <see cref="SerializationInfo"/> that holds the serialized object data about the exception being thrown.</param>
     /// <param name="context">The <see cref="StreamingContext"/> that contains contextual information about the source or destination.</param>
-    protected ShortenerException(SerializationInfo info, StreamingContext context) : base(info, context)
+    [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.")]
+    protected ShortenerException(SerializationInfo info, StreamingContext context)
+        : base(info, context)
     {
         OriginalUrl = info.GetString(nameof(OriginalUrl)) ?? string.Empty;
         ShortenerType = info.GetString(nameof(ShortenerType)) ?? string.Empty;
@@ -94,6 +98,7 @@ public class ShortenerException : Exception
     /// </summary>
     /// <param name="info">The <see cref="SerializationInfo"/> that holds the serialized object data about the exception being thrown.</param>
     /// <param name="context">The <see cref="StreamingContext"/> that contains contextual information about the source or destination.</param>
+    [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.")]
     public override void GetObjectData(SerializationInfo info, StreamingContext context)
     {
         if (info == null)

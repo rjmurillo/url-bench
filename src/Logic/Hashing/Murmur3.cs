@@ -5,13 +5,15 @@ using static System.Numerics.BitOperations;
 
 namespace Logic.Hashing;
 
+#pragma warning disable S907 // Remove use of goto
+
 /// <summary>
 /// Provides hashing functionality using the MurmurHash3 x64 128-bit variant, simplified to return a 64-bit hash.
 /// </summary>
 public static class Murmur3
 {
-    private const ulong C1 = 0x87c37b91114253d5;
-    private const ulong C2 = 0x4cf5ad432745937f;
+    private static readonly ulong C1 = 0x87c37b91114253d5;
+    private static readonly ulong C2 = 0x4cf5ad432745937f;
 
     /// <summary>
     /// Hashes the <paramref name="data"/> using MurmurHash3 x64 128-bit variant, simplified to return 64-bit hash.
@@ -19,7 +21,8 @@ public static class Murmur3
     /// <param name="data">The data to hash.</param>
     /// <param name="seed">The seed value for the hash.</param>
     /// <returns>A 64-bit hash result.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Meziantou.Analyzer", "MA0051:Method is too long", Justification = "MurmurHash3 implementation requires this length for performance")]
     public static ulong Hash64(ref ReadOnlySpan<byte> data, ulong seed)
     {
         var h1 = seed;
@@ -28,12 +31,12 @@ public static class Murmur3
         int pos = 0;
 
         ref var dataRef = ref MemoryMarshal.GetReference(data);
-        var nBlocks = len / 16;
+        int nBlocks = len / 16;
 
-        for (var i = 0; i < nBlocks; i++)
+        for (int i = 0; i < nBlocks; i++)
         {
-            var k1 = ReadUInt64(ref dataRef, pos);
-            var k2 = ReadUInt64(ref dataRef, pos + 8);
+            ulong k1 = ReadUInt64(ref dataRef, pos);
+            ulong k2 = ReadUInt64(ref dataRef, pos + 8);
 
             k1 *= C1;
             k1 = RotateLeft(k1, 31);

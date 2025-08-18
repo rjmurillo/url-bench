@@ -1,8 +1,6 @@
 ﻿using System.Text;
 using System.Web;
 using Contracts;
-using Contracts;
-using NonBlocking;
 using NonBlocking;
 
 namespace UrlConverterPermutations;
@@ -204,13 +202,13 @@ public class ShortenerTests(ITestOutputHelper output)
     {
         const int upper = 1_000_000;
         const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
-        var processorCount = Environment.ProcessorCount; // Number of logical CPUs
+        int processorCount = Environment.ProcessorCount; // Number of logical CPUs
         var hs = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
 
         if (Utilities.IsDeterministicHashShortener(shortener))
         {
             // For deterministic hash functions, test thread safety by ensuring consistent output
-            var expectedResult = shortener.ShortenUrl(longUrl);
+            string expectedResult = shortener.ShortenUrl(longUrl);
             expectedResult.ShouldNotBeNullOrWhiteSpace();
 
             Parallel.For(0, upper, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, i =>

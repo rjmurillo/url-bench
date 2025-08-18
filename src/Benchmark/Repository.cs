@@ -1,12 +1,13 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Contracts;
-
 using Logic;
 using Logic.Repositories;
 using Logic.Shorteners;
 
 // [RPlotExporter]
+namespace Benchmark;
+
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
 
 // GC and Memory allocation
@@ -18,9 +19,6 @@ using Logic.Shorteners;
 // Get details about what the JIT is doing
 [JitStatsDiagnoser]
 [GcServer(true)]
-/// <summary>
-/// Benchmark class for testing URL repository performance.
-/// </summary>
 public class Repository
 {
     private IUrlShortener? _urlShortener;
@@ -38,12 +36,12 @@ public class Repository
     /// Gets or sets the type of URL repository to benchmark.
     /// </summary>
     [Params(
-               typeof(ConcurrentUrlRepository),
-               typeof(FastCacheUrlRepository),
-               typeof(FASTERUrlRepository),
-               typeof(MemoryCacheUrlRepository),
-               typeof(PartitionedUrlRepository),
-               typeof(ReaderWriterLockSlimUrlRepository))]
+        typeof(ConcurrentUrlRepository),
+        typeof(FastCacheUrlRepository),
+        typeof(FASTERUrlRepository),
+        typeof(MemoryCacheUrlRepository),
+        typeof(PartitionedUrlRepository),
+        typeof(ReaderWriterLockSlimUrlRepository))]
     public Type? RepositoryType;
 
     private const string LongUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
@@ -51,7 +49,9 @@ public class Repository
     /// <summary>
     /// Gets or sets the number of URLs to generate for benchmarking.
     /// </summary>
+#pragma warning disable ECS0900 // false positive
     [Params(1, 1_000, 1_000_000)]
+#pragma warning restore ECS0900
     public int NumberOfUrls;
 
     private UrlManager? _urlManager;
@@ -65,12 +65,12 @@ public class Repository
     [GlobalSetup]
     public void Setup()
     {
-        _urlShortener = Factory.CreateShortener(ShortenerType);
-        _repo = Factory.CreateRepository(RepositoryType);
+        _urlShortener = Factory.CreateShortener(ShortenerType!);
+        _repo = Factory.CreateRepository(RepositoryType!);
         _shortUrls = new HashSet<string>(NumberOfUrls, StringComparer.Ordinal);
         _urlManager = new UrlManager(_urlShortener, _repo);
 
-        for (var i = 0; i <= NumberOfUrls; i++)
+        for (int i = 0; i <= NumberOfUrls; i++)
         {
             _shortUrls.Add(_urlManager.ShortenAndSave(LongUrl + i));
         }
@@ -107,8 +107,8 @@ public class Repository
     [Benchmark]
     public string Retrieve_Random()
     {
-        var i = _rnd!.Next(0, NumberOfUrls);
-        var shortUrl = _shortUrls.ElementAt(i);
+        int i = _rnd!.Next(0, NumberOfUrls);
+        var shortUrl = _shortUrls!.ElementAt(i);
         return _urlManager!.GetOriginalUrl(shortUrl);
     }
 }

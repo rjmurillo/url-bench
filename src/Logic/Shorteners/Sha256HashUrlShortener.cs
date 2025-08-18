@@ -25,14 +25,14 @@ public class Sha256HashUrlShortener()
     /// (e.g., compose the full URL externally via $"https://sho.rt/{slug}").
     /// Returns an empty string if <paramref name="originalUrl"/> is null, empty, or whitespace.
     /// </returns>
-    public string ShortenUrl(string originalUrl)
+    public string ShortenUrl(string? originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))
         {
             return string.Empty;
         }
 
-        var byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
+        int byteCount = Encoding.Unicode.GetByteCount(originalUrl);
 
         // Decide between stackalloc and ArrayPool
         if (byteCount <= Constants.MaxStackSize)
@@ -41,10 +41,10 @@ public class Sha256HashUrlShortener()
             return ProcessUrl(originalUrl, inputBuffer);
         }
 
-        var arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
+        byte[] arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
-            var poolBuffer = arrayFromPool.AsSpan(0, byteCount);
+            Span<byte> poolBuffer = arrayFromPool.AsSpan(0, byteCount);
             return ProcessUrl(originalUrl, poolBuffer);
         }
         finally
@@ -58,7 +58,9 @@ public class Sha256HashUrlShortener()
     private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
     {
         // Copy the original URL into the buffer
-        var bytesUsed = Encoding.Unicode.GetBytes(originalUrl, inputBuffer);
+#pragma warning disable ECS0900 // false positive
+        int bytesUsed = Encoding.Unicode.GetBytes(originalUrl, inputBuffer);
+#pragma warning restore ECS0900
 
         // SHA256 outputs 32 bytes, 256 bits
         Span<byte> hashBuffer = stackalloc byte[32];

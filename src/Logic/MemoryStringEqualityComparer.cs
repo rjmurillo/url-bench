@@ -7,6 +7,15 @@
 public class MemoryStringEqualityComparer(StringComparison comparison) : IEqualityComparer<ReadOnlyMemory<char>>
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="MemoryStringEqualityComparer"/> class.
+    /// </summary>
+    /// <param name="ignoreCase">true to ignore case during comparison; otherwise, false.</param>
+    public MemoryStringEqualityComparer(bool ignoreCase = false)
+        : this(ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)
+    {
+    }
+
+    /// <summary>
     /// Gets a MemoryStringEqualityComparer that uses ordinal string comparison.
     /// </summary>
     public static MemoryStringEqualityComparer Ordinal { get; } = new(StringComparison.Ordinal);
@@ -15,15 +24,6 @@ public class MemoryStringEqualityComparer(StringComparison comparison) : IEquali
     /// Gets a MemoryStringEqualityComparer that uses ordinal case-insensitive string comparison.
     /// </summary>
     public static MemoryStringEqualityComparer OrdinalIgnoreCase { get; } = new(StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MemoryStringEqualityComparer"/> class.
-    /// </summary>
-    /// <param name="ignoreCase">true to ignore case during comparison; otherwise, false.</param>
-    public MemoryStringEqualityComparer(bool ignoreCase = false)
-        : this(ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)
-    {
-    }
 
     /// <summary>
     /// Determines whether two ReadOnlyMemory&lt;char&gt; instances are equal.
