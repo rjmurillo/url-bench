@@ -42,6 +42,21 @@ The code is split into the following:
 
 This repository targets modern .NET SDKs (see `global.json` for the exact version). Ensure the required SDK is installed before building and running benchmarks.
 
+## Prerequisites
+
+- Operating system: Windows, macOS, or Linux
+- Git: [git-scm.com/downloads](https://git-scm.com/downloads)
+- .NET SDK 9: [dotnet.microsoft.com/download/dotnet/9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+
+Verify your install:
+
+```pwsh
+dotnet --info
+git --version
+```
+
+The SDK version is pinned by `global.json` (9.0.304). Install that version or later within .NET 9.
+
 ## Build and test
 
 Prerequisite: .NET SDK 9.0.304 (as pinned in `global.json`).
