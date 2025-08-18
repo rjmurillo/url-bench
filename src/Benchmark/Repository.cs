@@ -1,12 +1,13 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Contracts;
-
 using Logic;
 using Logic.Repositories;
 using Logic.Shorteners;
 
 // [RPlotExporter]
+namespace Benchmark;
+
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
 
 // GC and Memory allocation
@@ -35,12 +36,12 @@ public class Repository
     /// Gets or sets the type of URL repository to benchmark.
     /// </summary>
     [Params(
-               typeof(ConcurrentUrlRepository),
-               typeof(FastCacheUrlRepository),
-               typeof(FASTERUrlRepository),
-               typeof(MemoryCacheUrlRepository),
-               typeof(PartitionedUrlRepository),
-               typeof(ReaderWriterLockSlimUrlRepository))]
+        typeof(ConcurrentUrlRepository),
+        typeof(FastCacheUrlRepository),
+        typeof(FASTERUrlRepository),
+        typeof(MemoryCacheUrlRepository),
+        typeof(PartitionedUrlRepository),
+        typeof(ReaderWriterLockSlimUrlRepository))]
     public Type? RepositoryType;
 
     private const string LongUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";

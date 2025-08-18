@@ -32,7 +32,9 @@ public class MemoryCacheUrlRepository : UrlRepositoryBase, IDisposable
             ExpirationScanFrequency = TimeSpan.MaxValue,
         };
 
+#pragma warning disable ECS1200
         _cache = new MemoryCache(options);
+#pragma warning restore ECS1200
     }
 
     /// <summary>

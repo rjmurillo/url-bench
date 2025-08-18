@@ -23,6 +23,7 @@ public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
     /// <param name="capacity">The initial capacity for each partition dictionary.</param>
     public PartitionedUrlRepository(int numberOfPartitions, int capacity)
     {
+#pragma warning disable ECS1200
         _partitions = new Dictionary<string, string>[numberOfPartitions];
         _locks = new ReaderWriterLockSlim[numberOfPartitions];
         for (var i = 0; i < numberOfPartitions; i++)
@@ -30,6 +31,7 @@ public class PartitionedUrlRepository : UrlRepositoryBase, IDisposable
             _partitions[i] = new Dictionary<string, string>(capacity, StringComparer.Ordinal);
             _locks[i] = new ReaderWriterLockSlim();
         }
+#pragma warning restore ECS1200
     }
 
     /// <summary>

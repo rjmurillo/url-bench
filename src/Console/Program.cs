@@ -1,4 +1,5 @@
-﻿using Logic.Repositories;
+﻿using Console;
+using Logic.Repositories;
 using Logic.Shorteners;
 using Spectre.Console.Cli;
 

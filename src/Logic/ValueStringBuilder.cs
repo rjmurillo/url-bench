@@ -115,7 +115,7 @@ internal ref struct ValueStringBuilder
         char[]? toReturn = _arrayToReturnToPool;
 #pragma warning disable ECS0900 // false positive
         _chars = _arrayToReturnToPool = poolArray;
-#pragma warning restore ECS0900 
+#pragma warning restore ECS0900
         if (toReturn is not null)
         {
             ArrayPool<char>.Shared.Return(toReturn);

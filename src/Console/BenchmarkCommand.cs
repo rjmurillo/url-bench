@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using BenchmarkDotNet.Mathematics;
-using Console;
 using Contracts;
 using Logic;
 using Logic.Repositories;
@@ -12,6 +11,8 @@ using Convert = Logic.Convert;
 
 #pragma warning disable SA1600
 #pragma warning disable HAA0301
+
+namespace Console;
 
 [Description("Benchmark the URL shortener")]
 internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
@@ -84,7 +85,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         }
     }
 
+#pragma warning disable MA0051
     public override int Execute(CommandContext context, Settings settings)
+#pragma warning restore MA0051
     {
         try
         {

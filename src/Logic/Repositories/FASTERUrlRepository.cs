@@ -22,9 +22,11 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     /// </summary>
     public FASTERUrlRepository()
     {
+#pragma warning disable ECS1200
         _settings = new FasterKVSettings<string, string>(null);
         _store = new FasterKV<string, string>(_settings);
         _session = _store.For(new SimpleFunctions<string, string>()).NewSession<SimpleFunctions<string, string>>();
+#pragma warning restore ECS1200
     }
 
     /// <summary>

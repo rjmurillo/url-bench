@@ -5,6 +5,8 @@ using static System.Numerics.BitOperations;
 
 namespace Logic.Hashing;
 
+#pragma warning disable S907 // Remove use of goto
+
 /// <summary>
 /// Provides hashing functionality using the MurmurHash3 x64 128-bit variant, simplified to return a 64-bit hash.
 /// </summary>

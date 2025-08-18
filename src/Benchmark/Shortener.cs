@@ -1,11 +1,11 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Engines;
-
 using Contracts;
-
 using Logic;
 using Logic.Shorteners;
+
+namespace Benchmark;
 
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
 // GC and Memory allocation

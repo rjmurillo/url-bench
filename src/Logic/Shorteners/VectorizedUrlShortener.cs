@@ -81,7 +81,9 @@ public class VectorizedUrlShortener : IUrlShortener
 #if NET8_0_OR_GREATER
             && Vector256.IsHardwareAccelerated
 #endif
-        )
+#pragma warning disable SA1009
+           )
+#pragma warning restore SA1009
         {
             return ComputeHash256(data);
         }
