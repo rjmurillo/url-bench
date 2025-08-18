@@ -5,60 +5,52 @@
 ```csharp
 public interface IUrlRepository
 {
-    string GetOriginalUrl(string shortUrl);
-    bool SaveUrlMapping(string shortUrl, string originalUrl);
+  string GetOriginalUrl(string shortUrl);
+  bool SaveUrlMapping(string shortUrl, string originalUrl);
+  bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue);
 }
 
 public interface IUrlShortener
 {
-    string ShortenUrl(string originalUrl);
+  string ShortenUrl(string? originalUrl);
 }
 ```
 
-There are implementations of each utilizing various .NET features and capabilities, as well as popular libraries. 
+There are implementations of each utilizing various .NET features and capabilities, as well as popular libraries.
 The code is split into the following:
 
-- `src/Contracts` = The contracts above used to implement all shorteners and repositories
+- `src/Logic/Contracts` = The contracts above used to implement all shorteners and repositories
 - `src/Logic` = The implementation of various contracts
   - Shorteners
-    - `IncrementintInteger` making use of `Interlocked.Increment`
+    - `IncrementingInteger` making use of `Interlocked.Increment`
     - `Murmur3Hash` making use of the non-cryptographic [MurmurHash](https://en.wikipedia.org/wiki/MurmurHash)
     - `Sha256` making use of the cryptographic SHA-256 hash.
     - `Snowflake` making use of [Snowflake ID](https://en.wikipedia.org/wiki/Snowflake_ID)
     - `Vectorized` non-cryptographic hashing making use of hardware accelerated AVX, SSE2, or ARM SIMD
   - Repositories
-    - `Concurrent` making use of the built in .NET  `ConncurrentDictionary<string, string>` type
+    - `Concurrent` making use of the built-in .NET `ConcurrentDictionary<string, string>` type
     - `FastCache` making use of [fast-cache](https://github.com/neon-sunset/fast-cache) to include items with expiration time
     - `FASTER` using a [concurrent key-value store + cache](https://aka.ms/faster)
     - `IMemoryCache` using [ASP.NET Core's built in memory-based cache](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/memory?view=aspnetcore-8.0)
     - `Partitioned` using a naive array of `Dictionary<string,string>` and `ReaderWriterLockSlim`.
-    - `ReaderWriterLockSlim` using a single `Diction<string,string>` and `ReaderWriterLockSlim`
-  - Collision Resolution Strategies
-    - `NullCollisionResolutionStrategy` - No collision resolution (default, suitable for single-instance deployments)
-    - `SuffixCollisionResolutionStrategy` - Simple suffix-based approach for single-instance deployments
-    - `UuidCollisionResolutionStrategy` - UUID-based approach for distributed systems
-    - `TimestampCollisionResolutionStrategy` - Timestamp-based approach for time-ordered systems
+    - `ReaderWriterLockSlim` using a single `Dictionary<string,string>` and `ReaderWriterLockSlim`
 - `src/Console` = Console application for running throughput benchmarks
 - `src/Benchmark` = BenchmarkDotNet project to benchmark shorteners and repositories
 - `test` = A suite of tests for the shorteners and repositories
 
 ## Development Setup
 
-This project uses Git submodules. After cloning the repository, run the following command to initialize the submodules:
-
-```bash
-git submodule update --init
-```
+This repository targets modern .NET SDKs (see `global.json` for the exact version). Ensure the required SDK is installed before building and running benchmarks.
 
 ## Running with console
 
 To run the console, it is recommended that you run `dotnet publish` with the runtime identifier needed as a single file and self contained.
 
-```
+```sh
 dotnet publish -r linux-arm64 -p:PublishSingleFile=true --self-contained true -c Release
 ```
 
-This will place a file in `bin/Release/net8.0/linux-arm64/publish/`
+Publish output will be placed under `src/Console/bin/Release/net8.0/linux-arm64/publish/` (or the corresponding RID/framework).
 
 > NOTE: There is a script next to the `Console.csproj` called `publish.cmd` that will publish common RIDs
 
@@ -66,33 +58,34 @@ The console program has options:
 
 ```sh
 -t <SHORTENER TYPE>
--i <INTERATION COUNT>
+-i <ITERATION COUNT>
 -n <NUMBER OF URLS>
 -u <URL TO USE FOR BENCHMARK>
 -s <STORAGE TYPE>
--c <COLLISION RESOLUTION STRATEGY>
 -p <DEGREES OF PARALLELISM>
 ```
 
-### Example: run with concurrent dictionary for storage with 
+### Example: run with ConcurrentDictionary-based storage
 
-Running the console will provide output similar to the following vectorized shortener:
+Running the console (Vectorized shortener + Concurrent repository):
 
 ```sh
-./Console -t VectorizedUrlShortener -s ConcurrentUrlRepository -c UuidCollisionResolutionStrategy
+./Console bench -t VectorizedUrlShortener -s ConcurrentUrlRepository
+# or on Windows (from publish folder):
+./Console.exe bench -t VectorizedUrlShortener -s ConcurrentUrlRepository
 ```
 
 ### Console Output
 
 If no options are specified, the defaults are the following:
 
-```
+```text
 -t IncrementingIntegerUrlShortener
 -s FASTERUrlRepository
--c NullCollisionResolutionStrategy
 -i 3
 -n 10000000
 -u https://www.microsoft.com/en-us/security/business/endpoint-security/microsoft-defender-endpoint
+-p 1
 ```
 
 Output of Console is similar to the following:
@@ -107,7 +100,6 @@ Output of Console is similar to the following:
 │                        │ point                                                                                      │
 │ StorageType            │ FASTERUrlRepository                                                                        │
 │ ShortenerType          │ IncrementingIntegerUrlShortener                                                            │
-│ CollisionStrategyType  │ NullCollisionResolutionStrategy                                                            │
 │ MaxDegreeOfParallelism │ 1                                                                                          │
 ╰────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────╯
 Iteration 1: Total time to upsert 10,000,000 elements: 0.012 secs (833,333,333 inserts/sec)
