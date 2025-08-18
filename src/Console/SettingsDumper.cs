@@ -25,9 +25,11 @@ internal static class SettingsDumper
                 ?.ToString()
                 ?.Replace("[", "[[");
 
+#pragma warning disable HAA0101 // Array allocation for params parameter
             table.AddRow(
                 property.Name,
                 value ?? "[grey]null[/]");
+#pragma warning restore HAA0101 // Array allocation for params parameter
         }
 
         AnsiConsole.Write(table);

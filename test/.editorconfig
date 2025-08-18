@@ -8,3 +8,7 @@ dotnet_diagnostic.CS1591.severity = none
 
 # ECS0900: Avoid boxing
 dotnet_diagnostic.ECS0900.severity = none
+
+# HAA0301: Heap allocation of closure
+dotnet_diagnostic.HAA0301.severity = none
+

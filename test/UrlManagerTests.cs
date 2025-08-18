@@ -4,6 +4,8 @@ using Logic.Shorteners;
 
 namespace UrlConverterPermutations;
 
+#pragma warning disable HAA0301
+
 /// <summary>
 /// Tests for the refactored UrlManager that uses simplified collision handling.
 /// </summary>

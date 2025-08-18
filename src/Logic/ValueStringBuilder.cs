@@ -23,7 +23,9 @@ internal ref struct ValueStringBuilder
 {
     private char[]? _arrayToReturnToPool;
     private Span<char> _chars;
+#pragma warning disable ECS1200 // Prefer member initializers to assignment statements
     private int _pos = 0;
+#pragma warning restore ECS1200 // Prefer member initializers to assignment statements
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValueStringBuilder"/> struct with the specified initial capacity.
@@ -34,12 +36,6 @@ internal ref struct ValueStringBuilder
         _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
         _chars = _arrayToReturnToPool;
     }
-
-    /// <summary>
-    /// Gets a read-only span containing the current string content.
-    /// </summary>
-    /// <returns>A read-only span containing the current string content.</returns>
-    public ReadOnlySpan<char> AsSpan() => _chars[.._pos];
 
     /// <summary>
     /// Appends a character to the string builder.
@@ -61,11 +57,23 @@ internal ref struct ValueStringBuilder
         }
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private void GrowAndAppend(char c)
+    /// <summary>
+    /// Gets a read-only span containing the current string content.
+    /// </summary>
+    /// <returns>A read-only span containing the current string content.</returns>
+    public ReadOnlySpan<char> AsSpan() => _chars[.._pos];
+    /// <summary>
+    /// Releases the pooled array used by this string builder.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Dispose()
     {
-        Grow(1);
-        Append(c);
+        char[]? toReturn = _arrayToReturnToPool;
+        this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
+        if (toReturn is not null)
+        {
+            ArrayPool<char>.Shared.Return(toReturn);
+        }
     }
 
     /// <summary>
@@ -110,17 +118,10 @@ internal ref struct ValueStringBuilder
         }
     }
 
-    /// <summary>
-    /// Releases the pooled array used by this string builder.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Dispose()
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void GrowAndAppend(char c)
     {
-        char[]? toReturn = _arrayToReturnToPool;
-        this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
-        if (toReturn is not null)
-        {
-            ArrayPool<char>.Shared.Return(toReturn);
-        }
+        Grow(1);
+        Append(c);
     }
 }

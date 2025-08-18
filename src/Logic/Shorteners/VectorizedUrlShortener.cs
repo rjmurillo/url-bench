@@ -29,7 +29,7 @@ public class VectorizedUrlShortener : IUrlShortener
     /// (e.g., compose the full URL externally via $"https://sho.rt/{slug}").
     /// Returns an empty string if <paramref name="originalUrl"/> is null, empty, or whitespace.
     /// </returns>
-    public string ShortenUrl(string originalUrl)
+    public string ShortenUrl(string? originalUrl)
     {
         if (string.IsNullOrWhiteSpace(originalUrl))
         {

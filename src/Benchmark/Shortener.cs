@@ -18,9 +18,6 @@ using Logic.Shorteners;
 [JitStatsDiagnoser]
 [GcServer(true)]
 [SimpleJob(RunStrategy.Throughput)]
-/// <summary>
-/// Benchmark class for testing URL shortener performance.
-/// </summary>
 public class Shortener
 {
     private IUrlShortener? _urlShortener;

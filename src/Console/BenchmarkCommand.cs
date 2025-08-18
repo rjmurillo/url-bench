@@ -11,6 +11,7 @@ using Spectre.Console.Cli;
 using Convert = Logic.Convert;
 
 #pragma warning disable SA1600
+#pragma warning disable HAA0301
 
 [Description("Benchmark the URL shortener")]
 internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>

@@ -18,9 +18,6 @@ using Logic.Shorteners;
 // Get details about what the JIT is doing
 [JitStatsDiagnoser]
 [GcServer(true)]
-/// <summary>
-/// Benchmark class for testing URL repository performance.
-/// </summary>
 public class Repository
 {
     private IUrlShortener? _urlShortener;
