@@ -32,7 +32,7 @@ public class Sha256HashUrlShortener()
             return string.Empty;
         }
 
-        int byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
+        int byteCount = Encoding.Unicode.GetByteCount(originalUrl);
 
         // Decide between stackalloc and ArrayPool
         if (byteCount <= Constants.MaxStackSize)
