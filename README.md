@@ -390,6 +390,17 @@ Skewness = 0.86, Kurtosis = 2.22, MValue = 2.96
 ---------------------------------------------------
 ```
 
+### Reading the output
+
+- Iteration N: One full pass of writes or reads. We report elapsed seconds and inserts/sec or reads/sec.
+- URLs: Total processed across all iterations; helpful to cross-check sample counts.
+- Working set: Process memory in MB during the run.
+- Statistics table: Perfolizer/BenchmarkDotNet stats for the samples captured during progress ticks.
+  - Mean/Median: Average and middle throughput values across samples.
+  - StdDev/StdErr: Variability of samples; large values indicate unstable runs/noise.
+  - Percentiles: P95 shows a conservative “most runs are at least this fast” figure.
+  - Outliers: Extreme samples automatically detected; they’re reported and removed, then stats recomputed.
+
 ## Running with Benchmark
 
 Also included is a BenchmarkDotNet suite that takes about 20 minutes to run for each batch of shortener and repository.
