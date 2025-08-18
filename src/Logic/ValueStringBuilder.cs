@@ -50,7 +50,7 @@ internal ref struct ValueStringBuilder
     {
         int pos = _pos;
         Span<char> chars = _chars;
-        if (pos < chars.Length)
+        if ((uint)pos < (uint)chars.Length)
         {
             chars[pos] = c;
             _pos = pos + 1;
