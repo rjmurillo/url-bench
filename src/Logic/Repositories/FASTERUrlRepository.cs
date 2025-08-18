@@ -77,9 +77,9 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
             }
 
             // Key doesn't exist, save it
-            var status = _session.Upsert(ref shortUrl, ref originalUrl);
+            var retVal = SaveUrlMapping(shortUrl, originalUrl);
             currentValue = null;
-            return status.IsCompletedSuccessfully;
+            return retVal;
         }
 
         // Check if current value matches expected

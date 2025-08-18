@@ -34,7 +34,9 @@ internal ref struct ValueStringBuilder
     public ValueStringBuilder(int initialCapacity)
     {
         _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
+#pragma warning disable ECS0900 // false positive
         _chars = _arrayToReturnToPool;
+#pragma warning restore ECS0900
     }
 
     /// <summary>
@@ -111,7 +113,9 @@ internal ref struct ValueStringBuilder
 #pragma warning restore ECS0900
 
         char[]? toReturn = _arrayToReturnToPool;
+#pragma warning disable ECS0900 // false positive
         _chars = _arrayToReturnToPool = poolArray;
+#pragma warning restore ECS0900 
         if (toReturn is not null)
         {
             ArrayPool<char>.Shared.Return(toReturn);

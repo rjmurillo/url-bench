@@ -72,7 +72,7 @@ public class UrlManagerTests
     }
 
     [Fact]
-    public void ShortenAndSave_WithNullUrl_ThrowsArgumentNullException()
+    public void ShortenAndSave_WithNullUrl_ShouldBeEmpty()
     {
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
@@ -80,11 +80,11 @@ public class UrlManagerTests
         var urlManager = new UrlManager(shortener, repository);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => urlManager.ShortenAndSave(null!));
+        urlManager.ShortenAndSave(null!).ShouldBe(string.Empty);
     }
 
     [Fact]
-    public void ShortenAndSave_WithEmptyUrl_ThrowsArgumentException()
+    public void ShortenAndSave_WithEmptyUrl_ShouldBeEmpty()
     {
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
@@ -92,11 +92,11 @@ public class UrlManagerTests
         var urlManager = new UrlManager(shortener, repository);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => urlManager.ShortenAndSave(string.Empty));
+        urlManager.ShortenAndSave(string.Empty).ShouldBe(string.Empty);
     }
 
     [Fact]
-    public void ShortenAndSave_WithWhitespaceUrl_ThrowsArgumentException()
+    public void ShortenAndSave_WithWhitespaceUrl_ShouldBeEmpty()
     {
         // Arrange
         var shortener = new Murmur3HashUrlShortener();
@@ -104,7 +104,7 @@ public class UrlManagerTests
         var urlManager = new UrlManager(shortener, repository);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => urlManager.ShortenAndSave("   "));
+        urlManager.ShortenAndSave("   ").ShouldBe(string.Empty);
     }
 
     [Fact]

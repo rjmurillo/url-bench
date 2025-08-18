@@ -29,7 +29,7 @@ public sealed class UrlManager(
     /// <returns>The generated short URL.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="longUrl"/> is null or empty.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the operation fails.</exception>
-    public string ShortenAndSave(string? longUrl)
+    public string ShortenAndSave(string longUrl)
     {
         // Generate short URL
         var shortUrl = _shortener.ShortenUrl(longUrl);

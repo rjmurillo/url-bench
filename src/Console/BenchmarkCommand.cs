@@ -132,7 +132,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             sw.Start();
                             for (int i = 0; i < settings.NumberOfUrls; i++)
                             {
-                                var shortUrl = facade.ShortenAndSave(settings.Url);
+                                var shortUrl = facade.ShortenAndSave(settings.Url!);
 
                                 if (i % progressInterval == 0)
                                 {
@@ -161,7 +161,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             Parallel.For(0, settings.NumberOfUrls,
                                 new ParallelOptions { MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism }, i =>
                                 {
-                                    var shortUrl = facade.ShortenAndSave(settings.Url);
+                                    var shortUrl = facade.ShortenAndSave(settings.Url!);
 
                                     if (i % progressInterval == 0)
                                     {

@@ -24,7 +24,9 @@ public static class Convert
 
         int bufferIndex = bufferLength - 1;
         var arrayToReturnToPool = ArrayPool<char>.Shared.Rent(bufferLength);
+#pragma warning disable ECS0900 // false positive
         Span<char> buffer = arrayToReturnToPool;
+#pragma warning restore ECS0900
         try
         {
             do
