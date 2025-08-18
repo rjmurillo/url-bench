@@ -8,7 +8,6 @@ namespace Logic.Shorteners;
 /// <param name="initialValue">The initial value to start incrementing from.</param>
 public class IncrementingIntegerUrlShortener(ulong initialValue) : IUrlShortener
 {
-
     /// <summary>
     /// The current value for incrementing. This field is thread-safe and gets atomically incremented.
     /// </summary>
