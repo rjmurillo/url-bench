@@ -99,6 +99,9 @@ public interface IUrlShortener
 From the repo root
 
 ```sh
+# Restore any tools
+dotnet tool restore
+
 # Check formatting
 dotnet format --verify-no-changes
 
