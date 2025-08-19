@@ -22,7 +22,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         internal static class Defaults
         {
             internal const string Url = "https://www.microsoft.com/en-us/security/business/endpoint-security/microsoft-defender-endpoint";
-            internal const int NumberOfUrls = 10_000_000;
+            internal const long NumberOfUrls = 10_000_000;
             internal const int Iterations = 3;
             internal static readonly Type RepoType = typeof(FASTERUrlRepository);
             internal static readonly Type ShortenerType = typeof(IncrementingIntegerUrlShortener);
