@@ -157,7 +157,7 @@ Options:
 -p <PARALLELISM DEGREE>
 ```
 
-Example:
+Example: attempt to shorten 5.2 trillion URLs, each generating a unique short URL
 
 ```powershell
 dotnet run --project ./src/Console -c Release --framework net9.0 -- bench -t IncrementingIntegerUrlShortener -s ConcurrentUrlRepository -n 5200000000000 -i 3
@@ -170,7 +170,7 @@ Defaults when you don't pass options:
 -s FASTERUrlRepository
 -i 3
 -n 10000000
--u https://www.microsoft.com
+-u https://www.microsoft.com/en-us/security/business/endpoint-security/microsoft-defender-endpoint
 -p 1
 ```
 
