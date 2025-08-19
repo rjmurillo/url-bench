@@ -133,8 +133,7 @@ To run the console, it is recommended that you run `dotnet publish` with the run
 dotnet publish -r linux-arm64 -p:PublishSingleFile=true --self-contained true -c Release
 ```
 
-Publish output will be placed under `src/Console/bin/Release/net8.0/linux-arm64/publish/` (or the corresponding RID/framework).
-
+Publish output will be placed under `src/Console/bin/Release/<TFM>/<RID>/publish/` (for example, `net9.0/linux-arm64`).
 > NOTE: There is a script next to the `Console.csproj` called `publish.cmd` that will publish common RIDs
 
 The console program has options:
