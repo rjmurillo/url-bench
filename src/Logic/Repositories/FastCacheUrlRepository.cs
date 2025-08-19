@@ -1,18 +1,19 @@
 ﻿using FastCache;
+using Contracts;
 
 namespace Logic.Repositories;
 
 /// <summary>
 /// A URL repository implementation using FastCache for storing URL mappings with expiration support.
 /// </summary>
-public class FastCacheUrlRepository : UrlRepositoryBase, IDisposable
+public class FastCacheUrlRepository : IUrlRepository, IDisposable
 {
     /// <summary>
     /// Retrieves the original URL associated with the specified short URL.
     /// </summary>
     /// <param name="shortUrl">The short URL to look up.</param>
     /// <returns>The original URL if found; otherwise, an empty string.</returns>
-    public override string GetOriginalUrl(string shortUrl)
+    public string GetOriginalUrl(string shortUrl)
     {
         if (Cached<string>.TryGet(shortUrl, out var originalUrl))
         {
@@ -28,7 +29,7 @@ public class FastCacheUrlRepository : UrlRepositoryBase, IDisposable
     /// <param name="shortUrl">The short URL to use as the key.</param>
     /// <param name="originalUrl">The original URL to associate with the short URL.</param>
     /// <returns>Always returns true as the operation is assumed to succeed.</returns>
-    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
+    public bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
         Cached<string>.Save(shortUrl, originalUrl, TimeSpan.MaxValue);
         return true;
@@ -43,7 +44,7 @@ public class FastCacheUrlRepository : UrlRepositoryBase, IDisposable
     /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
     /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
     /// <returns>true if the save operation was successful; otherwise, false.</returns>
-    public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
+    public bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
     {
         // FastCache doesn't support conditional operations, so we implement a simplified version
         if (expectedValue is null)

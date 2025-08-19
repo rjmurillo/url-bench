@@ -122,7 +122,7 @@ public interface IUrlShortener
 - [`FastCacheUrlRepository`](src/Logic/Repositories/FastCacheUrlRepository.cs) — uses [FastCache](https://www.nuget.org/packages/FastCache/) for fast lookups + expiry.
 - [`FASTERUrlRepository`](src/Logic/Repositories/FASTERUrlRepository.cs) — uses [FASTER](https://github.com/microsoft/FASTER) high-throughput key-value store.
 
-Base class for repositories: [`UrlRepositoryBase`](src/Logic/Repositories/UrlRepositoryBase.cs).
+Repositories implement the shared contract [`IUrlRepository`](src/Logic/Contracts/IUrlRepository.cs).
 
 ## Development setup
 

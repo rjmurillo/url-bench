@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Contracts;
 
 namespace Logic.Repositories;
 
@@ -7,7 +8,7 @@ namespace Logic.Repositories;
 /// </summary>
 /// <param name="concurrencyLevel">The estimated number of threads that will update the dictionary concurrently.</param>
 /// <param name="capacity">The initial number of elements that the dictionary can contain.</param>
-public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRepositoryBase, IDisposable
+public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : IUrlRepository, IDisposable
 {
     private readonly ConcurrentDictionary<string, string> _urlMappings = new(concurrencyLevel, capacity, StringComparer.Ordinal);
 
@@ -24,7 +25,7 @@ public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRe
     /// </summary>
     /// <param name="shortUrl">The short URL to look up.</param>
     /// <returns>The original URL if found; otherwise, an empty string.</returns>
-    public override string GetOriginalUrl(string shortUrl)
+    public string GetOriginalUrl(string shortUrl)
     {
         if (_urlMappings.TryGetValue(shortUrl, out var originalUrl))
         {
@@ -40,7 +41,7 @@ public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRe
     /// <param name="shortUrl">The short URL to use as the key.</param>
     /// <param name="originalUrl">The original URL to associate with the short URL.</param>
     /// <returns>true if the mapping was successfully added; otherwise, false.</returns>
-    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
+    public bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
         return _urlMappings.TryAdd(shortUrl, originalUrl);
     }
@@ -53,7 +54,7 @@ public class ConcurrentUrlRepository(int concurrencyLevel, int capacity) : UrlRe
     /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
     /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
     /// <returns>true if the save operation was successful; otherwise, false.</returns>
-    public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
+    public bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
     {
         // If expectedValue is null, we expect the key to not exist
         if (expectedValue is null)
