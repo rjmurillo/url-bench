@@ -34,7 +34,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 
         [CommandOption("-n|--urls")]
         [DefaultValue(Defaults.NumberOfUrls)]
-        public int NumberOfUrls { get; init; }
+        public long NumberOfUrls { get; init; }
 
         [CommandOption("-u|--url")]
         [DefaultValue(Defaults.Url)]
@@ -103,22 +103,22 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             var sw = new Stopwatch();
             long workingSet;
 
-            int writeSampleCount = settings.Iterations * settings.NumberOfUrls;
+            long writeSampleCount = settings.Iterations * settings.NumberOfUrls;
             if (writeSampleCount < 0 || writeSampleCount > maxDictionaryCapacity)
             {
                 // We overflowed or we're trying to allocate that will cause OOM
                 writeSampleCount = maxDictionaryCapacity;
             }
 
-            int readSampleCount = settings.Iterations * settings.NumberOfUrls;
+            long readSampleCount = settings.Iterations * settings.NumberOfUrls;
             if (readSampleCount < 0 || readSampleCount > maxDictionaryCapacity)
             {
                 // We overflowed or we're trying to allocate that will cause OOM
                 readSampleCount = maxDictionaryCapacity;
             }
 
-            var readSamples = new List<double>(readSampleCount);
-            var writeSamples = new List<double>(writeSampleCount);
+            var readSamples = new List<double>((int)Math.Min(readSampleCount, int.MaxValue));
+            var writeSamples = new List<double>((int)Math.Min(writeSampleCount, int.MaxValue));
 
             const int progressInterval = 524288;
 
@@ -133,7 +133,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         for (int j = 1; j <= settings.Iterations; j++)
                         {
                             sw.Start();
-                            for (int i = 0; i < settings.NumberOfUrls; i++)
+                            for (long i = 0; i < settings.NumberOfUrls; i++)
                             {
                                 var shortUrl = facade.ShortenAndSave(settings.Url!);
 
