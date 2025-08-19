@@ -16,6 +16,79 @@ public interface IUrlShortener
 }
 ```
 
+Contract notes (read this before implementing):
+
+- `TrySaveUrlMapping` uses compare-and-set (CAS) semantics (see: [Compare-and-swap](https://en.wikipedia.org/wiki/Compare-and-swap), [.NET Interlocked.CompareExchange](https://learn.microsoft.com/dotnet/api/system.threading.interlocked.compareexchange?view=net-9.0), and [Optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control)). It returns true only when it atomically sets shortUrl → originalUrl and the current stored value equals expectedValue. On failure, the store is not changed and currentValue is set to the actual current value (or null if the key does not exist). Passing `expectedValue = null` means "only set if the key is absent."
+- `ShortenUrl` null handling: when originalUrl is null, empty, or whitespace, implementations must return the empty string (""). Do not throw. This keeps callers simple and consistent across shortener types.
+
+Why compare-and-set (CAS)?
+
+- The problem it solves: When many threads or servers write the same key at the same time, a simple "save" can overwrite someone else's change (a lost update). CAS prevents this by only writing if the stored value is what you expect.
+- Main goal: Make writes safe and predictable without heavy locks. You either win the write (because nothing changed) or you learn what changed so you can decide what to do next.
+- Who uses it: Service code that talks to the repository in multi-threaded or multi-instance apps (for example, a web API running on several servers), and repository implementers who need a clear contract for concurrency.
+- Key actions enabled:
+  - Insert-if-absent (idempotent create)
+  - Update-if-unchanged (optimistic concurrency)
+  - Conflict detection with the current value returned on failure
+  - Retry loops without global locks
+
+User stories that need CAS (not possible or safe with SaveUrlMapping alone):
+
+- As a client, I can create a new short code only if it's still free, even under high load, so I don't collide with other requests.
+- As an editor, I can change the target URL only if nobody changed it since I last read it; otherwise I get the new value and choose to retry or show a conflict.
+- As a background job, I can migrate or rename mappings without stomping live traffic updates; I detect and handle conflicts.
+- As an API running on many instances, I can write safely without a distributed lock service.
+
+Why this matters: CAS protects correctness at high throughput, scales better than coarse locks, and gives clear conflict signals. This improves reliability and user experience when many requests touch the same key.
+
+CAS explained (for `TrySaveUrlMapping`):
+
+- Purpose: Prevent lost updates when multiple threads/processes write the same key.
+- Inputs: shortUrl (key), originalUrl (new value), expectedValue (what you think is currently stored), out currentValue.
+- Success case (returns true): The repository sees the key’s current value equals expectedValue and atomically replaces it with originalUrl.
+- Failure case (returns false): The repository sees a different current value (including key not present when expectedValue was not null). It does not change the store and sets currentValue to what is actually stored (or null if the key is absent).
+
+Common patterns:
+
+- Insert-if-absent: call with `expectedValue = null`. Succeeds only if the key does not exist.
+- Update-if-unchanged: read the current value, then call with that as expectedValue. Succeeds only if no one changed it in the meantime.
+- Loop with retry (optional): on false, use the returned `currentValue` to decide whether to retry with a new expectedValue or to abort.
+
+Examples (C#):
+
+```csharp
+IUrlRepository repo = /* get repository */;
+string key = "k";
+string? current;
+
+// 1) Insert if absent (expectedValue = null)
+// Store: (k: <missing>)
+bool ok = repo.TrySaveUrlMapping(key, originalUrl: "A", expectedValue: null, out current);
+// ok == true; store becomes (k: "A"); current == null
+
+// 2) Update if unchanged (expectedValue matches)
+// Store: (k: "A")
+ok = repo.TrySaveUrlMapping(key, originalUrl: "B", expectedValue: "A", out current);
+// ok == true; store becomes (k: "B"); current == "A"
+
+// 3) Mismatch (expectedValue does not match current)
+// Store: (k: "B")
+ok = repo.TrySaveUrlMapping(key, originalUrl: "C", expectedValue: "A", out current);
+// ok == false; store unchanged (k: "B"); current == "B"
+
+// 4) Wrong non-null expected when key missing
+// Store: (k: <missing>)
+ok = repo.TrySaveUrlMapping(key, originalUrl: "A", expectedValue: "X", out current);
+// ok == false; store unchanged; current == null
+
+// Optional retry loop
+// while (!repo.TrySaveUrlMapping(key, newValue, expectedValue: observed, out var actual))
+// {
+//     observed = actual; // actual can be null (key missing) or the latest value
+//     // decide whether to recompute newValue or abort
+// }
+```
+
 There are implementations of each utilizing various .NET features and capabilities, as well as popular libraries.
 The code is split into the following:
 
