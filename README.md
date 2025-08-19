@@ -390,6 +390,40 @@ Skewness = 0.86, Kurtosis = 2.22, MValue = 2.96
 ---------------------------------------------------
 ```
 
+### Why publish with a RID and as a single, self-contained file?
+
+Publishing with a Runtime Identifier (RID) and enabling both self-contained and single-file gives predictable, easy-to-run artifacts and avoids "missing runtime" issues on target machines.
+
+- No .NET install required on the target machine (self-contained)
+  - The app carries the .NET runtime and libraries it needs, so users don’t install .NET first. You control the exact runtime version shipped with your app. See "Publish self-contained" in the .NET docs.
+    - [.NET application publishing overview — Publish self-contained](https://learn.microsoft.com/dotnet/core/deploying/#publish-self-contained)
+- Simple distribution (single file)
+  - One binary is easy to copy, attach, or drop into scripts/containers. Works with both self-contained and framework-dependent modes. See "Single-file deployment".
+    - [Single-file deployment (overview)](https://learn.microsoft.com/dotnet/core/deploying/single-file/overview)
+- OS/CPU-specific executables you can test up front (RID)
+  - Picking a RID (for example, win-x64, linux-arm64) produces platform-specific output you can validate before shipping. Some optimizations like ReadyToRun require publishing for a specific RID.
+    - [RID catalog](https://learn.microsoft.com/dotnet/core/rid-catalog)
+    - [ReadyToRun](https://learn.microsoft.com/dotnet/core/deploying/ready-to-run)
+- Reproducible runtime selection and isolation
+  - Self-contained apps don’t roll forward to a different installed runtime; you get the exact runtime you built and tested with.
+    - [Publish with CLI — Self-contained deployment](https://learn.microsoft.com/dotnet/core/deploying/deploy-with-cli#self-contained-deployment)
+
+Notes and trade-offs
+
+- Bigger artifacts and per-RID publishing
+  - Self-contained bundles are larger, and single-file self-contained is largest because it includes the runtime. You must publish once per OS/arch.
+    - [Advantages/Disadvantages of self-contained](https://learn.microsoft.com/dotnet/core/deploying/#publish-self-contained)
+    - [Single-file apps are OS/arch specific](https://learn.microsoft.com/dotnet/core/deploying/single-file/overview)
+- Security patching and updates
+  - Self-contained apps don’t automatically roll forward to newer runtime patches; republish to pick up fixes.
+    - [CLI SCD notes on version binding](https://learn.microsoft.com/dotnet/core/deploying/deploy-with-cli#self-contained-deployment)
+- Native prerequisites still apply
+  - The .NET SDK doesn’t bundle OS-native dependencies (for example, some Linux packages); they must exist on the host.
+    - [CLI SCD notes](https://learn.microsoft.com/dotnet/core/deploying/deploy-with-cli#self-contained-deployment)
+- .NET 8+ behavior change
+  - Specifying a RID no longer implies self-contained by default. If you want self-contained, set `--self-contained true` (or `SelfContained=true`) explicitly.
+    - [Runtime-specific apps no longer self-contained (breaking change)](https://learn.microsoft.com/dotnet/core/compatibility/sdk/8.0/runtimespecific-app-default)
+
 ### Reading the output
 
 - Iteration N: One full pass of writes or reads. We report elapsed seconds and inserts/sec or reads/sec.
@@ -398,7 +432,7 @@ Skewness = 0.86, Kurtosis = 2.22, MValue = 2.96
 - Statistics table: Perfolizer/BenchmarkDotNet stats for the samples captured during progress ticks.
   - Mean/Median: Average and middle throughput values across samples.
   - StdDev/StdErr: Variability of samples; large values indicate unstable runs/noise.
-  - Percentiles: P95 shows a conservative “most runs are at least this fast” figure.
+  - Percentiles: P95 shows a conservative "most runs are at least this fast" figure.
   - Outliers: Extreme samples automatically detected; they’re reported and removed, then stats recomputed.
 
 ## Running with Benchmark
