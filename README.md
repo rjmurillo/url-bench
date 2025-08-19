@@ -3,14 +3,16 @@
 **URL Bench** is a project for testing how different URL shorteners and storage methods work in .NET.  
 
 It helps answer two questions:
+
 - How fast can we shorten and store URLs?
 - Which method works best when many requests happen at the same time?
 
 ---
 
-## 🚀 Quick Start (5 minutes)
+## Quick Start (5 minutes)
 
 ### 1. Install prerequisites
+
 - Windows, macOS, or Linux
 - Git: [Download Git](https://git-scm.com/downloads)
 - .NET 9 SDK: [Download .NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
