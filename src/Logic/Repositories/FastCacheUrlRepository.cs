@@ -36,7 +36,7 @@ public class FastCacheUrlRepository : IUrlRepository, IDisposable
     public bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
         Cached<string>.Save(_ns + shortUrl, originalUrl, TimeSpan.MaxValue);
-    return true;
+        return true;
     }
 
     /// <summary>
@@ -78,12 +78,10 @@ public class FastCacheUrlRepository : IUrlRepository, IDisposable
                 currentValue = null;
                 return true;
             }
-            else
-            {
-                // Value doesn't match expected
-                currentValue = current.Value;
-                return false;
-            }
+
+            // Value doesn't match expected
+            currentValue = current.Value;
+            return false;
         }
 
         // Key doesn't exist but we expected it to
