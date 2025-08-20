@@ -1,4 +1,5 @@
-﻿using FASTER.core;
+﻿using Contracts;
+using FASTER.core;
 
 namespace Logic.Repositories;
 
@@ -10,7 +11,7 @@ namespace Logic.Repositories;
 /// <summary>
 /// A URL repository implementation using FASTER for high-performance concurrent key-value storage.
 /// </summary>
-public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
+public class FASTERUrlRepository : IUrlRepository, IDisposable
 #pragma warning restore S101 // Types should be named in PascalCase
 {
     private readonly FasterKVSettings<string, string> _settings;
@@ -34,7 +35,7 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     /// </summary>
     /// <param name="shortUrl">The short URL to look up.</param>
     /// <returns>The original URL if found; otherwise, an empty string.</returns>
-    public override string GetOriginalUrl(string shortUrl)
+    public string GetOriginalUrl(string shortUrl)
     {
         var retVal = string.Empty;
         _ = _session.Read(ref shortUrl, ref retVal);
@@ -48,7 +49,7 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     /// <param name="shortUrl">The short URL to use as the key.</param>
     /// <param name="originalUrl">The original URL to associate with the short URL.</param>
     /// <returns>true if the operation completed successfully; otherwise, false.</returns>
-    public override bool SaveUrlMapping(string shortUrl, string originalUrl)
+    public bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
         var status = _session.Upsert(ref shortUrl, ref originalUrl);
         return status.IsCompletedSuccessfully;
@@ -63,7 +64,7 @@ public class FASTERUrlRepository : UrlRepositoryBase, IDisposable
     /// <param name="expectedValue">The expected current value. If null, the key should not exist.</param>
     /// <param name="currentValue">When this method returns, contains the current value if the save failed due to a condition mismatch; otherwise, null.</param>
     /// <returns>true if the save operation was successful; otherwise, false.</returns>
-    public override bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
+    public bool TrySaveUrlMapping(string shortUrl, string originalUrl, string? expectedValue, out string? currentValue)
     {
         // FASTER doesn't support conditional operations, so we implement a simplified version
         if (expectedValue is null)

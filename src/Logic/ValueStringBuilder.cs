@@ -64,6 +64,7 @@ internal ref struct ValueStringBuilder
     /// </summary>
     /// <returns>A read-only span containing the current string content.</returns>
     public ReadOnlySpan<char> AsSpan() => _chars[.._pos];
+
     /// <summary>
     /// Releases the pooled array used by this string builder.
     /// </summary>
