@@ -23,21 +23,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 {
     private const int ProgressInterval = 524_288;
 
-    // Local copy to avoid depending on internal Logic.Convert.DetermineBufferLength
-    private static int DetermineBufferLength(ulong value)
-    {
-        ulong size = value;
-        int bufferLength = 0;
-        do
-        {
-            bufferLength++;
-            size /= 62UL;
-        }
-        while (size > 0UL);
-
-        return bufferLength;
-    }
-
 #pragma warning disable MA0051
     public override int Execute(CommandContext context, Settings settings)
 #pragma warning restore MA0051
@@ -128,16 +113,16 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 {
                     for (int j = 1; j <= settings.Iterations; j++)
                     {
-                        sw.Restart();
+                        var swLocal = Stopwatch.StartNew();
                         var options = new ParallelOptions { MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism };
                         Parallel.For(0L, settings.NumberOfUrls, options, _ => facade.ShortenAndSave(url));
-                        sw.Stop();
-                        if (sw.ElapsedMilliseconds > 0)
+                        swLocal.Stop();
+                        if (swLocal.ElapsedMilliseconds > 0)
                         {
-                            samples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
+                            samples.Add(settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0));
                         }
 
-                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({(sw.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0) : double.NaN):N0} inserts/sec)");
+                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {swLocal.ElapsedMilliseconds / 1000.0:N3} secs ({(swLocal.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0) : double.NaN):N0} inserts/sec)");
                     }
                 }
 
@@ -196,23 +181,23 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                     Parallel.For(1, settings.Iterations + 1, new ParallelOptions { MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism }, j =>
                     {
                         var localRnd = new Random(unchecked(397 ^ j));
-                        sw.Restart();
+                        var swLocal = Stopwatch.StartNew();
                         for (long i = 0; i < settings.NumberOfUrls; i++)
                         {
                             ulong k = (ulong)localRnd.NextInt64(1, settings.NumberOfUrls * j);
                             ReadSingle(facade, k);
                         }
 
-                        sw.Stop();
-                        if (sw.ElapsedMilliseconds > 0)
+                        swLocal.Stop();
+                        if (swLocal.ElapsedMilliseconds > 0)
                         {
                             lock (samples)
                             {
-                                samples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
+                                samples.Add(settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0));
                             }
                         }
 
-                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({(sw.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0) : double.NaN):N0} reads/sec)");
+                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {swLocal.ElapsedMilliseconds / 1000.0:N3} secs ({(swLocal.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0) : double.NaN):N0} reads/sec)");
                     });
                 }
 
@@ -228,7 +213,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
     private static void ReadSingle(UrlManager facade, ulong k)
     {
         Span<char> buf = stackalloc char[12];
-        int len = DetermineBufferLength(k);
+        int len = Convert.DetermineBufferLength(k);
         Span<char> slice = buf[..len];
         Convert.AsBase62String(k, ref slice);
         string shortUrl = slice.ToString();
