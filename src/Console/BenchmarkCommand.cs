@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime;
 using BenchmarkDotNet.Mathematics;
 using Contracts;
 using Logic;
@@ -93,6 +94,8 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         {
             SettingsDumper.Dump(settings);
 
+            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+
             const int maxDictionaryCapacity = 2_000_000_000;
 
             var repoType = UrlRepositoryHelper.GetRepositoryType(settings.StorageType);
@@ -142,7 +145,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                     sw.Stop();
                                     writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
 
-                                    GC.Collect();
                                     workingSet = Process.GetCurrentProcess().WorkingSet64;
 
                                     ctx.Status($"Generating... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M");
@@ -153,6 +155,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             sw.Stop();
                             writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
                             AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} inserts/sec)");
+                            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
                             sw.Reset();
                         }
                     }
@@ -171,7 +174,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                         sw.Stop();
                                         writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
 
-                                        GC.Collect();
                                         workingSet = Process.GetCurrentProcess().WorkingSet64;
 
                                         ctx.Status($"Generating... Iteration: {j}, URLs {i:N3}: {workingSet / 1048576}M");
@@ -182,6 +184,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             sw.Stop();
                             writeSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
                             AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} inserts/sec)");
+                            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
                             sw.Reset();
                         }
                     }
@@ -217,8 +220,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                 {
                                     sw.Stop();
                                     readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-
-                                    GC.Collect();
                                     workingSet = Process.GetCurrentProcess().WorkingSet64;
 
                                     ctx.Status($"Reading... Iteration: {j}, URLs {i:N3}: {workingSet / 1048576}M");
@@ -229,6 +230,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             sw.Stop();
                             readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
                             AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} reads/sec)");
+                            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
                             sw.Reset();
                         }
                     }
@@ -249,7 +251,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                                         sw.Stop();
                                         readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
 
-                                        GC.Collect();
                                         workingSet = Process.GetCurrentProcess().WorkingSet64;
 
                                         ctx.Status($"Reading... Iteration: {j}, URLs {i:N3}: {workingSet / 1048576}M");
@@ -260,6 +261,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             sw.Stop();
                             readSamples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
                             AnsiConsole.MarkupLineInterpolated($"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0):N0} reads/sec)");
+                            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
                             sw.Reset();
                         }
                     }
