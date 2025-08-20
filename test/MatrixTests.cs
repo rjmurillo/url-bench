@@ -62,4 +62,84 @@ public class MatrixTests(ITestOutputHelper output)
             hs.Add(a).ShouldBeTrue($"Duplicate detected: {a}");
         }
     }
+
+    [SkippableTheory]
+    [MemberData(nameof(MatrixData))]
+    public void Save_and_GetOriginal_roundtrip(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        const string shortUrl = "abc123";
+        const string original = "https://example.com/x";
+
+        Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
+
+        repository!.SaveUrlMapping(shortUrl, original).ShouldBeTrue();
+        repository!.GetOriginalUrl(shortUrl).ShouldBe(original);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(MatrixData))]
+    public void GetOriginal_missing_returns_empty(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
+
+        repository!.GetOriginalUrl("nope").ShouldBe(string.Empty);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(MatrixData))]
+    public void TrySave_expected_null_adds_when_absent(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
+
+        repository.TrySaveUrlMapping("s1", "https://a", expectedValue: null, out var current).ShouldBeTrue();
+        current.ShouldBeNull();
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(MatrixData))]
+    public void TrySave_expected_null_fails_when_present_and_exposes_current(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
+
+        repository.SaveUrlMapping("s1", "https://a").ShouldBeTrue();
+
+        repository.TrySaveUrlMapping("s1", "https://b", expectedValue: null, out var current).ShouldBeFalse();
+        current.ShouldBe("https://a");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(MatrixData))]
+    public void TrySave_expected_mismatch_returns_false_and_current(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
+
+        repository.SaveUrlMapping("s1", "https://a").ShouldBeTrue();
+
+        repository.TrySaveUrlMapping("s1", "https://b", expectedValue: "https://other", out var current).ShouldBeFalse();
+        current.ShouldBe("https://a");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(MatrixData))]
+    public void TrySave_expected_match_updates_value(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
+
+        repository.SaveUrlMapping("s1", "https://a").ShouldBeTrue();
+
+        repository.TrySaveUrlMapping("s1", "https://b", expectedValue: "https://a", out var current).ShouldBeTrue();
+        current.ShouldBeNull();
+
+        repository.GetOriginalUrl("s1").ShouldBe("https://b");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(MatrixData))]
+    public void TrySave_expected_present_but_key_missing_returns_false(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
+
+        repository.TrySaveUrlMapping("missing", "https://b", expectedValue: "https://a", out var current).ShouldBeFalse();
+        current.ShouldBeNull();
+    }
 }
