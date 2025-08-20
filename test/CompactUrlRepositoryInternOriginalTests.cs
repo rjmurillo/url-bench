@@ -54,7 +54,7 @@ public class CompactUrlRepositoryInternOriginalTests
 
         long ret = CallInternOriginal(repo, url);
         ret.ShouldBe(1);
-        hShards[(long)(hash & (uint)mask)].TryGetValue(hash, out var publishedId).ShouldBeTrue();
+        hShards[(int)(hash & (uint)mask)].TryGetValue(hash, out var publishedId).ShouldBeTrue();
         publishedId.ShouldBe(ret);
         uShards[ret & mask].TryGetValue(ret, out var storedUrl).ShouldBeTrue();
         storedUrl.ShouldBe(url);
@@ -69,7 +69,7 @@ public class CompactUrlRepositoryInternOriginalTests
 
         var (hShards, uShards, mask, _) = GetInternals(repo);
         long racedId = 31415L;
-        hShards[(long)(hash & (uint)mask)][hash] = racedId;
+        hShards[(int)(hash & (uint)mask)][hash] = racedId;
         uShards[racedId & mask][racedId] = url;
 
         long ret = CallInternOriginal(repo, url);
@@ -85,7 +85,7 @@ public class CompactUrlRepositoryInternOriginalTests
 
         var (hShards, uShards, mask, collisions) = GetInternals(repo);
         long racedId = 27182L;
-        hShards[(long)(hash & (uint)mask)][hash] = racedId;
+        hShards[(int)(hash & (uint)mask)][hash] = racedId;
         uShards[racedId & mask][racedId] = "https://other.example/";
 
         var bucket = collisions.GetOrAdd(hash, _ => new ConcurrentDictionary<string, long>(StringComparer.Ordinal));
