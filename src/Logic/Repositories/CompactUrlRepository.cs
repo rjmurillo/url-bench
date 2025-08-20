@@ -16,12 +16,10 @@ namespace Logic.Repositories;
 /// <param name="capacity">Initial capacity hint.</param>
 public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepository, IDisposable
 {
-    // Hot path: short code -> interned ID
-    private readonly ConcurrentDictionary<string, int> _shortToId = new(concurrencyLevel, capacity, StringComparer.Ordinal);
+    // Sharded state holder, initialized using primary constructor parameters
+    private readonly ShardState _state = ShardState.Create(capacity, concurrencyLevel);
 
-    // Interning maps
-    private readonly ConcurrentDictionary<ulong, int> _hashToId = new(concurrencyLevel, capacity);
-    private readonly ConcurrentDictionary<int, string> _idToUrl = new(concurrencyLevel, capacity);
+    // Rare: handle true 64-bit hash collisions using per-hash buckets (global map is fine; buckets are tiny)
     private readonly ConcurrentDictionary<ulong, ConcurrentDictionary<string, int>> _hashCollisions = new(Environment.ProcessorCount, 31);
 
     private int _nextId; // starts at 0, Interlocked.Increment returns first id as 1
@@ -38,12 +36,14 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string GetOriginalUrl(string shortUrl)
     {
-        if (!_shortToId.TryGetValue(shortUrl, out var id))
+        var shard = _state.ShortToIdShards[ShardForShort(shortUrl)];
+        if (!shard.TryGetValue(shortUrl, out var id))
         {
             return string.Empty;
         }
 
-        return _idToUrl.TryGetValue(id, out var original) ? original : string.Empty;
+        var urlShard = _state.IdToUrlShards[ShardForId(id)];
+        return urlShard.TryGetValue(id, out var original) ? original : string.Empty;
     }
 
     /// <inheritdoc />
@@ -51,7 +51,8 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
     public bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
         int id = InternOriginal(originalUrl);
-        return _shortToId.TryAdd(shortUrl, id);
+        var shard = _state.ShortToIdShards[ShardForShort(shortUrl)];
+        return shard.TryAdd(shortUrl, id);
     }
 
     /// <inheritdoc />
@@ -61,7 +62,8 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
         if (expectedValue is null)
         {
             int idNew = InternOriginal(originalUrl);
-            if (_shortToId.TryAdd(shortUrl, idNew))
+            var shard = _state.ShortToIdShards[ShardForShort(shortUrl)];
+            if (shard.TryAdd(shortUrl, idNew))
             {
                 currentValue = null;
                 return true;
@@ -72,13 +74,15 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
         }
 
         // Otherwise enforce CAS based on expected string value
-        if (!_shortToId.TryGetValue(shortUrl, out var existingId))
+        var s = _state.ShortToIdShards[ShardForShort(shortUrl)];
+        if (!s.TryGetValue(shortUrl, out var existingId))
         {
             currentValue = null;
             return false;
         }
 
-        string? existingOriginal = _idToUrl.TryGetValue(existingId, out var s) ? s : null;
+        var urlShard = _state.IdToUrlShards[ShardForId(existingId)];
+        string? existingOriginal = urlShard.TryGetValue(existingId, out var s2) ? s2 : null;
         if (!string.Equals(existingOriginal, expectedValue, StringComparison.Ordinal))
         {
             currentValue = existingOriginal;
@@ -86,7 +90,7 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
         }
 
         int newId = InternOriginal(originalUrl);
-        if (_shortToId.TryUpdate(shortUrl, newId, existingId))
+        if (s.TryUpdate(shortUrl, newId, existingId))
         {
             currentValue = null;
             return true;
@@ -116,9 +120,21 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
             return;
         }
 
-        _shortToId.Clear();
-        _hashToId.Clear();
-        _idToUrl.Clear();
+        foreach (var d in _state.ShortToIdShards)
+        {
+            d.Clear();
+        }
+
+        foreach (var d in _state.HashToIdShards)
+        {
+            d.Clear();
+        }
+
+        foreach (var d in _state.IdToUrlShards)
+        {
+            d.Clear();
+        }
+
         _hashCollisions.Clear();
     }
 
@@ -161,9 +177,11 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
         ulong hash = GetHash64(url);
 
         // Fast path: hash -> id exists, verify content matches
-        if (_hashToId.TryGetValue(hash, out var id))
+        var hashShard = _state.HashToIdShards[ShardForHash(hash)];
+        if (hashShard.TryGetValue(hash, out var id))
         {
-            if (_idToUrl.TryGetValue(id, out var existing) && string.Equals(existing, url, StringComparison.Ordinal))
+            var urlShard = _state.IdToUrlShards[ShardForId(id)];
+            if (urlShard.TryGetValue(id, out var existing) && string.Equals(existing, url, StringComparison.Ordinal))
             {
                 return id;
             }
@@ -174,16 +192,18 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
 
         // First claim on this hash
         int newId = Interlocked.Increment(ref _nextId);
-        if (_hashToId.TryAdd(hash, newId))
+        if (hashShard.TryAdd(hash, newId))
         {
-            _idToUrl.TryAdd(newId, url);
+            var urlShard = _state.IdToUrlShards[ShardForId(newId)];
+            urlShard.TryAdd(newId, url);
             return newId;
         }
 
         // Lost race; resolve against published entry
-        if (_hashToId.TryGetValue(hash, out var racedId))
+        if (hashShard.TryGetValue(hash, out var racedId))
         {
-            if (_idToUrl.TryGetValue(racedId, out var raced) && string.Equals(raced, url, StringComparison.Ordinal))
+            var urlShard = _state.IdToUrlShards[ShardForId(racedId)];
+            if (urlShard.TryGetValue(racedId, out var raced) && string.Equals(raced, url, StringComparison.Ordinal))
             {
                 return racedId;
             }
@@ -207,7 +227,8 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
 
         int newId = Interlocked.Increment(ref _nextId);
 
-        if (!_idToUrl.TryAdd(newId, url) && bucket.TryGetValue(url, out var existed))
+        var urlShard = _state.IdToUrlShards[ShardForId(newId)];
+        if (!urlShard.TryAdd(newId, url) && bucket.TryGetValue(url, out var existed))
         {
             return existed;
         }
@@ -217,13 +238,98 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
             return newId;
         }
 
-        _idToUrl.TryRemove(newId, out _);
+        urlShard.TryRemove(newId, out _);
         return bucket[url];
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private string? GetCurrentOriginal(string shortUrl)
     {
-        return _shortToId.TryGetValue(shortUrl, out int id) && _idToUrl.TryGetValue(id, out string? s) ? s : null;
+        var s = _state.ShortToIdShards[ShardForShort(shortUrl)];
+        if (!s.TryGetValue(shortUrl, out int id))
+        {
+            return null;
+        }
+
+        var u = _state.IdToUrlShards[ShardForId(id)];
+        return u.TryGetValue(id, out string? val) ? val : null;
+    }
+
+    // Partitioning helpers (power-of-two & bitmasking)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int ShardForShort(string shortUrl)
+    {
+        // Use stable ordinal hash (consistent with PartitionedUrlRepository)
+        int h = MemoryStringEqualityComparer.Ordinal.GetHashCode(shortUrl.AsMemory());
+        return ((int)(uint)h) & _state.ShardMask;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int ShardForHash(ulong hash) => (int)(hash & (uint)_state.ShardMask);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int ShardForId(int id) => id & _state.ShardMask;
+
+    private sealed class ShardState
+    {
+        private ShardState(
+            int shardCount,
+            ConcurrentDictionary<string, int>[] shortToId,
+            ConcurrentDictionary<ulong, int>[] hashToId,
+            ConcurrentDictionary<int, string>[] idToUrl)
+        {
+            ShardCount = shardCount;
+            ShardMask = shardCount - 1;
+            ShortToIdShards = shortToId;
+            HashToIdShards = hashToId;
+            IdToUrlShards = idToUrl;
+        }
+
+        public int ShardCount { get; }
+
+        public int ShardMask { get; }
+
+        public ConcurrentDictionary<string, int>[] ShortToIdShards { get; }
+
+        public ConcurrentDictionary<ulong, int>[] HashToIdShards { get; }
+
+        public ConcurrentDictionary<int, string>[] IdToUrlShards { get; }
+
+        public static ShardState Create(int capacity, int concurrencyHint)
+        {
+            const int MaxEntriesPerShardHint = 32_768;
+            int desiredShards = Math.Max(1, DivRoundUp(capacity, MaxEntriesPerShardHint));
+            int shardCount = NextPowerOfTwo(desiredShards);
+            int perShardCapacity = Math.Max(31, DivRoundUp(capacity, shardCount));
+            int perShardConcurrency = Math.Max(1, Math.Max(1, concurrencyHint) / shardCount);
+
+            var shortToId = new ConcurrentDictionary<string, int>[shardCount];
+            var hashToId = new ConcurrentDictionary<ulong, int>[shardCount];
+            var idToUrl = new ConcurrentDictionary<int, string>[shardCount];
+
+            for (int i = 0; i < shardCount; i++)
+            {
+                shortToId[i] = new ConcurrentDictionary<string, int>(perShardConcurrency, perShardCapacity, StringComparer.Ordinal);
+                hashToId[i] = new ConcurrentDictionary<ulong, int>(perShardConcurrency, perShardCapacity);
+                idToUrl[i] = new ConcurrentDictionary<int, string>(perShardConcurrency, perShardCapacity);
+            }
+
+            return new ShardState(shardCount, shortToId, hashToId, idToUrl);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int DivRoundUp(int value, int divisor) => (value + divisor - 1) / divisor;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int NextPowerOfTwo(int x)
+        {
+            x--;
+            x |= x >> 1;
+            x |= x >> 2;
+            x |= x >> 4;
+            x |= x >> 8;
+            x |= x >> 16;
+            return Math.Max(1, x + 1);
+        }
     }
 }
