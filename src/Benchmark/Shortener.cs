@@ -8,6 +8,7 @@ using Logic.Shorteners;
 namespace Benchmark;
 
 [InliningDiagnoser(true, new[] { "Logic.Shorteners", "Logic.Repositories" })]
+
 // GC and Memory allocation
 [MemoryDiagnoser]
 

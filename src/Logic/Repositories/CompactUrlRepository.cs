@@ -50,8 +50,8 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool SaveUrlMapping(string shortUrl, string originalUrl)
     {
-    int id = InternOriginal(originalUrl);
-    return _shortToId.TryAdd(shortUrl, id);
+        int id = InternOriginal(originalUrl);
+        return _shortToId.TryAdd(shortUrl, id);
     }
 
     /// <inheritdoc />

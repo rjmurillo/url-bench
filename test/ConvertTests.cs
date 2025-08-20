@@ -573,6 +573,7 @@ public class ConvertTests(ITestOutputHelper output)
         {
             Base62Chars.ShouldContain(c);
         }
+
         foreach (var c in reversedResult)
         {
             Base62Chars.ShouldContain(c);
