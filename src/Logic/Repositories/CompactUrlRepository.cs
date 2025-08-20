@@ -141,14 +141,13 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong GetHash64(string value)
     {
-        const int maxByteCount = Constants.MaxStackSize / 2;
         const ulong seed = 0xC0FFEEUL;
 
         // Encode as UTF-8 with minimal allocation; fall back to pooled buffer for larger strings.
         ReadOnlySpan<char> chars = value.AsSpan();
         int byteCount = Encoding.UTF8.GetByteCount(chars);
 
-        if (byteCount <= maxByteCount)
+        if (byteCount <= Constants.MaxStackUnicodeCharByteCount)
         {
             Span<byte> buffer = stackalloc byte[byteCount];
             _ = Encoding.UTF8.GetBytes(chars, buffer);
