@@ -189,7 +189,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                             samples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
                         }
 
-                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({(sw.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0) : double.NaN):N0} reads/sec)");                       
+                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({(sw.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0) : double.NaN):N0} reads/sec)");
                     }
                 }
                 else
