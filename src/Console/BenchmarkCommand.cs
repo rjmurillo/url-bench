@@ -156,7 +156,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             .Start("Uniform random read...", ctx =>
             {
                 var rnd = new Random(0); // Initialize random number generator
-                const int MaxShortUrlLen = 16; // Base62 for ulong never exceeds 11
 
                 if (settings.MaxDegreeOfParallelism == 1)
                 {
