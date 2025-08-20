@@ -118,6 +118,7 @@ public interface IUrlShortener
 - [`ConcurrentUrlRepository`](src/Logic/Repositories/ConcurrentUrlRepository.cs) — simple, thread-safe baseline using a [concurrent dictionary](https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2).
 - [`ReaderWriterLockSlimUrlRepository`](src/Logic/Repositories/ReaderWriterLockSlimUrlRepository.cs) — single dictionary with [ReaderWriterLockSlim](https://learn.microsoft.com/dotnet/api/system.threading.readerwriterlockslim).
 - [`PartitionedUrlRepository`](src/Logic/Repositories/PartitionedUrlRepository.cs) — multiple dictionaries with shard locks. Learn about [sharding](https://en.wikipedia.org/wiki/Shard_(database)).
+- [`CompactUrlRepository`](src/Logic/Repositories/CompactUrlRepository.cs) — compact, power-of-two sharded dictionaries to avoid LOH growth; routes shards via a stable ordinal hash and bitmask; all string-keyed shards use `StringComparer.Ordinal`; interns original URLs behind integer IDs to reduce duplication.
 - [`MemoryCacheUrlRepository`](src/Logic/Repositories/MemoryCacheUrlRepository.cs) — uses [.NET MemoryCache](https://learn.microsoft.com/aspnet/core/performance/caching/memory) with expiration.
 - [`FastCacheUrlRepository`](src/Logic/Repositories/FastCacheUrlRepository.cs) — uses [FastCache](https://www.nuget.org/packages/FastCache/) for fast lookups + expiry.
 - [`FASTERUrlRepository`](src/Logic/Repositories/FASTERUrlRepository.cs) — uses [FASTER](https://github.com/microsoft/FASTER) high-throughput key-value store.
@@ -228,7 +229,7 @@ dotnet test -c Release --settings ./build/targets/tests/test.runsettings
 
 - "Unrecognized type 'X'": Run without args to see defaults, or check class names under `src/Logic/Shorteners` and `src/Logic/Repositories`.
 - Very slow / high memory: Try `-n 100000 -i 1`.
-- Vectorized shortener fails:s Your CPU may not support [AVX2](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#techs=AVX2)/[SSE2](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#techs=SSE2)/[AdvSimd](https://learn.microsoft.com/dotnet/standard/simd). Use Murmur3 or Sha256 instead.
+- Vectorized shortener fails: Your CPU may not support [AVX2](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#techs=AVX2)/[SSE2](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#techs=SSE2)/[AdvSimd](https://learn.microsoft.com/dotnet/standard/simd). Use Murmur3 or Sha256 instead.
 
 ## Glossary
 
