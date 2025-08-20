@@ -14,11 +14,11 @@ public class CompactUrlRepositoryInternOriginalTests
         ulong hash = InvokeHash(url);
 
         var (hShards, uShards, mask, _) = GetInternals(repo);
-        int id = 12345;
+        long id = 12345L;
         hShards[(int)(hash & (uint)mask)][hash] = id;
         uShards[id & mask][id] = url;
 
-        int ret = CallInternOriginal(repo, url);
+        long ret = CallInternOriginal(repo, url);
         ret.ShouldBe(id);
     }
 
@@ -30,15 +30,15 @@ public class CompactUrlRepositoryInternOriginalTests
         ulong hash = InvokeHash(url);
 
         var (hShards, uShards, mask, collisions) = GetInternals(repo);
-        int existingId = 2001;
+        long existingId = 2001L;
         hShards[(int)(hash & (uint)mask)][hash] = existingId;
         uShards[existingId & mask][existingId] = "https://different.example/";
 
-        var bucket = collisions.GetOrAdd(hash, _ => new ConcurrentDictionary<string, int>(StringComparer.Ordinal));
-        int expected = 777;
+        var bucket = collisions.GetOrAdd(hash, _ => new ConcurrentDictionary<string, long>(StringComparer.Ordinal));
+        long expected = 777L;
         bucket[url] = expected;
 
-        int ret = CallInternOriginal(repo, url);
+        long ret = CallInternOriginal(repo, url);
         ret.ShouldBe(expected);
     }
 
@@ -52,9 +52,9 @@ public class CompactUrlRepositoryInternOriginalTests
         var (hShards, uShards, mask, _) = GetInternals(repo);
         hShards[(int)(hash & (uint)mask)].TryRemove(hash, out _);
 
-        int ret = CallInternOriginal(repo, url);
+        long ret = CallInternOriginal(repo, url);
         ret.ShouldBe(1);
-        hShards[(int)(hash & (uint)mask)].TryGetValue(hash, out var publishedId).ShouldBeTrue();
+        hShards[(long)(hash & (uint)mask)].TryGetValue(hash, out var publishedId).ShouldBeTrue();
         publishedId.ShouldBe(ret);
         uShards[ret & mask].TryGetValue(ret, out var storedUrl).ShouldBeTrue();
         storedUrl.ShouldBe(url);
@@ -68,11 +68,11 @@ public class CompactUrlRepositoryInternOriginalTests
         ulong hash = InvokeHash(url);
 
         var (hShards, uShards, mask, _) = GetInternals(repo);
-        int racedId = 31415;
-        hShards[(int)(hash & (uint)mask)][hash] = racedId;
+        long racedId = 31415L;
+        hShards[(long)(hash & (uint)mask)][hash] = racedId;
         uShards[racedId & mask][racedId] = url;
 
-        int ret = CallInternOriginal(repo, url);
+        long ret = CallInternOriginal(repo, url);
         ret.ShouldBe(racedId);
     }
 
@@ -84,15 +84,15 @@ public class CompactUrlRepositoryInternOriginalTests
         ulong hash = InvokeHash(url);
 
         var (hShards, uShards, mask, collisions) = GetInternals(repo);
-        int racedId = 27182;
-        hShards[(int)(hash & (uint)mask)][hash] = racedId;
+        long racedId = 27182L;
+        hShards[(long)(hash & (uint)mask)][hash] = racedId;
         uShards[racedId & mask][racedId] = "https://other.example/";
 
-        var bucket = collisions.GetOrAdd(hash, _ => new ConcurrentDictionary<string, int>(StringComparer.Ordinal));
-        int expected = 4242;
+        var bucket = collisions.GetOrAdd(hash, _ => new ConcurrentDictionary<string, long>(StringComparer.Ordinal));
+        long expected = 4242L;
         bucket[url] = expected;
 
-        int ret = CallInternOriginal(repo, url);
+        long ret = CallInternOriginal(repo, url);
         ret.ShouldBe(expected);
     }
 
@@ -103,23 +103,23 @@ public class CompactUrlRepositoryInternOriginalTests
         return (ulong)mi.Invoke(null, new object[] { value })!;
     }
 
-    private static int CallInternOriginal(CompactUrlRepository repo, string url)
+    private static long CallInternOriginal(CompactUrlRepository repo, string url)
     {
         var mi = typeof(CompactUrlRepository).GetMethod("InternOriginal", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        return (int)mi.Invoke(repo, new object[] { url })!;
+        return (long)mi.Invoke(repo, new object[] { url })!;
     }
 
-    private static (ConcurrentDictionary<ulong, int>[] HashToId,
-                    ConcurrentDictionary<int, string>[] IdToUrl,
+    private static (ConcurrentDictionary<ulong, long>[] HashToId,
+                    ConcurrentDictionary<long, string>[] IdToUrl,
                     int Mask,
-                    ConcurrentDictionary<ulong, ConcurrentDictionary<string, int>> Collisions) GetInternals(CompactUrlRepository repo)
+                    ConcurrentDictionary<ulong, ConcurrentDictionary<string, long>> Collisions) GetInternals(CompactUrlRepository repo)
     {
         var state = typeof(CompactUrlRepository).GetField("_state", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(repo)!;
         var stateType = state.GetType();
         int mask = (int)stateType.GetProperty("ShardMask", BindingFlags.Public | BindingFlags.Instance)!.GetValue(state)!;
-        var h = (ConcurrentDictionary<ulong, int>[])stateType.GetProperty("HashToIdShards", BindingFlags.Public | BindingFlags.Instance)!.GetValue(state)!;
-        var u = (ConcurrentDictionary<int, string>[])stateType.GetProperty("IdToUrlShards", BindingFlags.Public | BindingFlags.Instance)!.GetValue(state)!;
-        var collisions = (ConcurrentDictionary<ulong, ConcurrentDictionary<string, int>>)typeof(CompactUrlRepository)
+        var h = (ConcurrentDictionary<ulong, long>[])stateType.GetProperty("HashToIdShards", BindingFlags.Public | BindingFlags.Instance)!.GetValue(state)!;
+        var u = (ConcurrentDictionary<long, string>[])stateType.GetProperty("IdToUrlShards", BindingFlags.Public | BindingFlags.Instance)!.GetValue(state)!;
+        var collisions = (ConcurrentDictionary<ulong, ConcurrentDictionary<string, long>>)typeof(CompactUrlRepository)
             .GetField("_hashCollisions", BindingFlags.NonPublic | BindingFlags.Instance)!
             .GetValue(repo)!;
         return (h, u, mask, collisions);
