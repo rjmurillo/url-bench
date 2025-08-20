@@ -90,7 +90,7 @@ public static class Convert
     /// <param name="value">The value to determine buffer length for.</param>
     /// <returns>The required buffer length.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int DetermineBufferLength(ulong value)
+    public static int DetermineBufferLength(ulong value)
     {
         // Let's be a little smarter about the allocation
         //
