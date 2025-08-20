@@ -18,5 +18,5 @@ internal static class Constants
     /// <summary>
     /// The maximum size for stack allocation. Stackalloc is limited to 2,096 bytes, which is below the size we hit StackOverflow at 56,320 bytes.
     /// </summary>
-    internal static readonly int MaxStackSize = 2_096;
+    internal const int MaxStackSize = 2_096;
 }
