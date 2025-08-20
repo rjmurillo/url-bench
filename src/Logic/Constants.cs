@@ -18,6 +18,7 @@ internal static class Constants
     /// <summary>
     /// The maximum size for stack allocation. Stackalloc is limited to 2,096 bytes, which is below the size we hit StackOverflow at 56,320 bytes.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "ECS0200:Consider using readonly instead of const for better flexibility", Justification = "Value is a compile-time constant and const is preferred for performance and clarity.")]
     internal const int MaxStackSize = 2_096;
 
     /// <summary>
