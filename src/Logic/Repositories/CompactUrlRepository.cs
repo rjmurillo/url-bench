@@ -214,7 +214,6 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
     }
 
     // Handle rare hash collisions via per-hash string -> id buckets.
-    [ExcludeFromCodeCoverage]
     private int InternCollision(ulong hash, string url)
     {
         var bucket = _hashCollisions.GetOrAdd(hash, static _ => new ConcurrentDictionary<string, int>(StringComparer.Ordinal));
