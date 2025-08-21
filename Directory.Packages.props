@@ -10,17 +10,14 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.2" />
     <PackageVersion Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.15.2" />
     <PackageVersion Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.2" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="FastCache.Cached" Version="1.8.2" />
     <PackageVersion Include="IdGen" Version="3.0.7" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="9.0.8" />
     <PackageVersion Include="Microsoft.FASTER.Core" Version="2.6.5" />
     <PackageVersion Include="ReflectionIT.ClrHeapAllocationAnalyzer" Version="3.2.4" />
-    <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Spectre.Console" Version="0.50.0" />
     <PackageVersion Include="Spectre.Console.Analyzer" Version="1.0.0" />
     <PackageVersion Include="Spectre.Console.Cli" Version="0.50.0" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
-    <PackageVersion Include="Xunit.SkippableFact" Version="1.5.23" />
   </ItemGroup>
 </Project>
