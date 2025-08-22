@@ -214,7 +214,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         Span<char> buf = stackalloc char[12];
         int len = Base64Encoder.DetermineBufferLength(k);
         Span<char> slice = buf[..len];
-        Base64Encoder.AsBase62String(k, ref slice);
+        Base64Encoder.Encode(k, ref slice);
         string shortUrl = slice.ToString();
         _ = facade.GetOriginalUrl(shortUrl);
     }

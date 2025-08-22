@@ -51,7 +51,7 @@ public class IncrementingIntegerUrlShortener(ulong initialValue) : IUrlShortener
         // This encoding helps in generating a shorter URL identifier from large numeric values.
         // For example, the first short URL will be "A", the second will be "B", and so on.
         Span<char> base62Buffer = stackalloc char[Math.Min(Base64Encoder.DetermineBufferLength(value), Constants.MaxSlugLength)];
-        Base64Encoder.AsBase62String(value, ref base62Buffer);
+        Base64Encoder.Encode(value, ref base62Buffer);
 
         return base62Buffer.ToString();
     }

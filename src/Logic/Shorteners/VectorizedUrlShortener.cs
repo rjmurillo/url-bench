@@ -69,7 +69,7 @@ public class VectorizedUrlShortener : IUrlShortener
         var value = FlexibleHash(bytes[..byteCount]);
 
         Span<char> base62Buffer = stackalloc char[Math.Min(Base64Encoder.DetermineBufferLength(value), Constants.MaxSlugLength)];
-        Base64Encoder.AsBase62String(value, ref base62Buffer);
+        Base64Encoder.Encode(value, ref base62Buffer);
 
         return base62Buffer.ToString();
     }

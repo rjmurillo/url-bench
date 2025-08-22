@@ -18,7 +18,7 @@ public static class Base64Encoder
     /// <param name="value">The value to convert.</param>
     /// <returns>The Base62 string representation of the value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<char> AsBase62String(ulong value)
+    public static ReadOnlySpan<char> Encode(ulong value)
     {
         int bufferLength = DetermineBufferLength(value);
 
@@ -49,7 +49,7 @@ public static class Base64Encoder
     /// </summary>
     /// <param name="value">The value to convert.</param>
     /// <param name="buffer">The buffer to write the result to.</param>
-    public static void AsBase62String(ulong value, ref Span<char> buffer)
+    public static void Encode(ulong value, ref Span<char> buffer)
     {
         int bufferIndex = buffer.Length - 1;
         do
@@ -66,10 +66,10 @@ public static class Base64Encoder
     /// <param name="hash">The byte span to convert.</param>
     /// <returns>The Base62 string representation of the hash.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<char> AsBase62String(Span<byte> hash)
+    public static ReadOnlySpan<char> Encode(Span<byte> hash)
     {
         ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
-        return AsBase62String(index);
+        return Encode(index);
     }
 
     /// <summary>
@@ -78,10 +78,10 @@ public static class Base64Encoder
     /// <param name="hash">The byte span to convert.</param>
     /// <param name="buffer">The buffer to write the result to.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void AsBase62String(Span<byte> hash, ref Span<char> buffer)
+    public static void Encode(Span<byte> hash, ref Span<char> buffer)
     {
         ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
-        AsBase62String(index, ref buffer);
+        Encode(index, ref buffer);
     }
 
     /// <summary>

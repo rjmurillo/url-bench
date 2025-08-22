@@ -74,7 +74,7 @@ public class Murmur3HashUrlShortener(uint seed)
         ulong value = Murmur3.Hash64(ref inputSpan, seed);
 
         Span<char> base62Buffer = stackalloc char[Math.Min(Base64Encoder.DetermineBufferLength(value), Constants.MaxSlugLength)];
-        Base64Encoder.AsBase62String(value, ref base62Buffer);
+        Base64Encoder.Encode(value, ref base62Buffer);
         return base62Buffer.ToString();
     }
 }
