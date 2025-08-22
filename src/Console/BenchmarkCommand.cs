@@ -11,7 +11,6 @@ using Logic.Repositories;
 using Logic.Shorteners;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using Convert = Logic.Convert;
 
 #pragma warning disable SA1600
 #pragma warning disable HAA0301
@@ -213,9 +212,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
     private static void ReadSingle(UrlManager facade, ulong k)
     {
         Span<char> buf = stackalloc char[12];
-        int len = Convert.DetermineBufferLength(k);
+        int len = Base64Encoder.DetermineBufferLength(k);
         Span<char> slice = buf[..len];
-        Convert.AsBase62String(k, ref slice);
+        Base64Encoder.AsBase62String(k, ref slice);
         string shortUrl = slice.ToString();
         _ = facade.GetOriginalUrl(shortUrl);
     }

@@ -1,10 +1,10 @@
 namespace UrlConverterPermutations;
 
 /// <summary>
-/// Test class for the Convert utility class.
+/// Test class for the Base64Encoder utility class.
 /// </summary>
 /// <param name="output">The test output helper for writing test information.</param>
-public class ConvertTests(ITestOutputHelper output)
+public class Base64EncoderTests(ITestOutputHelper output)
 {
     private const ulong Base62Power8 = 218_340_105_584_896UL;
     private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -15,7 +15,7 @@ public class ConvertTests(ITestOutputHelper output)
     [Fact]
     public void AsBase62String_ZeroValue_ReturnsSingleCharacter()
     {
-        var result = Logic.Convert.AsBase62String(0UL);
+        var result = Logic.Base64Encoder.AsBase62String(0UL);
 
         output.WriteLine($"Result: {result}");
 
@@ -38,7 +38,7 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(61UL, "9")]
     public void AsBase62String_SingleDigitValues_ReturnsCorrectCharacter(ulong value, string expected)
     {
-        var result = Logic.Convert.AsBase62String(value);
+        var result = Logic.Base64Encoder.AsBase62String(value);
 
         output.WriteLine($"Value: {value}, Result: {result}, Expected: {expected}");
 
@@ -58,7 +58,7 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(3844UL, "BAA")]
     public void AsBase62String_TwoDigitValues_ReturnsCorrectString(ulong value, string expected)
     {
-        var result = Logic.Convert.AsBase62String(value);
+        var result = Logic.Base64Encoder.AsBase62String(value);
 
         output.WriteLine($"Value: {value}, Result: {result}, Expected: {expected}");
 
@@ -76,7 +76,7 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(1_000_000_000_000UL)]
     public void AsBase62String_LargeValues_ReturnsValidBase62String(ulong value)
     {
-        var result = Logic.Convert.AsBase62String(value);
+        var result = Logic.Base64Encoder.AsBase62String(value);
 
         output.WriteLine($"Value: {value}, Result: {result}");
 
@@ -96,7 +96,7 @@ public class ConvertTests(ITestOutputHelper output)
     [Fact]
     public void AsBase62String_ReturnsValidReadOnlySpan()
     {
-        var result = Logic.Convert.AsBase62String(12345UL);
+        var result = Logic.Base64Encoder.AsBase62String(12345UL);
 
         result.IsEmpty.ShouldBeFalse();
     }
@@ -111,12 +111,12 @@ public class ConvertTests(ITestOutputHelper output)
         var buffer = new char[10];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(value, ref span);
+        Logic.Base64Encoder.AsBase62String(value, ref span);
 
         output.WriteLine($"Value: {value}, Buffer: {new string(buffer)}");
 
         // Verify the result is correct - buffer writes from right to left
-        var expected = Logic.Convert.AsBase62String(value);
+        var expected = Logic.Base64Encoder.AsBase62String(value);
         var actual = new string(buffer).TrimStart('\0');
         actual.ShouldBe(expected.ToString());
     }
@@ -135,11 +135,11 @@ public class ConvertTests(ITestOutputHelper output)
         var buffer = new char[bufferSize];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(value, ref span);
+        Logic.Base64Encoder.AsBase62String(value, ref span);
 
         output.WriteLine($"Value: {value}, Buffer: {new string(buffer)}");
 
-        var expected = Logic.Convert.AsBase62String(value);
+        var expected = Logic.Base64Encoder.AsBase62String(value);
         var actual = new string(buffer);
         actual.ShouldBe(expected.ToString());
     }
@@ -157,7 +157,7 @@ public class ConvertTests(ITestOutputHelper output)
         var buffer = new char[bufferSize];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(value, ref span);
+        Logic.Base64Encoder.AsBase62String(value, ref span);
 
         output.WriteLine($"Value: {value}, Buffer: {new string(buffer)}");
 
@@ -182,7 +182,7 @@ public class ConvertTests(ITestOutputHelper output)
         var buffer = new char[5];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(0UL, ref span);
+        Logic.Base64Encoder.AsBase62String(0UL, ref span);
 
         output.WriteLine($"Buffer: {new string(buffer)}");
 
@@ -197,7 +197,7 @@ public class ConvertTests(ITestOutputHelper output)
     {
         var hash = new byte[8];
 
-        var result = Logic.Convert.AsBase62String(hash);
+        var result = Logic.Base64Encoder.AsBase62String(hash);
 
         output.WriteLine($"Result: {result}");
 
@@ -222,7 +222,7 @@ public class ConvertTests(ITestOutputHelper output)
     {
         var hash = new Span<byte>(hashBytes);
 
-        var result = Logic.Convert.AsBase62String(hash);
+        var result = Logic.Base64Encoder.AsBase62String(hash);
 
         output.WriteLine($"Hash: {BitConverter.ToString(hashBytes)}, Result: {result}");
 
@@ -243,7 +243,7 @@ public class ConvertTests(ITestOutputHelper output)
     {
         var hash = new byte[] { 255, 255, 255, 255, 255, 255, 255, 255 };
 
-        var result = Logic.Convert.AsBase62String(hash);
+        var result = Logic.Base64Encoder.AsBase62String(hash);
 
         output.WriteLine($"Result: {result}");
 
@@ -266,12 +266,12 @@ public class ConvertTests(ITestOutputHelper output)
         var largeValue = Base62Power8 + 1000UL;
         var hash = BitConverter.GetBytes(largeValue);
 
-        var result = Logic.Convert.AsBase62String(hash);
+        var result = Logic.Base64Encoder.AsBase62String(hash);
 
         output.WriteLine($"Large value: {largeValue}, Result: {result}");
 
         // Should be equivalent to the modulo operation
-        var expected = Logic.Convert.AsBase62String(largeValue % Base62Power8);
+        var expected = Logic.Base64Encoder.AsBase62String(largeValue % Base62Power8);
         result.ToString().ShouldBe(expected.ToString());
     }
 
@@ -285,11 +285,11 @@ public class ConvertTests(ITestOutputHelper output)
         var buffer = new char[10];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(hash, ref span);
+        Logic.Base64Encoder.AsBase62String(hash, ref span);
 
         output.WriteLine($"Hash: {BitConverter.ToString(hash)}, Buffer: {new string(buffer)}");
 
-        var expected = Logic.Convert.AsBase62String(hash);
+        var expected = Logic.Base64Encoder.AsBase62String(hash);
         var actual = new string(buffer).TrimStart('\0');
         actual.ShouldBe(expected.ToString());
     }
@@ -304,7 +304,7 @@ public class ConvertTests(ITestOutputHelper output)
         var buffer = new char[2];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(hash, ref span);
+        Logic.Base64Encoder.AsBase62String(hash, ref span);
 
         output.WriteLine($"Hash: {BitConverter.ToString(hash)}, Buffer: {new string(buffer)}");
 
@@ -328,7 +328,7 @@ public class ConvertTests(ITestOutputHelper output)
         // Test a range of values to ensure all Base62 characters are used
         for (ulong i = 0; i < 10000; i++)
         {
-            var result = Logic.Convert.AsBase62String(i);
+            var result = Logic.Base64Encoder.AsBase62String(i);
             foreach (var c in result)
             {
                 usedChars.Add(c);
@@ -355,8 +355,8 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(ulong.MaxValue)]
     public void AsBase62String_ConsistentResults_ForSameInput(ulong value)
     {
-        var result1 = Logic.Convert.AsBase62String(value);
-        var result2 = Logic.Convert.AsBase62String(value);
+        var result1 = Logic.Base64Encoder.AsBase62String(value);
+        var result2 = Logic.Base64Encoder.AsBase62String(value);
 
         output.WriteLine($"Value: {value}, Result1: {result1}, Result2: {result2}");
 
@@ -374,11 +374,11 @@ public class ConvertTests(ITestOutputHelper output)
         var span = buffer.AsSpan();
 
         // First call with buffer
-        Logic.Convert.AsBase62String(value, ref span);
+        Logic.Base64Encoder.AsBase62String(value, ref span);
         var bufferResult = new string(buffer).TrimStart('\0');
 
         // Second call without buffer
-        var spanResult = Logic.Convert.AsBase62String(value);
+        var spanResult = Logic.Base64Encoder.AsBase62String(value);
 
         output.WriteLine($"Buffer result: {bufferResult}, Span result: {spanResult}");
 
@@ -394,8 +394,8 @@ public class ConvertTests(ITestOutputHelper output)
         var hash1 = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
         var hash2 = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
 
-        var result1 = Logic.Convert.AsBase62String(hash1);
-        var result2 = Logic.Convert.AsBase62String(hash2);
+        var result1 = Logic.Base64Encoder.AsBase62String(hash1);
+        var result2 = Logic.Base64Encoder.AsBase62String(hash2);
 
         output.WriteLine($"Hash1: {BitConverter.ToString(hash1)}, Result1: {result1}");
         output.WriteLine($"Hash2: {BitConverter.ToString(hash2)}, Result2: {result2}");
@@ -410,7 +410,7 @@ public class ConvertTests(ITestOutputHelper output)
     [Fact]
     public void AsBase62String_MaximumValue_HandledCorrectly()
     {
-        var result = Logic.Convert.AsBase62String(ulong.MaxValue);
+        var result = Logic.Base64Encoder.AsBase62String(ulong.MaxValue);
 
         output.WriteLine($"Max value result: {result}");
 
@@ -437,7 +437,7 @@ public class ConvertTests(ITestOutputHelper output)
 
         for (int i = 0; i < 10000; i++)
         {
-            Logic.Convert.AsBase62String(value, ref span);
+            Logic.Base64Encoder.AsBase62String(value, ref span);
         }
 
         stopwatch.Stop();
@@ -458,8 +458,8 @@ public class ConvertTests(ITestOutputHelper output)
         var littleEndianBytes = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
         var expectedValue = 1UL;
 
-        var result = Logic.Convert.AsBase62String(littleEndianBytes);
-        var expected = Logic.Convert.AsBase62String(expectedValue);
+        var result = Logic.Base64Encoder.AsBase62String(littleEndianBytes);
+        var expected = Logic.Base64Encoder.AsBase62String(expectedValue);
 
         output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {result}, Expected: {expected}");
 
@@ -476,8 +476,8 @@ public class ConvertTests(ITestOutputHelper output)
         var bigEndianBytes = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
         var littleEndianBytes = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
 
-        var bigEndianResult = Logic.Convert.AsBase62String(bigEndianBytes);
-        var littleEndianResult = Logic.Convert.AsBase62String(littleEndianBytes);
+        var bigEndianResult = Logic.Base64Encoder.AsBase62String(bigEndianBytes);
+        var littleEndianResult = Logic.Base64Encoder.AsBase62String(littleEndianBytes);
 
         output.WriteLine($"Big-endian bytes: {BitConverter.ToString(bigEndianBytes)}, Result: {bigEndianResult}");
         output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {littleEndianResult}");
@@ -498,8 +498,8 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 }, 0x0807060504030201UL)]
     public void AsBase62String_ByteSpan_VariousBytePatterns_HandledCorrectly(byte[] bytes, ulong expectedValue)
     {
-        var result = Logic.Convert.AsBase62String(bytes);
-        var expected = Logic.Convert.AsBase62String(expectedValue % Base62Power8);
+        var result = Logic.Base64Encoder.AsBase62String(bytes);
+        var expected = Logic.Base64Encoder.AsBase62String(expectedValue % Base62Power8);
 
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
         output.WriteLine($"Result: {result}, Expected: {expected}");
@@ -517,11 +517,11 @@ public class ConvertTests(ITestOutputHelper output)
         var buffer = new char[10];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(bytes, ref span);
+        Logic.Base64Encoder.AsBase62String(bytes, ref span);
 
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Buffer: {new string(buffer)}");
 
-        var expected = Logic.Convert.AsBase62String(bytes);
+        var expected = Logic.Base64Encoder.AsBase62String(bytes);
         var actual = new string(buffer).TrimStart('\0');
         actual.ShouldBe(expected.ToString());
     }
@@ -536,10 +536,10 @@ public class ConvertTests(ITestOutputHelper output)
 
         // Convert using BinaryPrimitives (little-endian)
         var ulongValue = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
-        var expected = Logic.Convert.AsBase62String(ulongValue % Base62Power8);
+        var expected = Logic.Base64Encoder.AsBase62String(ulongValue % Base62Power8);
 
         // Convert using byte span
-        var result = Logic.Convert.AsBase62String(bytes);
+        var result = Logic.Base64Encoder.AsBase62String(bytes);
 
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, ULong value: {ulongValue}");
         output.WriteLine($"Expected: {expected}, Result: {result}");
@@ -556,8 +556,8 @@ public class ConvertTests(ITestOutputHelper output)
         var originalBytes = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
         var reversedBytes = new byte[] { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
-        var originalResult = Logic.Convert.AsBase62String(originalBytes);
-        var reversedResult = Logic.Convert.AsBase62String(reversedBytes);
+        var originalResult = Logic.Base64Encoder.AsBase62String(originalBytes);
+        var reversedResult = Logic.Base64Encoder.AsBase62String(reversedBytes);
 
         output.WriteLine($"Original bytes: {BitConverter.ToString(originalBytes)}, Result: {originalResult}");
         output.WriteLine($"Reversed bytes: {BitConverter.ToString(reversedBytes)}, Result: {reversedResult}");
@@ -601,8 +601,8 @@ public class ConvertTests(ITestOutputHelper output)
 
         foreach (var (bytes, expectedValue) in testCases)
         {
-            var result = Logic.Convert.AsBase62String(bytes);
-            var expected = Logic.Convert.AsBase62String(expectedValue % Base62Power8);
+            var result = Logic.Base64Encoder.AsBase62String(bytes);
+            var expected = Logic.Base64Encoder.AsBase62String(expectedValue % Base62Power8);
 
             output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
             output.WriteLine($"Result: {result}, Expected: {expected}");
@@ -628,8 +628,8 @@ public class ConvertTests(ITestOutputHelper output)
 
         foreach (var (bytes, expectedValue) in testCases)
         {
-            var result = Logic.Convert.AsBase62String(bytes);
-            var expected = Logic.Convert.AsBase62String(expectedValue % Base62Power8);
+            var result = Logic.Base64Encoder.AsBase62String(bytes);
+            var expected = Logic.Base64Encoder.AsBase62String(expectedValue % Base62Power8);
 
             output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
             output.WriteLine($"Result: {result}, Expected: {expected}");

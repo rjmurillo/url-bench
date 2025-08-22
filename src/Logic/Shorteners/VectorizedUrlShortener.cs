@@ -68,8 +68,8 @@ public class VectorizedUrlShortener : IUrlShortener
         // Only hash the bytes written
         var value = FlexibleHash(bytes[..byteCount]);
 
-        Span<char> base62Buffer = stackalloc char[Math.Min(Convert.DetermineBufferLength(value), Constants.MaxSlugLength)];
-        Convert.AsBase62String(value, ref base62Buffer);
+        Span<char> base62Buffer = stackalloc char[Math.Min(Base64Encoder.DetermineBufferLength(value), Constants.MaxSlugLength)];
+        Base64Encoder.AsBase62String(value, ref base62Buffer);
 
         return base62Buffer.ToString();
     }

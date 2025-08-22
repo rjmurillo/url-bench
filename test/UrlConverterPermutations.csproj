@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- 
+    <!--
     This is to work around an issue with the ReportGenerator Task.
 
     When the tests target multiple frameworks, there's a concept introduced of
