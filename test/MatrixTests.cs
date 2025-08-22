@@ -1,5 +1,6 @@
 ﻿using Contracts;
 using Logic;
+using Logic.Contracts;
 
 namespace UrlConverterPermutations;
 
@@ -36,6 +37,25 @@ public class MatrixTests(ITestOutputHelper output)
         output.WriteLine($"Original URL: {originalUrl}");
 
         originalUrl.ShouldBe(longUrl);
+    }
+
+    [Theory]
+    [MemberData(nameof(MatrixData))]
+    public void RetrieveOriginalUrl_returns_original_url_with_Span(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        const string longUrl = "https://jobs.careers.microsoft.com/us/en/job/1613473";
+
+        var f = new UrlManager(shortener, repository);
+
+        var shortUrl = f.ShortenAndSave(longUrl);
+
+        output.WriteLine($"Shortened URL: {shortUrl}");
+
+        var originalUrl = f.GetOriginalUrl(shortUrl.AsSpan());
+
+        output.WriteLine($"Original URL: {originalUrl}");
+
+        originalUrl.ToString().ShouldBe(longUrl);
     }
 
     /// <summary>
@@ -78,11 +98,33 @@ public class MatrixTests(ITestOutputHelper output)
 
     [SkippableTheory]
     [MemberData(nameof(MatrixData))]
+    public void Save_and_GetOriginal_Span_roundtrip(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        const string shortUrl = "abc123";
+        const string original = "https://example.com/x";
+
+        Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
+
+        repository!.SaveUrlMapping(shortUrl, original).ShouldBeTrue();
+        repository!.GetOriginalUrl(shortUrl).ShouldBe(original);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(MatrixData))]
     public void GetOriginal_missing_returns_empty(IUrlShortener? shortener, IUrlRepository? repository)
     {
         Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
 
         repository!.GetOriginalUrl("nope").ShouldBe(string.Empty);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(MatrixData))]
+    public void GetOriginal_missing_returns_empty_span(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
+
+        repository!.GetOriginalUrl("nope".AsSpan()).ShouldBe(string.Empty);
     }
 
     [SkippableTheory]

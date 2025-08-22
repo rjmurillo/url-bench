@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Mathematics;
 using Contracts;
 using Logic;
+using Logic.Contracts;
 using Logic.Repositories;
 using Logic.Shorteners;
 using Spectre.Console;
@@ -69,7 +70,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         return 0;
     }
 
-    private static void RunWritePhase(Settings settings, UrlManager facade, string url, Stopwatch sw, List<double> samples)
+    private static void RunWritePhase(Settings settings, IUrlManager facade, string url, Stopwatch sw, List<double> samples)
     {
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
@@ -133,7 +134,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             });
     }
 
-    private static void RunReadPhase(Settings settings, UrlManager facade, Stopwatch sw, List<double> samples)
+    private static void RunReadPhase(Settings settings, IUrlManager facade, Stopwatch sw, List<double> samples)
     {
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
@@ -209,14 +210,13 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ReadSingle(UrlManager facade, ulong k)
+    private static void ReadSingle(IUrlManager facade, ulong k)
     {
         Span<char> buf = stackalloc char[12];
         int len = Base64Encoder.DetermineBufferLength(k);
         Span<char> slice = buf[..len];
         Base64Encoder.Encode(k, ref slice);
-        string shortUrl = slice.ToString();
-        _ = facade.GetOriginalUrl(shortUrl);
+        _ = facade.GetOriginalUrl(slice);
     }
 
     public sealed class Settings : CommandSettings

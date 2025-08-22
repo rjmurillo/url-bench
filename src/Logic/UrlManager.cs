@@ -1,4 +1,6 @@
-﻿using Contracts;
+﻿using System.Runtime.CompilerServices;
+using Contracts;
+using Logic.Contracts;
 
 namespace Logic;
 
@@ -10,7 +12,7 @@ namespace Logic;
 /// <param name="repository">The repository to use for storing URL mappings.</param>
 public sealed class UrlManager(
     IUrlShortener? shortener,
-    IUrlRepository? repository)
+    IUrlRepository? repository) : IUrlManagerSpan
 {
     private readonly IUrlShortener _shortener = shortener ?? throw new ArgumentNullException(nameof(shortener));
     private readonly IUrlRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -64,5 +66,25 @@ public sealed class UrlManager(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(shortUrl);
         return _repository.GetOriginalUrl(shortUrl);
+    }
+
+    /// <summary>
+    /// Retrieves the original URL associated with the specified short URL using a <see cref="ReadOnlySpan{Char}"/>.
+    /// This overload is optimized for performance and avoids allocations when possible.
+    /// If the underlying repository supports span-based lookup, it is used directly; otherwise, falls back to string-based lookup.
+    /// </summary>
+    /// <param name="shortUrl">The short URL as a <see cref="ReadOnlySpan{Char}"/> to look up.</param>
+    /// <returns>
+    /// A <see cref="ReadOnlySpan{Char}"/> containing the original URL if found; otherwise, an empty span.
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<char> GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl)
+    {
+        if (_repository is IUrlRepositorySpan fast)
+        {
+            return fast.GetOriginalUrl(shortUrl).Span;
+        }
+
+        return GetOriginalUrl(shortUrl.ToString());
     }
 }
