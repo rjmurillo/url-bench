@@ -1,5 +1,6 @@
 ﻿using Contracts;
 using Logic;
+using Logic.Contracts;
 
 namespace UrlConverterPermutations;
 

@@ -1,4 +1,5 @@
 ﻿using Contracts;
+using Logic.Contracts;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Logic.Repositories;

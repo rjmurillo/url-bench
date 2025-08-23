@@ -2,6 +2,7 @@
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Contracts;
 using Logic;
+using Logic.Contracts;
 using Logic.Repositories;
 using Logic.Shorteners;
 
