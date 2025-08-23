@@ -10,9 +10,9 @@ namespace Logic.Repositories;
 public class ConcurrentUrlRepository : IUrlRepositorySpan, IDisposable
 {
     private readonly ConcurrentDictionary<string, string> _urlMappings;
-    #if NET9_0_OR_GREATER
+#if NET9_0_OR_GREATER
     private readonly ConcurrentDictionary<string, string>.AlternateLookup<ReadOnlySpan<char>> _altLookup;
-    #endif
+#endif
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConcurrentUrlRepository"/> class with default concurrency level and capacity.
@@ -23,6 +23,7 @@ public class ConcurrentUrlRepository : IUrlRepositorySpan, IDisposable
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="ConcurrentUrlRepository"/> class.
     /// A thread-safe URL repository implementation using ConcurrentDictionary for storing URL mappings.
     /// </summary>
     /// <param name="concurrencyLevel">The estimated number of threads that will update the dictionary concurrently.</param>

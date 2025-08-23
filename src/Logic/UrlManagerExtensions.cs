@@ -1,6 +1,5 @@
-﻿using Logic.Contracts;
-
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
+using Logic.Contracts;
 
 namespace Logic;
 
