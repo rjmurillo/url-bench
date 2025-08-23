@@ -44,7 +44,7 @@ public class SnowflakeUrlShortener(int generatorId) : IUrlShortener
 
         // Convert the unique ID to a base62 string.
         Span<char> base62Buffer = stackalloc char[Constants.MaxSlugLength];
-        Base64Encoder.Encode((ulong)id, ref base62Buffer);
+        Base62Encoder.Encode((ulong)id, ref base62Buffer);
 
         return base62Buffer.ToString();
     }

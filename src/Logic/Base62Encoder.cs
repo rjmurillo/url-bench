@@ -7,7 +7,7 @@ namespace Logic;
 /// <summary>
 /// Provides utility methods for converting values to Base62 string representations.
 /// </summary>
-public static class Base64Encoder
+public static class Base62Encoder
 {
     private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static readonly ulong CharLength = 62UL;

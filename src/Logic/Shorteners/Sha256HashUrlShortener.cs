@@ -76,7 +76,7 @@ public class Sha256HashUrlShortener()
 
         // Base62 encode the SHA256 hash
         Span<char> base62Buffer = stackalloc char[Constants.MaxSlugLength];
-        Base64Encoder.Encode(hashBuffer, ref base62Buffer);
+        Base62Encoder.Encode(hashBuffer, ref base62Buffer);
 
         return base62Buffer.ToString();
     }

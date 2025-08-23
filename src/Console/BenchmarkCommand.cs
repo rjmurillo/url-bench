@@ -213,9 +213,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
     private static void ReadSingle(IUrlManager facade, ulong k)
     {
         Span<char> buf = stackalloc char[12];
-        int len = Base64Encoder.DetermineBufferLength(k);
+        int len = Base62Encoder.DetermineBufferLength(k);
         Span<char> slice = buf[..len];
-        Base64Encoder.Encode(k, ref slice);
+        Base62Encoder.Encode(k, ref slice);
         _ = facade.GetOriginalUrl(slice);
     }
 
