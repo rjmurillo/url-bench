@@ -38,10 +38,7 @@ public static class UrlManagerExtensions
         // 4. Avoiding allocations with Span<T> is opt in.
         if (manager is IUrlManagerSpan spanCapable)
         {
-            ReadOnlySpan<char> span = spanCapable.GetOriginalUrl(shortUrl);
-
-            // Materialize once for the string-returning interface.
-            return new string(span);
+            return spanCapable.GetOriginalUrl(shortUrl);
         }
 
         // Legacy path: must materialize the input for the string-taking API.

@@ -78,11 +78,11 @@ public sealed class UrlManager(
     /// A <see cref="ReadOnlySpan{Char}"/> containing the original URL if found; otherwise, an empty span.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<char> GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl)
+    public string GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl)
     {
         if (_repository is IUrlRepositorySpan fast)
         {
-            return fast.GetOriginalUrl(shortUrl).Span;
+            return fast.GetOriginalUrl(shortUrl);
         }
 
         return GetOriginalUrl(shortUrl.ToString());

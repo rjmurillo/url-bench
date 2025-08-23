@@ -10,5 +10,5 @@ public interface IUrlManagerSpan : IUrlManager
     /// </summary>
     /// <param name="shortUrl">The short URL to look up as a read-only character span.</param>
     /// <returns>The original URL as a <see cref="ReadOnlySpan{Char}"/> if found; otherwise, an empty span.</returns>
-    ReadOnlySpan<char> GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl);
+    string GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl);
 }
