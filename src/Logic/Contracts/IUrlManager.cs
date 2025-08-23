@@ -17,7 +17,8 @@ public interface IUrlManager
     /// </summary>
     /// <param name="longUrl">The long URL to shorten.</param>
     /// <returns>The generated short URL.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="longUrl"/> is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="longUrl"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="longUrl"/> is empty or consists only of whitespace.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the operation fails.</exception>
     string ShortenAndSave(string longUrl);
 
@@ -26,6 +27,7 @@ public interface IUrlManager
     /// </summary>
     /// <param name="shortUrl">The short URL to look up.</param>
     /// <returns>The original URL if found; otherwise, an <see cref="string.Empty"/>.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="shortUrl"/> is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="shortUrl"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="shortUrl"/> is empty or consists only of whitespace.</exception>
     string GetOriginalUrl(string shortUrl);
 }
