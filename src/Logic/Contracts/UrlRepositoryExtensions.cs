@@ -39,17 +39,7 @@ public static class UrlRepositoryExtensions
         // 4. Avoiding allocations with Span<T> is opt in.
         if (repository is IUrlRepositorySpan spanCapable)
         {
-            ReadOnlyMemory<char> span = spanCapable.GetOriginalUrl(shortUrl);
-
-            // If the span is backed by a whole string (not a slice), return the original string without allocating.
-            if (MemoryMarshal.TryGetString(span, out var s, out int start, out int length) &&
-                start == 0 && length == s.Length)
-            {
-                return s;
-            }
-
-            // Fallback: materialize once for the string-returning interface.
-            return new string(span.Span);
+            return spanCapable.GetOriginalUrl(shortUrl);
         }
 
         // Legacy path: must materialize the input for the string-taking API.

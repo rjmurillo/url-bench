@@ -1,6 +1,4 @@
-﻿using Logic.Contracts;
-
-namespace Logic;
+﻿namespace Logic.Contracts;
 
 /// <summary>
 /// Provides <see cref="ReadOnlySpan{T}" />-based URL shortening and retrieval operations.

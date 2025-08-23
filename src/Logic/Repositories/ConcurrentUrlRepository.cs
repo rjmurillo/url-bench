@@ -55,17 +55,17 @@ public class ConcurrentUrlRepository : IUrlRepositorySpan, IDisposable
     /// </summary>
     /// <param name="shortUrl">The short URL to look up, provided as a <see cref="ReadOnlySpan{Char}"/>.</param>
     /// <returns>The original URL as a <see cref="ReadOnlySpan{Char}"/> if found; otherwise, an empty span.</returns>
-    public ReadOnlyMemory<char> GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl)
+    public string GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl)
     {
 #if NET9_0_OR_GREATER
         if (_altLookup.TryGetValue(shortUrl, out var originalUrl))
         {
-            return originalUrl.AsMemory();
+            return originalUrl;
         }
 
-        return ReadOnlyMemory<char>.Empty;
+        return string.Empty;
 #else
-        return GetOriginalUrl(shortUrl.ToString()).AsMemory();
+        return GetOriginalUrl(shortUrl.ToString());
 #endif
     }
 

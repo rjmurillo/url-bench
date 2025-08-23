@@ -13,5 +13,5 @@ public interface IUrlRepositorySpan : IUrlRepository
     /// <param name="shortUrl">The short URL to look up as a <see cref="ReadOnlySpan{T}" />.</param>
     /// <returns>The original URL as a <see cref="ReadOnlyMemory{Char}"/> if found; otherwise, <see cref="ReadOnlyMemory{T}.Empty"/>.</returns>
     /// <remarks>The return as <see cref="ReadOnlyMemory{T}"/> is required to avoid reallocating a <see cref="string"/> in the compatibility layers above.</remarks>
-    ReadOnlyMemory<char> GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl);
+    string GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl);
 }
