@@ -68,6 +68,11 @@ public static class Base64Encoder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<char> Encode(Span<byte> hash)
     {
+        if (hash.Length < sizeof(ulong))
+        {
+            throw new ArgumentException("Hash must be at least 8 bytes", nameof(hash));
+        }
+
         ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
         return Encode(index);
     }
