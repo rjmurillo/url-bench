@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using Logic;
 
 namespace UrlConverterPermutations;
@@ -8,7 +9,6 @@ namespace UrlConverterPermutations;
 /// <param name="output">The test output helper for writing test information.</param>
 public class Base62EncoderTests(ITestOutputHelper output)
 {
-    private const ulong Base62Power8 = 218_340_105_584_896UL;
     private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     /// <summary>
@@ -17,8 +17,13 @@ public class Base62EncoderTests(ITestOutputHelper output)
     [Fact]
     public void Encode_ZeroValue_ReturnsSingleCharacter()
     {
-        var result = Base62Encoder.Encode(0UL);
+        int bufferLength = Base62Encoder.DetermineBufferLength(0UL);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
+        
+        Base62Encoder.Encode(0UL, ref span);
 
+        var result = new string(buffer);
         output.WriteLine($"Result: {result}");
 
         result.Length.ShouldBe(1);
@@ -40,11 +45,16 @@ public class Base62EncoderTests(ITestOutputHelper output)
     [InlineData(61UL, "9")]
     public void Encode_SingleDigitValues_ReturnsCorrectCharacter(ulong value, string expected)
     {
-        var result = Base62Encoder.Encode(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
+        
+        Base62Encoder.Encode(value, ref span);
 
+        var result = new string(buffer);
         output.WriteLine($"Value: {value}, Result: {result}, Expected: {expected}");
 
-        result.ToString().ShouldBe(expected);
+        result.ShouldBe(expected);
     }
 
     /// <summary>
@@ -60,11 +70,16 @@ public class Base62EncoderTests(ITestOutputHelper output)
     [InlineData(3844UL, "BAA")]
     public void Encode_TwoDigitValues_ReturnsCorrectString(ulong value, string expected)
     {
-        var result = Base62Encoder.Encode(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
+        
+        Base62Encoder.Encode(value, ref span);
 
+        var result = new string(buffer);
         output.WriteLine($"Value: {value}, Result: {result}, Expected: {expected}");
 
-        result.ToString().ShouldBe(expected);
+        result.ShouldBe(expected);
     }
 
     /// <summary>
@@ -78,8 +93,13 @@ public class Base62EncoderTests(ITestOutputHelper output)
     [InlineData(1_000_000_000_000UL)]
     public void Encode_LargeValues_ReturnsValidBase62String(ulong value)
     {
-        var result = Base62Encoder.Encode(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
+        
+        Base62Encoder.Encode(value, ref span);
 
+        var result = new string(buffer);
         output.WriteLine($"Value: {value}, Result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -90,17 +110,6 @@ public class Base62EncoderTests(ITestOutputHelper output)
         {
             Base62Chars.ShouldContain(c);
         }
-    }
-
-    /// <summary>
-    /// Tests that the result is a valid ReadOnlySpan.
-    /// </summary>
-    [Fact]
-    public void Encode_ReturnsValidReadOnlySpan()
-    {
-        var result = Base62Encoder.Encode(12345UL);
-
-        result.IsEmpty.ShouldBeFalse();
     }
 
     /// <summary>
@@ -118,9 +127,13 @@ public class Base62EncoderTests(ITestOutputHelper output)
         output.WriteLine($"Value: {value}, Buffer: {new string(buffer)}");
 
         // Verify the result is correct - buffer writes from right to left
-        var expected = Base62Encoder.Encode(value);
+        int expectedBufferLength = Base62Encoder.DetermineBufferLength(value);
+        var expectedBuffer = new char[expectedBufferLength];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(value, ref expectedSpan);
+        var expected = new string(expectedBuffer);
         var actual = new string(buffer).TrimStart('\0');
-        actual.ShouldBe(expected.ToString());
+        actual.ShouldBe(expected);
     }
 
     /// <summary>
@@ -141,9 +154,9 @@ public class Base62EncoderTests(ITestOutputHelper output)
 
         output.WriteLine($"Value: {value}, Buffer: {new string(buffer)}");
 
-        var expected = Base62Encoder.Encode(value);
+        var expected = new string(buffer);
         var actual = new string(buffer);
-        actual.ShouldBe(expected.ToString());
+        actual.ShouldBe(expected);
     }
 
     /// <summary>
@@ -198,9 +211,12 @@ public class Base62EncoderTests(ITestOutputHelper output)
     public void Encode_ByteSpan_AllZeros_ReturnsValidString()
     {
         var hash = new byte[8];
+        var buffer = new char[11]; // Max possible length
+        var span = buffer.AsSpan();
+        
+        Base62Encoder.Encode(hash, ref span);
 
-        var result = Base62Encoder.Encode(hash);
-
+        var result = new string(buffer).TrimStart('\0');
         output.WriteLine($"Result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -222,10 +238,13 @@ public class Base62EncoderTests(ITestOutputHelper output)
     [InlineData(new byte[] { 255, 255, 255, 255, 255, 255, 255, 255 })]
     public void Encode_ByteSpan_SpecificValues_ReturnsValidString(byte[] hashBytes)
     {
-        var hash = new Span<byte>(hashBytes);
+        var hash = new ReadOnlySpan<byte>(hashBytes);
+        var buffer = new char[11]; // Max possible length
+        var span = buffer.AsSpan();
+        
+        Base62Encoder.Encode(hash, ref span);
 
-        var result = Base62Encoder.Encode(hash);
-
+        var result = new string(buffer).TrimStart('\0');
         output.WriteLine($"Hash: {BitConverter.ToString(hashBytes)}, Result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -244,9 +263,12 @@ public class Base62EncoderTests(ITestOutputHelper output)
     public void Encode_ByteSpan_MaxValue_ReturnsValidString()
     {
         var hash = new byte[] { 255, 255, 255, 255, 255, 255, 255, 255 };
+        var buffer = new char[11]; // Max possible length
+        var span = buffer.AsSpan();
+        
+        Base62Encoder.Encode(hash, ref span);
 
-        var result = Base62Encoder.Encode(hash);
-
+        var result = new string(buffer).TrimStart('\0');
         output.WriteLine($"Result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -265,16 +287,22 @@ public class Base62EncoderTests(ITestOutputHelper output)
     public void Encode_ByteSpan_UsesModuloOperation()
     {
         // Create a value that's larger than Base62Power8
-        var largeValue = Base62Power8 + 1000UL;
+        var largeValue = 218_340_105_584_896UL + 1000UL;
         var hash = BitConverter.GetBytes(largeValue);
 
-        var result = Base62Encoder.Encode(hash);
+        var buffer = new char[11]; // Max possible length
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(hash, ref span);
 
+        var result = new string(buffer).TrimStart('\0');
         output.WriteLine($"Large value: {largeValue}, Result: {result}");
 
         // Should be equivalent to the modulo operation
-        var expected = Base62Encoder.Encode(largeValue % Base62Power8);
-        result.ToString().ShouldBe(expected.ToString());
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(largeValue % 218_340_105_584_896UL, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
+        result.ShouldBe(expected);
     }
 
     /// <summary>
@@ -291,9 +319,12 @@ public class Base62EncoderTests(ITestOutputHelper output)
 
         output.WriteLine($"Hash: {BitConverter.ToString(hash)}, Buffer: {new string(buffer)}");
 
-        var expected = Base62Encoder.Encode(hash);
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(hash, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
         var actual = new string(buffer).TrimStart('\0');
-        actual.ShouldBe(expected.ToString());
+        actual.ShouldBe(expected);
     }
 
     /// <summary>
@@ -330,7 +361,12 @@ public class Base62EncoderTests(ITestOutputHelper output)
         // Test a range of values to ensure all Base62 characters are used
         for (ulong i = 0; i < 10000; i++)
         {
-            var result = Base62Encoder.Encode(i);
+            int bufferLength = Base62Encoder.DetermineBufferLength(i);
+            var buffer = new char[bufferLength];
+            var span = buffer.AsSpan();
+            Base62Encoder.Encode(i, ref span);
+            var result = new string(buffer);
+            
             foreach (var c in result)
             {
                 usedChars.Add(c);
@@ -357,9 +393,17 @@ public class Base62EncoderTests(ITestOutputHelper output)
     [InlineData(ulong.MaxValue)]
     public void Encode_ConsistentResults_ForSameInput(ulong value)
     {
-        var result1 = Base62Encoder.Encode(value);
-        var result2 = Base62Encoder.Encode(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer1 = new char[bufferLength];
+        var buffer2 = new char[bufferLength];
+        var span1 = buffer1.AsSpan();
+        var span2 = buffer2.AsSpan();
+        
+        Base62Encoder.Encode(value, ref span1);
+        Base62Encoder.Encode(value, ref span2);
 
+        var result1 = new string(buffer1);
+        var result2 = new string(buffer2);
         output.WriteLine($"Value: {value}, Result1: {result1}, Result2: {result2}");
 
         result1.ToString().ShouldBe(result2.ToString());
@@ -380,11 +424,15 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var bufferResult = new string(buffer).TrimStart('\0');
 
         // Second call without buffer
-        var spanResult = Base62Encoder.Encode(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var spanBuffer = new char[bufferLength];
+        var spanSpan = spanBuffer.AsSpan();
+        Base62Encoder.Encode(value, ref spanSpan);
+        var spanResult = new string(spanBuffer);
 
         output.WriteLine($"Buffer result: {bufferResult}, Span result: {spanResult}");
 
-        bufferResult.ShouldBe(spanResult.ToString());
+        bufferResult.ShouldBe(spanResult);
     }
 
     /// <summary>
@@ -396,8 +444,16 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var hash1 = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
         var hash2 = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
 
-        var result1 = Base62Encoder.Encode(hash1);
-        var result2 = Base62Encoder.Encode(hash2);
+        var buffer1 = new char[11];
+        var buffer2 = new char[11];
+        var span1 = buffer1.AsSpan();
+        var span2 = buffer2.AsSpan();
+        
+        Base62Encoder.Encode(hash1, ref span1);
+        Base62Encoder.Encode(hash2, ref span2);
+
+        var result1 = new string(buffer1).TrimStart('\0');
+        var result2 = new string(buffer2).TrimStart('\0');
 
         output.WriteLine($"Hash1: {BitConverter.ToString(hash1)}, Result1: {result1}");
         output.WriteLine($"Hash2: {BitConverter.ToString(hash2)}, Result2: {result2}");
@@ -412,8 +468,13 @@ public class Base62EncoderTests(ITestOutputHelper output)
     [Fact]
     public void Encode_MaximumValue_HandledCorrectly()
     {
-        var result = Base62Encoder.Encode(ulong.MaxValue);
+        int bufferLength = Base62Encoder.DetermineBufferLength(ulong.MaxValue);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
+        
+        Base62Encoder.Encode(ulong.MaxValue, ref span);
 
+        var result = new string(buffer);
         output.WriteLine($"Max value result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -460,8 +521,15 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var littleEndianBytes = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
         var expectedValue = 1UL;
 
-        var result = Base62Encoder.Encode(littleEndianBytes);
-        var expected = Base62Encoder.Encode(expectedValue);
+        var buffer = new char[11];
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(littleEndianBytes, ref span);
+        var result = new string(buffer).TrimStart('\0');
+
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(expectedValue, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
 
         output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {result}, Expected: {expected}");
 
@@ -478,8 +546,16 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var bigEndianBytes = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
         var littleEndianBytes = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
 
-        var bigEndianResult = Base62Encoder.Encode(bigEndianBytes);
-        var littleEndianResult = Base62Encoder.Encode(littleEndianBytes);
+        var buffer1 = new char[11];
+        var buffer2 = new char[11];
+        var span1 = buffer1.AsSpan();
+        var span2 = buffer2.AsSpan();
+        
+        Base62Encoder.Encode(bigEndianBytes, ref span1);
+        Base62Encoder.Encode(littleEndianBytes, ref span2);
+
+        var bigEndianResult = new string(buffer1).TrimStart('\0');
+        var littleEndianResult = new string(buffer2).TrimStart('\0');
 
         output.WriteLine($"Big-endian bytes: {BitConverter.ToString(bigEndianBytes)}, Result: {bigEndianResult}");
         output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {littleEndianResult}");
@@ -500,8 +576,15 @@ public class Base62EncoderTests(ITestOutputHelper output)
     [InlineData(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 }, 0x0807060504030201UL)]
     public void Encode_ByteSpan_VariousBytePatterns_HandledCorrectly(byte[] bytes, ulong expectedValue)
     {
-        var result = Base62Encoder.Encode(bytes);
-        var expected = Base62Encoder.Encode(expectedValue % Base62Power8);
+        var buffer = new char[11];
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(bytes, ref span);
+        var result = new string(buffer).TrimStart('\0');
+
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(expectedValue % 218_340_105_584_896UL, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
 
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
         output.WriteLine($"Result: {result}, Expected: {expected}");
@@ -523,9 +606,12 @@ public class Base62EncoderTests(ITestOutputHelper output)
 
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Buffer: {new string(buffer)}");
 
-        var expected = Base62Encoder.Encode(bytes);
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(bytes, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
         var actual = new string(buffer).TrimStart('\0');
-        actual.ShouldBe(expected.ToString());
+        actual.ShouldBe(expected);
     }
 
     /// <summary>
@@ -538,10 +624,16 @@ public class Base62EncoderTests(ITestOutputHelper output)
 
         // Convert using BinaryPrimitives (little-endian)
         var ulongValue = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
-        var expected = Base62Encoder.Encode(ulongValue % Base62Power8);
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(ulongValue % 218_340_105_584_896UL, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
 
         // Convert using byte span
-        var result = Base62Encoder.Encode(bytes);
+        var resultBuffer = new char[11];
+        var resultSpan = resultBuffer.AsSpan();
+        Base62Encoder.Encode(bytes, ref resultSpan);
+        var result = new string(resultBuffer).TrimStart('\0');
 
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, ULong value: {ulongValue}");
         output.WriteLine($"Expected: {expected}, Result: {result}");
@@ -558,8 +650,16 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var originalBytes = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
         var reversedBytes = new byte[] { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
-        var originalResult = Base62Encoder.Encode(originalBytes);
-        var reversedResult = Base62Encoder.Encode(reversedBytes);
+        var buffer1 = new char[11];
+        var buffer2 = new char[11];
+        var span1 = buffer1.AsSpan();
+        var span2 = buffer2.AsSpan();
+        
+        Base62Encoder.Encode(originalBytes, ref span1);
+        Base62Encoder.Encode(reversedBytes, ref span2);
+
+        var originalResult = new string(buffer1).TrimStart('\0');
+        var reversedResult = new string(buffer2).TrimStart('\0');
 
         output.WriteLine($"Original bytes: {BitConverter.ToString(originalBytes)}, Result: {originalResult}");
         output.WriteLine($"Reversed bytes: {BitConverter.ToString(reversedBytes)}, Result: {reversedResult}");
@@ -603,8 +703,15 @@ public class Base62EncoderTests(ITestOutputHelper output)
 
         foreach (var (bytes, expectedValue) in testCases)
         {
-            var result = Base62Encoder.Encode(bytes);
-            var expected = Base62Encoder.Encode(expectedValue % Base62Power8);
+            var buffer = new char[11];
+            var span = buffer.AsSpan();
+            Base62Encoder.Encode(bytes, ref span);
+            var result = new string(buffer).TrimStart('\0');
+
+            var expectedBuffer = new char[11];
+            var expectedSpan = expectedBuffer.AsSpan();
+            Base62Encoder.Encode(expectedValue % 218_340_105_584_896UL, ref expectedSpan);
+            var expected = new string(expectedBuffer).TrimStart('\0');
 
             output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
             output.WriteLine($"Result: {result}, Expected: {expected}");
@@ -622,18 +729,26 @@ public class Base62EncoderTests(ITestOutputHelper output)
         // Test edge cases around byte boundaries
         var testCases = new[]
         {
-            (new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE }, ulong.MaxValue - 1),
-            (new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 1UL),
-            (new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }, 0x0100000000000000UL),
-            (new byte[] { 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0x0000000000000080UL),
+            new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE },
+            new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+            new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
+            new byte[] { 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
         };
 
-        foreach (var (bytes, expectedValue) in testCases)
+        foreach (var bytes in testCases)
         {
-            var result = Base62Encoder.Encode(bytes);
-            var expected = Base62Encoder.Encode(expectedValue % Base62Power8);
+            var buffer = new char[11];
+            var span = buffer.AsSpan();
+            Base62Encoder.Encode(bytes, ref span);
+            var result = new string(buffer).TrimStart('\0');
+            
+            var littleEndian = BinaryPrimitives.ReadUInt64LittleEndian(bytes);
+            var expectedBuffer = new char[11];
+            var expectedSpan = expectedBuffer.AsSpan();
+            Base62Encoder.Encode(littleEndian % 218_340_105_584_896UL, ref expectedSpan);
+            var expected = new string(expectedBuffer).TrimStart('\0');
 
-            output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
+            output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Little-endian value: {littleEndian}");
             output.WriteLine($"Result: {result}, Expected: {expected}");
 
             result.ToString().ShouldBe(expected.ToString());

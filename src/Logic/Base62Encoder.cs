@@ -1,5 +1,4 @@
-﻿using System.Buffers;
-using System.Buffers.Binary;
+﻿using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 
 namespace Logic;
@@ -11,38 +10,6 @@ public static class Base62Encoder
 {
     private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static readonly ulong CharLength = 62UL;
-
-    /// <summary>
-    /// Converts a 64-bit unsigned integer to its Base62 string representation.
-    /// </summary>
-    /// <param name="value">The value to convert.</param>
-    /// <returns>The Base62 string representation of the value.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<char> Encode(ulong value)
-    {
-        int bufferLength = DetermineBufferLength(value);
-
-        int bufferIndex = bufferLength - 1;
-        var arrayToReturnToPool = ArrayPool<char>.Shared.Rent(bufferLength);
-#pragma warning disable ECS0900 // false positive
-        Span<char> buffer = arrayToReturnToPool;
-#pragma warning restore ECS0900
-        try
-        {
-            do
-            {
-                buffer[bufferIndex--] = Base62Chars[(int)(value % CharLength)];
-                value /= CharLength;
-            }
-            while (value > 0UL);
-
-            return buffer[..bufferLength];
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(arrayToReturnToPool);
-        }
-    }
 
     /// <summary>
     /// Converts a 64-bit unsigned integer to its Base62 string representation and writes it to the provided buffer.
@@ -61,30 +28,18 @@ public static class Base62Encoder
     }
 
     /// <summary>
-    /// Converts a byte span to its Base62 string representation.
+    /// Converts a byte span to its Base62 string representation and writes it to the provided buffer.
     /// </summary>
     /// <param name="hash">The byte span to convert.</param>
-    /// <returns>The Base62 string representation of the hash.</returns>
+    /// <param name="buffer">The buffer to write the result to.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<char> Encode(Span<byte> hash)
+    public static void Encode(ReadOnlySpan<byte> hash, ref Span<char> buffer)
     {
         if (hash.Length < sizeof(ulong))
         {
             throw new ArgumentException("Hash must be at least 8 bytes", nameof(hash));
         }
 
-        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
-        return Encode(index);
-    }
-
-    /// <summary>
-    /// Converts a byte span to its Base62 string representation and writes it to the provided buffer.
-    /// </summary>
-    /// <param name="hash">The byte span to convert.</param>
-    /// <param name="buffer">The buffer to write the result to.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Encode(Span<byte> hash, ref Span<char> buffer)
-    {
         ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
         Encode(index, ref buffer);
     }
