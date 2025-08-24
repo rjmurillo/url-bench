@@ -20,7 +20,7 @@ public class RepositorySpanLookup
     private string _originalUrl = null!;
 
     // Simulate hot-path buffer that holds the short code (like BenchmarkCommand.ReadSingle)
-    private char[] _hotPathBuffer = new char[12];
+    private readonly char[] _hotPathBuffer = new char[12];
 
     [GlobalSetup]
     public void Setup()

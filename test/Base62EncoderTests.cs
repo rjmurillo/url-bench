@@ -20,7 +20,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         int bufferLength = Base62Encoder.DetermineBufferLength(0UL);
         var buffer = new char[bufferLength];
         var span = buffer.AsSpan();
-        
+
         Base62Encoder.Encode(0UL, ref span);
 
         var result = new string(buffer);
@@ -48,7 +48,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         int bufferLength = Base62Encoder.DetermineBufferLength(value);
         var buffer = new char[bufferLength];
         var span = buffer.AsSpan();
-        
+
         Base62Encoder.Encode(value, ref span);
 
         var result = new string(buffer);
@@ -73,7 +73,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         int bufferLength = Base62Encoder.DetermineBufferLength(value);
         var buffer = new char[bufferLength];
         var span = buffer.AsSpan();
-        
+
         Base62Encoder.Encode(value, ref span);
 
         var result = new string(buffer);
@@ -96,7 +96,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         int bufferLength = Base62Encoder.DetermineBufferLength(value);
         var buffer = new char[bufferLength];
         var span = buffer.AsSpan();
-        
+
         Base62Encoder.Encode(value, ref span);
 
         var result = new string(buffer);
@@ -213,7 +213,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var hash = new byte[8];
         var buffer = new char[11]; // Max possible length
         var span = buffer.AsSpan();
-        
+
         Base62Encoder.Encode(hash, ref span);
 
         var result = new string(buffer).TrimStart('\0');
@@ -241,7 +241,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var hash = new ReadOnlySpan<byte>(hashBytes);
         var buffer = new char[11]; // Max possible length
         var span = buffer.AsSpan();
-        
+
         Base62Encoder.Encode(hash, ref span);
 
         var result = new string(buffer).TrimStart('\0');
@@ -265,7 +265,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var hash = new byte[] { 255, 255, 255, 255, 255, 255, 255, 255 };
         var buffer = new char[11]; // Max possible length
         var span = buffer.AsSpan();
-        
+
         Base62Encoder.Encode(hash, ref span);
 
         var result = new string(buffer).TrimStart('\0');
@@ -366,7 +366,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
             var span = buffer.AsSpan();
             Base62Encoder.Encode(i, ref span);
             var result = new string(buffer);
-            
+
             foreach (var c in result)
             {
                 usedChars.Add(c);
@@ -398,7 +398,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var buffer2 = new char[bufferLength];
         var span1 = buffer1.AsSpan();
         var span2 = buffer2.AsSpan();
-        
+
         Base62Encoder.Encode(value, ref span1);
         Base62Encoder.Encode(value, ref span2);
 
@@ -448,7 +448,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var buffer2 = new char[11];
         var span1 = buffer1.AsSpan();
         var span2 = buffer2.AsSpan();
-        
+
         Base62Encoder.Encode(hash1, ref span1);
         Base62Encoder.Encode(hash2, ref span2);
 
@@ -471,7 +471,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         int bufferLength = Base62Encoder.DetermineBufferLength(ulong.MaxValue);
         var buffer = new char[bufferLength];
         var span = buffer.AsSpan();
-        
+
         Base62Encoder.Encode(ulong.MaxValue, ref span);
 
         var result = new string(buffer);
@@ -550,7 +550,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var buffer2 = new char[11];
         var span1 = buffer1.AsSpan();
         var span2 = buffer2.AsSpan();
-        
+
         Base62Encoder.Encode(bigEndianBytes, ref span1);
         Base62Encoder.Encode(littleEndianBytes, ref span2);
 
@@ -654,7 +654,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var buffer2 = new char[11];
         var span1 = buffer1.AsSpan();
         var span2 = buffer2.AsSpan();
-        
+
         Base62Encoder.Encode(originalBytes, ref span1);
         Base62Encoder.Encode(reversedBytes, ref span2);
 
@@ -741,7 +741,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
             var span = buffer.AsSpan();
             Base62Encoder.Encode(bytes, ref span);
             var result = new string(buffer).TrimStart('\0');
-            
+
             var littleEndian = BinaryPrimitives.ReadUInt64LittleEndian(bytes);
             var expectedBuffer = new char[11];
             var expectedSpan = expectedBuffer.AsSpan();
