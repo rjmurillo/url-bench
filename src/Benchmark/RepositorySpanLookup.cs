@@ -1,5 +1,7 @@
 using BenchmarkDotNet.Attributes;
+#if WINDOWS
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
+#endif
 using BenchmarkDotNet.Engines;
 using Logic.Contracts;
 using Logic.Repositories;
