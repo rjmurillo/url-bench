@@ -6,9 +6,11 @@ using Logic.Repositories;
 
 namespace Benchmark;
 
+#if WINDOWS
 [InliningDiagnoser(true, new[] { "Logic.Repositories" })]
-[MemoryDiagnoser]
 [JitStatsDiagnoser]
+#endif
+[MemoryDiagnoser]
 [GcServer(true)]
 [SimpleJob(RunStrategy.Throughput)]
 public class RepositorySpanLookup
