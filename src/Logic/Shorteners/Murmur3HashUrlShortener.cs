@@ -1,7 +1,7 @@
 ﻿using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Contracts;
+using Logic.Contracts;
 using Logic.Hashing;
 
 namespace Logic.Shorteners;

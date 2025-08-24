@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Contracts;
 using Logic.Contracts;
 
 namespace Logic.Repositories;

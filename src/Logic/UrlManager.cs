@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using Contracts;
 using Logic.Contracts;
 
 namespace Logic;

@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Mathematics;
-using Contracts;
 using Logic;
 using Logic.Contracts;
 using Logic.Repositories;

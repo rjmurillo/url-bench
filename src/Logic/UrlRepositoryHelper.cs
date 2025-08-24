@@ -1,5 +1,4 @@
-﻿using Contracts;
-using Logic.Contracts;
+﻿using Logic.Contracts;
 
 namespace Logic;
 

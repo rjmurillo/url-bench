@@ -1,6 +1,4 @@
-﻿using Contracts;
-
-namespace Logic.Contracts;
+﻿namespace Logic.Contracts;
 
 /// <summary>
 /// Defines a contract for a URL repository that supports retrieval of the original URL using a <see cref="ReadOnlySpan{Char}"/>.

@@ -1,5 +1,5 @@
-﻿using Contracts;
-using IdGen;
+﻿using IdGen;
+using Logic.Contracts;
 
 namespace Logic.Shorteners;
 

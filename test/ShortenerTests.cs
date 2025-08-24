@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using System.Web;
-using Contracts;
+using Logic.Contracts;
 using NonBlocking;
 
 namespace UrlConverterPermutations;

@@ -1,8 +1,8 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Engines;
-using Contracts;
 using Logic;
+using Logic.Contracts;
 using Logic.Shorteners;
 
 namespace Benchmark;

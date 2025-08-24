@@ -1,4 +1,4 @@
-﻿namespace Contracts;
+﻿namespace Logic.Contracts;
 
 /// <summary>
 /// Defines a contract for shortening URLs.

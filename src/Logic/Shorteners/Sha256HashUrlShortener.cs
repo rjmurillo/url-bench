@@ -3,8 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
-
-using Contracts;
+using Logic.Contracts;
 
 namespace Logic.Shorteners;
 
