@@ -105,7 +105,7 @@ public class MatrixTests(ITestOutputHelper output)
         Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
 
         repository!.SaveUrlMapping(shortUrl, original).ShouldBeTrue();
-        repository!.GetOriginalUrl(shortUrl).ShouldBe(original);
+        repository!.GetOriginalUrl(shortUrl.AsSpan()).ShouldBe(original);
     }
 
     [SkippableTheory]
