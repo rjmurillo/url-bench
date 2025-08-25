@@ -18,7 +18,7 @@ namespace Benchmark;
 public class RepositorySpanLookup
 {
     private ConcurrentUrlRepository? _repo;
-    private IUrlRepository? _iface;
+    private IUrlRepository? _interface;
 
     private string _shortUrl = null!;
     private string _originalUrl = null!;
@@ -30,7 +30,7 @@ public class RepositorySpanLookup
     public void Setup()
     {
         _repo = new ConcurrentUrlRepository();
-        _iface = _repo;
+        _interface = _repo;
 
         _originalUrl = "https://contoso.example/path/resource";
         _shortUrl = "AbCdEf123"; // arbitrary short token under 12 chars
@@ -47,7 +47,7 @@ public class RepositorySpanLookup
     {
         _repo?.Dispose();
         _repo = null;
-        _iface = null;
+        _interface = null;
     }
 
     // 1) Baseline: slice.ToString() then use legacy interface
@@ -57,7 +57,7 @@ public class RepositorySpanLookup
     {
         var span = _hotPathBuffer.AsSpan(0, _shortUrl.Length);
         string key = span.ToString(); // allocation
-        return _iface!.GetOriginalUrl(key);
+        return _interface!.GetOriginalUrl(key);
     }
 
     // 2) Extension method on interface using ReadOnlySpan<char>
@@ -67,7 +67,7 @@ public class RepositorySpanLookup
     public string Extension_Span_Interface()
     {
         var span = _hotPathBuffer.AsSpan(0, _shortUrl.Length);
-        return _iface!.GetOriginalUrl(span);
+        return _interface!.GetOriginalUrl(span);
     }
 
     // 3) Hot-path stackalloc variant matching ReadSingle pattern
@@ -78,6 +78,6 @@ public class RepositorySpanLookup
         var src = _shortUrl.AsSpan();
         src.CopyTo(buf);
         var slice = buf[..src.Length];
-        return _iface!.GetOriginalUrl(slice);
+        return _interface!.GetOriginalUrl(slice);
     }
 }
