@@ -8,7 +8,7 @@ public interface IUrlRepositorySpan : IUrlRepository
     /// <summary>
     /// Retrieves the original URL associated with the specified short URL as a <see cref="string"/>.
     /// </summary>
-    /// <param name="shortUrl">The short URL to look up as a <see cref="ReadOnlySpan{T}" />.</param>
+    /// <param name="shortUrl">The short URL to look up as a <see cref="ReadOnlySpan{Char}" />.</param>
     /// <returns>The original URL as a <see cref="string"/> if found; otherwise, <see cref="string.Empty"/>.</returns>
     string GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl);
 }
