@@ -59,7 +59,7 @@ public sealed class UrlManager(
     /// Retrieves the original URL associated with the specified short URL.
     /// </summary>
     /// <param name="shortUrl">The short URL to look up.</param>
-    /// <returns>The original URL if found; otherwise, an empty string.</returns>
+    /// <returns>The original URL if found; otherwise, <see cref="string.Empty"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="shortUrl"/> is null or empty.</exception>
     public string GetOriginalUrl(string shortUrl)
     {
@@ -74,7 +74,7 @@ public sealed class UrlManager(
     /// </summary>
     /// <param name="shortUrl">The short URL as a <see cref="ReadOnlySpan{Char}"/> to look up.</param>
     /// <returns>
-    /// A <see cref="ReadOnlySpan{Char}"/> containing the original URL if found; otherwise, an empty span.
+    /// A <see cref="string"/> containing the original URL if found; otherwise, <see cref="string.Empty"/>.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl)
