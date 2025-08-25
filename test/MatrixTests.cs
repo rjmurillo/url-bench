@@ -57,6 +57,22 @@ public class MatrixTests(ITestOutputHelper output)
         originalUrl.ToString().ShouldBe(longUrl);
     }
 
+    [Theory]
+    [MemberData(nameof(MatrixData))]
+    public void Shortened_slug_has_no_NUL(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        const string input = "https://a.co/x";
+
+        Skip.If(shortener is null, "Shortener is not initialized.");
+        repository.ShouldNotBeNull();
+
+        var shortUrl = shortener!.ShortenUrl(input);
+
+        shortUrl.ShouldNotBeNull();
+        shortUrl.ShouldNotBeEmpty();
+        shortUrl.IndexOf('\0').ShouldBeLessThan(0);
+    }
+
     /// <summary>
     /// Tests that different short URLs are generated for the same input URL across multiple iterations.
     /// </summary>
