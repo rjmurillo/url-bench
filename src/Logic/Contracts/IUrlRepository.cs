@@ -1,4 +1,4 @@
-﻿namespace Contracts;
+﻿namespace Logic.Contracts;
 
 /// <summary>
 /// Defines a repository for storing and retrieving URL mappings between short URLs and their original URLs.

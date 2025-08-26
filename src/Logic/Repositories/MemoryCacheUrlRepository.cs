@@ -1,4 +1,4 @@
-﻿using Contracts;
+﻿using Logic.Contracts;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Logic.Repositories;
@@ -6,7 +6,7 @@ namespace Logic.Repositories;
 /// <summary>
 /// A URL repository implementation using ASP.NET Core's IMemoryCache for storing URL mappings.
 /// </summary>
-public class MemoryCacheUrlRepository : Contracts.IUrlRepository, IDisposable
+public class MemoryCacheUrlRepository : IUrlRepository, IDisposable
 {
     private readonly IMemoryCache _cache;
     private static readonly MemoryCacheEntryOptions Options = new() { Size = 1 };

@@ -3,8 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
-
-using Contracts;
+using Logic.Contracts;
 
 namespace Logic.Shorteners;
 
@@ -75,8 +74,9 @@ public class Sha256HashUrlShortener()
 #endif
 
         // Base62 encode the SHA256 hash
-        Span<char> base62Buffer = stackalloc char[Constants.MaxSlugLength];
-        Convert.AsBase62String(hashBuffer, ref base62Buffer);
+        ulong index = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(hashBuffer) % Constants.Base62Power8;
+        Span<char> base62Buffer = stackalloc char[Base62Encoder.DetermineBufferLength(index)];
+        Base62Encoder.Encode(hashBuffer, ref base62Buffer);
 
         return base62Buffer.ToString();
     }

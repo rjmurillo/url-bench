@@ -1,9 +1,8 @@
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Contracts;
+using Logic.Contracts;
 using Logic.Hashing;
 
 namespace Logic.Repositories;
@@ -300,7 +299,7 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
             int shardCount = NextPowerOfTwo(desiredShards);
             int perShardCapacity = Math.Max(31, DivRoundUp(capacity, shardCount));
 
-                // Do not divide concurrency by shard count; ensure each shard gets a reasonable number of stripes.
+            // Do not divide concurrency by shard count; ensure each shard gets a reasonable number of stripes.
             // Cap to a small value to avoid excessive contention/overhead while still provisioning adequate stripes.
             int perShardConcurrency = Math.Max(1, Math.Min(Math.Max(1, concurrencyHint), 8));
 

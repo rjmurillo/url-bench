@@ -5,13 +5,12 @@ using System.Globalization;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Mathematics;
-using Contracts;
 using Logic;
+using Logic.Contracts;
 using Logic.Repositories;
 using Logic.Shorteners;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using Convert = Logic.Convert;
 
 #pragma warning disable SA1600
 #pragma warning disable HAA0301
@@ -70,7 +69,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         return 0;
     }
 
-    private static void RunWritePhase(Settings settings, UrlManager facade, string url, Stopwatch sw, List<double> samples)
+    private static void RunWritePhase(Settings settings, IUrlManager facade, string url, Stopwatch sw, List<double> samples)
     {
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
@@ -134,7 +133,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             });
     }
 
-    private static void RunReadPhase(Settings settings, UrlManager facade, Stopwatch sw, List<double> samples)
+    private static void RunReadPhase(Settings settings, IUrlManager facade, Stopwatch sw, List<double> samples)
     {
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
@@ -210,14 +209,13 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ReadSingle(UrlManager facade, ulong k)
+    private static void ReadSingle(IUrlManager facade, ulong k)
     {
         Span<char> buf = stackalloc char[12];
-        int len = Convert.DetermineBufferLength(k);
+        int len = Base62Encoder.DetermineBufferLength(k);
         Span<char> slice = buf[..len];
-        Convert.AsBase62String(k, ref slice);
-        string shortUrl = slice.ToString();
-        _ = facade.GetOriginalUrl(shortUrl);
+        Base62Encoder.Encode(k, ref slice);
+        _ = facade.GetOriginalUrl(slice);
     }
 
     public sealed class Settings : CommandSettings

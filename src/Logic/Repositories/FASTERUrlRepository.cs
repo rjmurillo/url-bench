@@ -1,5 +1,5 @@
-﻿using Contracts;
-using FASTER.core;
+﻿using FASTER.core;
+using Logic.Contracts;
 
 namespace Logic.Repositories;
 

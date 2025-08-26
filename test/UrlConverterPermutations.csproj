@@ -3,6 +3,17 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!--
+    This is to work around an issue with the ReportGenerator Task.
+
+    When the tests target multiple frameworks, there's a concept introduced of
+    an outer and an inner build. An outer build runs for a combination of pre-requisite
+    tasks and orchestrates running each TFM listed. The ReportGenerator task is part of
+    the inner build, but since our tasks runs after VSTest/MSTest, we're back in an outer
+    build where the NuGet package importing the task is not available.
+    -->
+    <TargetFrameworks></TargetFrameworks>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>

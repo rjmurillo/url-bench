@@ -1,5 +1,5 @@
-﻿using Contracts;
-using FastCache;
+﻿using FastCache;
+using Logic.Contracts;
 
 namespace Logic.Repositories;
 

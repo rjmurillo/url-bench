@@ -1,22 +1,29 @@
+using System.Buffers.Binary;
+using Logic;
+
 namespace UrlConverterPermutations;
 
 /// <summary>
-/// Test class for the Convert utility class.
+/// Test class for the Base62Encoder utility class.
 /// </summary>
 /// <param name="output">The test output helper for writing test information.</param>
-public class ConvertTests(ITestOutputHelper output)
+public class Base62EncoderTests(ITestOutputHelper output)
 {
-    private const ulong Base62Power8 = 218_340_105_584_896UL;
     private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     /// <summary>
     /// Tests conversion of zero value.
     /// </summary>
     [Fact]
-    public void AsBase62String_ZeroValue_ReturnsSingleCharacter()
+    public void Encode_ZeroValue_ReturnsSingleCharacter()
     {
-        var result = Logic.Convert.AsBase62String(0UL);
+        int bufferLength = Base62Encoder.DetermineBufferLength(0UL);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
 
+        Base62Encoder.Encode(0UL, ref span);
+
+        var result = new string(buffer);
         output.WriteLine($"Result: {result}");
 
         result.Length.ShouldBe(1);
@@ -36,13 +43,18 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(51UL, "z")]
     [InlineData(52UL, "0")]
     [InlineData(61UL, "9")]
-    public void AsBase62String_SingleDigitValues_ReturnsCorrectCharacter(ulong value, string expected)
+    public void Encode_SingleDigitValues_ReturnsCorrectCharacter(ulong value, string expected)
     {
-        var result = Logic.Convert.AsBase62String(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
 
+        Base62Encoder.Encode(value, ref span);
+
+        var result = new string(buffer);
         output.WriteLine($"Value: {value}, Result: {result}, Expected: {expected}");
 
-        result.ToString().ShouldBe(expected);
+        result.ShouldBe(expected);
     }
 
     /// <summary>
@@ -56,13 +68,18 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(124UL, "CA")]
     [InlineData(3843UL, "99")]
     [InlineData(3844UL, "BAA")]
-    public void AsBase62String_TwoDigitValues_ReturnsCorrectString(ulong value, string expected)
+    public void Encode_TwoDigitValues_ReturnsCorrectString(ulong value, string expected)
     {
-        var result = Logic.Convert.AsBase62String(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
 
+        Base62Encoder.Encode(value, ref span);
+
+        var result = new string(buffer);
         output.WriteLine($"Value: {value}, Result: {result}, Expected: {expected}");
 
-        result.ToString().ShouldBe(expected);
+        result.ShouldBe(expected);
     }
 
     /// <summary>
@@ -74,10 +91,15 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(ulong.MaxValue - 1)]
     [InlineData(1_000_000_000UL)]
     [InlineData(1_000_000_000_000UL)]
-    public void AsBase62String_LargeValues_ReturnsValidBase62String(ulong value)
+    public void Encode_LargeValues_ReturnsValidBase62String(ulong value)
     {
-        var result = Logic.Convert.AsBase62String(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
 
+        Base62Encoder.Encode(value, ref span);
+
+        var result = new string(buffer);
         output.WriteLine($"Value: {value}, Result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -91,34 +113,42 @@ public class ConvertTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Tests that the result is a valid ReadOnlySpan.
-    /// </summary>
-    [Fact]
-    public void AsBase62String_ReturnsValidReadOnlySpan()
-    {
-        var result = Logic.Convert.AsBase62String(12345UL);
-
-        result.IsEmpty.ShouldBeFalse();
-    }
-
-    /// <summary>
     /// Tests conversion with sufficient buffer size.
     /// </summary>
     [Fact]
-    public void AsBase62String_WithBuffer_SufficientSize_WritesCorrectly()
+    public void Encode_WithBuffer_SufficientSize_WritesCorrectly()
     {
-        var value = 12345UL;
-        var buffer = new char[10];
-        var span = buffer.AsSpan();
+        ulong value = 12345UL;
+        var expectedEncoded = "DNH";
 
-        Logic.Convert.AsBase62String(value, ref span);
+        var oversizeBuffer = new char[10];
+        var oversizeSpan = oversizeBuffer.AsSpan();
 
-        output.WriteLine($"Value: {value}, Buffer: {new string(buffer)}");
+        Base62Encoder.Encode(value, ref oversizeSpan);
+
+        output.WriteLine($"Value: {value}, Buffer Length: {oversizeBuffer.Length}, Buffer: {new string(oversizeBuffer)}");
 
         // Verify the result is correct - buffer writes from right to left
-        var expected = Logic.Convert.AsBase62String(value);
-        var actual = new string(buffer).TrimStart('\0');
-        actual.ShouldBe(expected.ToString());
+        int exactBufferLength = Base62Encoder.DetermineBufferLength(value);
+        var exactBuffer = new char[exactBufferLength];
+        var exactBufferSpan = exactBuffer.AsSpan();
+        Base62Encoder.Encode(value, ref exactBufferSpan);
+
+        output.WriteLine($"Value: {value}, Buffer Length: {exactBuffer.Length}, Buffer: {new string(exactBuffer)}");
+
+        // Convert the buffers to strings
+        var exactString = new string(exactBuffer);
+
+        // Trim off the null items from the oversize buffer
+        var oversizeStringTrimmed = new string(oversizeBuffer).TrimStart('\0');
+
+        // Assert the trimmed actual is the same as the "right-sized" buffer
+        // This ensures we didn't truncate or trim
+        oversizeStringTrimmed.ShouldBe(exactString);
+
+        // Assert the encoded value is the expected value
+        oversizeStringTrimmed.ShouldBe(expectedEncoded);
+        exactString.ShouldBe(expectedEncoded);
     }
 
     /// <summary>
@@ -130,18 +160,18 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(1UL, 1)]
     [InlineData(62UL, 2)]
     [InlineData(3844UL, 3)]
-    public void AsBase62String_WithBuffer_ExactSize_WritesCorrectly(ulong value, int bufferSize)
+    public void Encode_WithBuffer_ExactSize_WritesCorrectly(ulong value, int bufferSize)
     {
         var buffer = new char[bufferSize];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(value, ref span);
+        Base62Encoder.Encode(value, ref span);
 
         output.WriteLine($"Value: {value}, Buffer: {new string(buffer)}");
 
-        var expected = Logic.Convert.AsBase62String(value);
+        var expected = new string(buffer);
         var actual = new string(buffer);
-        actual.ShouldBe(expected.ToString());
+        actual.ShouldBe(expected);
     }
 
     /// <summary>
@@ -152,12 +182,12 @@ public class ConvertTests(ITestOutputHelper output)
     [Theory]
     [InlineData(12345UL, 1)]
     [InlineData(12345UL, 2)]
-    public void AsBase62String_WithBuffer_InsufficientSize_TruncatesResult(ulong value, int bufferSize)
+    public void Encode_WithBuffer_InsufficientSize_TruncatesResult(ulong value, int bufferSize)
     {
         var buffer = new char[bufferSize];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(value, ref span);
+        Base62Encoder.Encode(value, ref span);
 
         output.WriteLine($"Value: {value}, Buffer: {new string(buffer)}");
 
@@ -177,12 +207,12 @@ public class ConvertTests(ITestOutputHelper output)
     /// Tests conversion with zero value and buffer.
     /// </summary>
     [Fact]
-    public void AsBase62String_WithBuffer_ZeroValue_WritesCorrectly()
+    public void Encode_WithBuffer_ZeroValue_WritesCorrectly()
     {
         var buffer = new char[5];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(0UL, ref span);
+        Base62Encoder.Encode(0UL, ref span);
 
         output.WriteLine($"Buffer: {new string(buffer)}");
 
@@ -193,12 +223,15 @@ public class ConvertTests(ITestOutputHelper output)
     /// Tests conversion of byte span with all zeros.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_AllZeros_ReturnsValidString()
+    public void Encode_ByteSpan_AllZeros_ReturnsValidString()
     {
         var hash = new byte[8];
+        var buffer = new char[11]; // Max possible length
+        var span = buffer.AsSpan();
 
-        var result = Logic.Convert.AsBase62String(hash);
+        Base62Encoder.Encode(hash, ref span);
 
+        var result = new string(buffer).TrimStart('\0');
         output.WriteLine($"Result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -218,12 +251,15 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 })]
     [InlineData(new byte[] { 0, 1, 0, 0, 0, 0, 0, 0 })]
     [InlineData(new byte[] { 255, 255, 255, 255, 255, 255, 255, 255 })]
-    public void AsBase62String_ByteSpan_SpecificValues_ReturnsValidString(byte[] hashBytes)
+    public void Encode_ByteSpan_SpecificValues_ReturnsValidString(byte[] hashBytes)
     {
-        var hash = new Span<byte>(hashBytes);
+        var hash = new ReadOnlySpan<byte>(hashBytes);
+        var buffer = new char[11]; // Max possible length
+        var span = buffer.AsSpan();
 
-        var result = Logic.Convert.AsBase62String(hash);
+        Base62Encoder.Encode(hash, ref span);
 
+        var result = new string(buffer).TrimStart('\0');
         output.WriteLine($"Hash: {BitConverter.ToString(hashBytes)}, Result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -239,12 +275,15 @@ public class ConvertTests(ITestOutputHelper output)
     /// Tests conversion of byte span with maximum value.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_MaxValue_ReturnsValidString()
+    public void Encode_ByteSpan_MaxValue_ReturnsValidString()
     {
         var hash = new byte[] { 255, 255, 255, 255, 255, 255, 255, 255 };
+        var buffer = new char[11]; // Max possible length
+        var span = buffer.AsSpan();
 
-        var result = Logic.Convert.AsBase62String(hash);
+        Base62Encoder.Encode(hash, ref span);
 
+        var result = new string(buffer).TrimStart('\0');
         output.WriteLine($"Result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -260,51 +299,60 @@ public class ConvertTests(ITestOutputHelper output)
     /// Tests that byte span conversion uses modulo operation correctly.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_UsesModuloOperation()
+    public void Encode_ByteSpan_UsesModuloOperation()
     {
         // Create a value that's larger than Base62Power8
-        var largeValue = Base62Power8 + 1000UL;
+        var largeValue = 218_340_105_584_896UL + 1000UL;
         var hash = BitConverter.GetBytes(largeValue);
 
-        var result = Logic.Convert.AsBase62String(hash);
+        var buffer = new char[11]; // Max possible length
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(hash, ref span);
 
+        var result = new string(buffer).TrimStart('\0');
         output.WriteLine($"Large value: {largeValue}, Result: {result}");
 
         // Should be equivalent to the modulo operation
-        var expected = Logic.Convert.AsBase62String(largeValue % Base62Power8);
-        result.ToString().ShouldBe(expected.ToString());
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(largeValue % 218_340_105_584_896UL, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
+        result.ShouldBe(expected);
     }
 
     /// <summary>
     /// Tests conversion of byte span with buffer.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpanWithBuffer_WritesCorrectly()
+    public void Encode_ByteSpanWithBuffer_WritesCorrectly()
     {
         var hash = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var buffer = new char[10];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(hash, ref span);
+        Base62Encoder.Encode(hash, ref span);
 
         output.WriteLine($"Hash: {BitConverter.ToString(hash)}, Buffer: {new string(buffer)}");
 
-        var expected = Logic.Convert.AsBase62String(hash);
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(hash, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
         var actual = new string(buffer).TrimStart('\0');
-        actual.ShouldBe(expected.ToString());
+        actual.ShouldBe(expected);
     }
 
     /// <summary>
     /// Tests conversion of byte span with insufficient buffer.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpanWithBuffer_InsufficientSize_TruncatesResult()
+    public void Encode_ByteSpanWithBuffer_InsufficientSize_TruncatesResult()
     {
         var hash = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var buffer = new char[2];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(hash, ref span);
+        Base62Encoder.Encode(hash, ref span);
 
         output.WriteLine($"Hash: {BitConverter.ToString(hash)}, Buffer: {new string(buffer)}");
 
@@ -321,14 +369,19 @@ public class ConvertTests(ITestOutputHelper output)
     /// Tests that all Base62 characters are used in conversions.
     /// </summary>
     [Fact]
-    public void AsBase62String_AllBase62Characters_AreUsed()
+    public void Encode_AllBase62Characters_AreUsed()
     {
         var usedChars = new HashSet<char>();
 
         // Test a range of values to ensure all Base62 characters are used
         for (ulong i = 0; i < 10000; i++)
         {
-            var result = Logic.Convert.AsBase62String(i);
+            int bufferLength = Base62Encoder.DetermineBufferLength(i);
+            var buffer = new char[bufferLength];
+            var span = buffer.AsSpan();
+            Base62Encoder.Encode(i, ref span);
+            var result = new string(buffer);
+
             foreach (var c in result)
             {
                 usedChars.Add(c);
@@ -353,65 +406,90 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(12345UL)]
     [InlineData(67890UL)]
     [InlineData(ulong.MaxValue)]
-    public void AsBase62String_ConsistentResults_ForSameInput(ulong value)
+    public void Encode_ConsistentResults_ForSameInput(ulong value)
     {
-        var result1 = Logic.Convert.AsBase62String(value);
-        var result2 = Logic.Convert.AsBase62String(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer1 = new char[bufferLength];
+        var buffer2 = new char[bufferLength];
+        var span1 = buffer1.AsSpan();
+        var span2 = buffer2.AsSpan();
 
+        Base62Encoder.Encode(value, ref span1);
+        Base62Encoder.Encode(value, ref span2);
+
+        var result1 = new string(buffer1);
+        var result2 = new string(buffer2);
         output.WriteLine($"Value: {value}, Result1: {result1}, Result2: {result2}");
 
-        result1.ToString().ShouldBe(result2.ToString());
+        result1.ShouldBe(result2);
     }
 
     /// <summary>
     /// Tests that buffer operations don't affect subsequent calls.
     /// </summary>
     [Fact]
-    public void AsBase62String_BufferOperations_DontAffectSubsequentCalls()
+    public void Encode_BufferOperations_DontAffectSubsequentCalls()
     {
         var value = 12345UL;
         var buffer = new char[10];
         var span = buffer.AsSpan();
 
         // First call with buffer
-        Logic.Convert.AsBase62String(value, ref span);
+        Base62Encoder.Encode(value, ref span);
         var bufferResult = new string(buffer).TrimStart('\0');
 
         // Second call without buffer
-        var spanResult = Logic.Convert.AsBase62String(value);
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var spanBuffer = new char[bufferLength];
+        var spanSpan = spanBuffer.AsSpan();
+        Base62Encoder.Encode(value, ref spanSpan);
+        var spanResult = new string(spanBuffer);
 
         output.WriteLine($"Buffer result: {bufferResult}, Span result: {spanResult}");
 
-        bufferResult.ShouldBe(spanResult.ToString());
+        bufferResult.ShouldBe(spanResult);
     }
 
     /// <summary>
     /// Tests that byte span conversion handles different byte orderings correctly.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_DifferentByteOrderings_HandledCorrectly()
+    public void Encode_ByteSpan_DifferentByteOrderings_HandledCorrectly()
     {
         var hash1 = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
         var hash2 = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
 
-        var result1 = Logic.Convert.AsBase62String(hash1);
-        var result2 = Logic.Convert.AsBase62String(hash2);
+        var buffer1 = new char[11];
+        var buffer2 = new char[11];
+        var span1 = buffer1.AsSpan();
+        var span2 = buffer2.AsSpan();
+
+        Base62Encoder.Encode(hash1, ref span1);
+        Base62Encoder.Encode(hash2, ref span2);
+
+        var result1 = new string(buffer1).TrimStart('\0');
+        var result2 = new string(buffer2).TrimStart('\0');
 
         output.WriteLine($"Hash1: {BitConverter.ToString(hash1)}, Result1: {result1}");
         output.WriteLine($"Hash2: {BitConverter.ToString(hash2)}, Result2: {result2}");
 
         // Results should be different due to different byte orderings
-        result1.ToString().ShouldNotBe(result2.ToString());
+        result1.ShouldNotBe(result2);
     }
 
     /// <summary>
     /// Tests that the conversion handles the maximum possible value correctly.
     /// </summary>
     [Fact]
-    public void AsBase62String_MaximumValue_HandledCorrectly()
+    public void Encode_MaximumValue_HandledCorrectly()
     {
-        var result = Logic.Convert.AsBase62String(ulong.MaxValue);
+        int bufferLength = Base62Encoder.DetermineBufferLength(ulong.MaxValue);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
 
+        Base62Encoder.Encode(ulong.MaxValue, ref span);
+
+        var result = new string(buffer);
         output.WriteLine($"Max value result: {result}");
 
         result.Length.ShouldBeGreaterThan(0);
@@ -427,7 +505,7 @@ public class ConvertTests(ITestOutputHelper output)
     /// Tests that buffer operations are efficient.
     /// </summary>
     [Fact]
-    public void AsBase62String_BufferOperations_AreEfficient()
+    public void Encode_BufferOperations_AreEfficient()
     {
         var value = 12345UL;
         var buffer = new char[10];
@@ -437,7 +515,7 @@ public class ConvertTests(ITestOutputHelper output)
 
         for (int i = 0; i < 10000; i++)
         {
-            Logic.Convert.AsBase62String(value, ref span);
+            Base62Encoder.Encode(value, ref span);
         }
 
         stopwatch.Stop();
@@ -452,38 +530,53 @@ public class ConvertTests(ITestOutputHelper output)
     /// Tests that little-endian byte ordering is handled correctly.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_LittleEndian_HandledCorrectly()
+    public void Encode_ByteSpan_LittleEndian_HandledCorrectly()
     {
         // Test value 1 in little-endian format (least significant byte first)
         var littleEndianBytes = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
         var expectedValue = 1UL;
 
-        var result = Logic.Convert.AsBase62String(littleEndianBytes);
-        var expected = Logic.Convert.AsBase62String(expectedValue);
+        var buffer = new char[11];
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(littleEndianBytes, ref span);
+        var result = new string(buffer).TrimStart('\0');
+
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(expectedValue, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
 
         output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {result}, Expected: {expected}");
 
-        result.ToString().ShouldBe(expected.ToString());
+        result.ShouldBe(expected);
     }
 
     /// <summary>
     /// Tests that big-endian byte ordering produces different results.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_BigEndian_ProducesDifferentResults()
+    public void Encode_ByteSpan_BigEndian_ProducesDifferentResults()
     {
         // Test value 1 in big-endian format (most significant byte first)
         var bigEndianBytes = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
         var littleEndianBytes = new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 };
 
-        var bigEndianResult = Logic.Convert.AsBase62String(bigEndianBytes);
-        var littleEndianResult = Logic.Convert.AsBase62String(littleEndianBytes);
+        var buffer1 = new char[11];
+        var buffer2 = new char[11];
+        var span1 = buffer1.AsSpan();
+        var span2 = buffer2.AsSpan();
+
+        Base62Encoder.Encode(bigEndianBytes, ref span1);
+        Base62Encoder.Encode(littleEndianBytes, ref span2);
+
+        var bigEndianResult = new string(buffer1).TrimStart('\0');
+        var littleEndianResult = new string(buffer2).TrimStart('\0');
 
         output.WriteLine($"Big-endian bytes: {BitConverter.ToString(bigEndianBytes)}, Result: {bigEndianResult}");
         output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {littleEndianResult}");
 
         // Results should be different due to different byte orderings
-        bigEndianResult.ToString().ShouldNotBe(littleEndianResult.ToString());
+        bigEndianResult.ShouldNotBe(littleEndianResult);
     }
 
     /// <summary>
@@ -496,68 +589,92 @@ public class ConvertTests(ITestOutputHelper output)
     [InlineData(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF }, 0xFF00000000000000UL)]
     [InlineData(new byte[] { 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0x00000000000000FFUL)]
     [InlineData(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 }, 0x0807060504030201UL)]
-    public void AsBase62String_ByteSpan_VariousBytePatterns_HandledCorrectly(byte[] bytes, ulong expectedValue)
+    public void Encode_ByteSpan_VariousBytePatterns_HandledCorrectly(byte[] bytes, ulong expectedValue)
     {
-        var result = Logic.Convert.AsBase62String(bytes);
-        var expected = Logic.Convert.AsBase62String(expectedValue % Base62Power8);
+        var buffer = new char[11];
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(bytes, ref span);
+        var result = new string(buffer).TrimStart('\0');
+
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(expectedValue % 218_340_105_584_896UL, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
 
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
         output.WriteLine($"Result: {result}, Expected: {expected}");
 
-        result.ToString().ShouldBe(expected.ToString());
+        result.ShouldBe(expected);
     }
 
     /// <summary>
     /// Tests that byte span conversion with buffer handles endianness correctly.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpanWithBuffer_Endianness_HandledCorrectly()
+    public void Encode_ByteSpanWithBuffer_Endianness_HandledCorrectly()
     {
         var bytes = new byte[] { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0 };
         var buffer = new char[10];
         var span = buffer.AsSpan();
 
-        Logic.Convert.AsBase62String(bytes, ref span);
+        Base62Encoder.Encode(bytes, ref span);
 
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Buffer: {new string(buffer)}");
 
-        var expected = Logic.Convert.AsBase62String(bytes);
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(bytes, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
         var actual = new string(buffer).TrimStart('\0');
-        actual.ShouldBe(expected.ToString());
+        actual.ShouldBe(expected);
     }
 
     /// <summary>
     /// Tests that byte span conversion is consistent with BinaryPrimitives.ReadUInt64LittleEndian behavior.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_ConsistentWithBinaryPrimitives()
+    public void Encode_ByteSpan_ConsistentWithBinaryPrimitives()
     {
         var bytes = new byte[] { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 };
 
         // Convert using BinaryPrimitives (little-endian)
         var ulongValue = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
-        var expected = Logic.Convert.AsBase62String(ulongValue % Base62Power8);
+        var expectedBuffer = new char[11];
+        var expectedSpan = expectedBuffer.AsSpan();
+        Base62Encoder.Encode(ulongValue % 218_340_105_584_896UL, ref expectedSpan);
+        var expected = new string(expectedBuffer).TrimStart('\0');
 
         // Convert using byte span
-        var result = Logic.Convert.AsBase62String(bytes);
+        var resultBuffer = new char[11];
+        var resultSpan = resultBuffer.AsSpan();
+        Base62Encoder.Encode(bytes, ref resultSpan);
+        var result = new string(resultBuffer).TrimStart('\0');
 
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, ULong value: {ulongValue}");
         output.WriteLine($"Expected: {expected}, Result: {result}");
 
-        result.ToString().ShouldBe(expected.ToString());
+        result.ShouldBe(expected);
     }
 
     /// <summary>
     /// Tests that byte span conversion handles reversed byte order correctly.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_ReversedByteOrder_HandledCorrectly()
+    public void Encode_ByteSpan_ReversedByteOrder_HandledCorrectly()
     {
         var originalBytes = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
         var reversedBytes = new byte[] { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
-        var originalResult = Logic.Convert.AsBase62String(originalBytes);
-        var reversedResult = Logic.Convert.AsBase62String(reversedBytes);
+        var buffer1 = new char[11];
+        var buffer2 = new char[11];
+        var span1 = buffer1.AsSpan();
+        var span2 = buffer2.AsSpan();
+
+        Base62Encoder.Encode(originalBytes, ref span1);
+        Base62Encoder.Encode(reversedBytes, ref span2);
+
+        var originalResult = new string(buffer1).TrimStart('\0');
+        var reversedResult = new string(buffer2).TrimStart('\0');
 
         output.WriteLine($"Original bytes: {BitConverter.ToString(originalBytes)}, Result: {originalResult}");
         output.WriteLine($"Reversed bytes: {BitConverter.ToString(reversedBytes)}, Result: {reversedResult}");
@@ -588,7 +705,7 @@ public class ConvertTests(ITestOutputHelper output)
     /// Tests that byte span conversion handles byte patterns that span multiple bytes correctly.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_MultiBytePatterns_HandledCorrectly()
+    public void Encode_ByteSpan_MultiBytePatterns_HandledCorrectly()
     {
         // Test patterns that span multiple bytes
         var testCases = new[]
@@ -601,13 +718,20 @@ public class ConvertTests(ITestOutputHelper output)
 
         foreach (var (bytes, expectedValue) in testCases)
         {
-            var result = Logic.Convert.AsBase62String(bytes);
-            var expected = Logic.Convert.AsBase62String(expectedValue % Base62Power8);
+            var buffer = new char[11];
+            var span = buffer.AsSpan();
+            Base62Encoder.Encode(bytes, ref span);
+            var result = new string(buffer).TrimStart('\0');
+
+            var expectedBuffer = new char[11];
+            var expectedSpan = expectedBuffer.AsSpan();
+            Base62Encoder.Encode(expectedValue % 218_340_105_584_896UL, ref expectedSpan);
+            var expected = new string(expectedBuffer).TrimStart('\0');
 
             output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
             output.WriteLine($"Result: {result}, Expected: {expected}");
 
-            result.ToString().ShouldBe(expected.ToString());
+            result.ShouldBe(expected);
         }
     }
 
@@ -615,26 +739,34 @@ public class ConvertTests(ITestOutputHelper output)
     /// Tests that byte span conversion handles edge cases around byte boundaries correctly.
     /// </summary>
     [Fact]
-    public void AsBase62String_ByteSpan_ByteBoundaryEdgeCases_HandledCorrectly()
+    public void Encode_ByteSpan_ByteBoundaryEdgeCases_HandledCorrectly()
     {
         // Test edge cases around byte boundaries
         var testCases = new[]
         {
-            (new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE }, ulong.MaxValue - 1),
-            (new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 1UL),
-            (new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }, 0x0100000000000000UL),
-            (new byte[] { 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0x0000000000000080UL),
+            new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE },
+            new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+            new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
+            new byte[] { 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
         };
 
-        foreach (var (bytes, expectedValue) in testCases)
+        foreach (var bytes in testCases)
         {
-            var result = Logic.Convert.AsBase62String(bytes);
-            var expected = Logic.Convert.AsBase62String(expectedValue % Base62Power8);
+            var buffer = new char[11];
+            var span = buffer.AsSpan();
+            Base62Encoder.Encode(bytes, ref span);
+            var result = new string(buffer).TrimStart('\0');
 
-            output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
+            var littleEndian = BinaryPrimitives.ReadUInt64LittleEndian(bytes);
+            var expectedBuffer = new char[11];
+            var expectedSpan = expectedBuffer.AsSpan();
+            Base62Encoder.Encode(littleEndian % 218_340_105_584_896UL, ref expectedSpan);
+            var expected = new string(expectedBuffer).TrimStart('\0');
+
+            output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Little-endian value: {littleEndian}");
             output.WriteLine($"Result: {result}, Expected: {expected}");
 
-            result.ToString().ShouldBe(expected.ToString());
+            result.ShouldBe(expected);
         }
     }
 }

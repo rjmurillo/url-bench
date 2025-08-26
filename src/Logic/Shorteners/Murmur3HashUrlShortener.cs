@@ -1,7 +1,7 @@
 ﻿using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Contracts;
+using Logic.Contracts;
 using Logic.Hashing;
 
 namespace Logic.Shorteners;
@@ -73,8 +73,8 @@ public class Murmur3HashUrlShortener(uint seed)
         // Calculate hash and convert to Base62
         ulong value = Murmur3.Hash64(ref inputSpan, seed);
 
-        Span<char> base62Buffer = stackalloc char[Math.Min(Convert.DetermineBufferLength(value), Constants.MaxSlugLength)];
-        Convert.AsBase62String(value, ref base62Buffer);
+        Span<char> base62Buffer = stackalloc char[Math.Min(Base62Encoder.DetermineBufferLength(value), Constants.MaxSlugLength)];
+        Base62Encoder.Encode(value, ref base62Buffer);
         return base62Buffer.ToString();
     }
 }

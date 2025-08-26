@@ -1,4 +1,4 @@
-﻿using Contracts;
+﻿using Logic.Contracts;
 using Logic.Shorteners;
 
 namespace UrlConverterPermutations;

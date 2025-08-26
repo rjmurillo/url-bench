@@ -4,8 +4,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
-using System.Text;
-using Contracts;
+using Logic.Contracts;
 using Logic.Exceptions;
 
 namespace Logic.Shorteners;
@@ -68,8 +67,8 @@ public class VectorizedUrlShortener : IUrlShortener
         // Only hash the bytes written
         var value = FlexibleHash(bytes[..byteCount]);
 
-        Span<char> base62Buffer = stackalloc char[Math.Min(Convert.DetermineBufferLength(value), Constants.MaxSlugLength)];
-        Convert.AsBase62String(value, ref base62Buffer);
+        Span<char> base62Buffer = stackalloc char[Math.Min(Base62Encoder.DetermineBufferLength(value), Constants.MaxSlugLength)];
+        Base62Encoder.Encode(value, ref base62Buffer);
 
         return base62Buffer.ToString();
     }
