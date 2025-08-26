@@ -57,7 +57,7 @@ public static class UrlRepositoryExtensions
     /// predictable and fast for common cases: allocating the span to a string when needed.
     /// </summary>
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static string GetOriginalUrlSlow(IUrlRepository repository, ReadOnlySpan<char> shortUrl)
+    private static string GetOriginalUrlSlow(IUrlRepository repository, scoped ReadOnlySpan<char> shortUrl)
     {
         // Allocate exactly once to satisfy the legacy string-based API.
         return repository.GetOriginalUrl(new string(shortUrl));
