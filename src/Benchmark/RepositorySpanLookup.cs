@@ -24,6 +24,7 @@ public class RepositorySpanLookup
     private string _originalUrl = null!;
 
     // Simulate hot-path buffer that holds the short code (like BenchmarkCommand.ReadSingle)
+    // 12 is the absolute maximum that can be shortened based on Int64.MaxValue
     private readonly char[] _hotPathBuffer = new char[12];
 
     [GlobalSetup]
