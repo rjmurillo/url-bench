@@ -118,22 +118,37 @@ public class Base62EncoderTests(ITestOutputHelper output)
     [Fact]
     public void Encode_WithBuffer_SufficientSize_WritesCorrectly()
     {
-        var value = 12345UL;
-        var buffer = new char[10];
-        var span = buffer.AsSpan();
+        ulong value = 12345UL;
+        var expectedEncoded = "DNH";
 
-        Base62Encoder.Encode(value, ref span);
+        var oversizeBuffer = new char[10];
+        var oversizeSpan = oversizeBuffer.AsSpan();
 
-        output.WriteLine($"Value: {value}, Buffer: {new string(buffer)}");
+        Base62Encoder.Encode(value, ref oversizeSpan);
+
+        output.WriteLine($"Value: {value}, Buffer Length: {oversizeBuffer.Length}, Buffer: {new string(oversizeBuffer)}");
 
         // Verify the result is correct - buffer writes from right to left
-        int expectedBufferLength = Base62Encoder.DetermineBufferLength(value);
-        var expectedBuffer = new char[expectedBufferLength];
-        var expectedSpan = expectedBuffer.AsSpan();
-        Base62Encoder.Encode(value, ref expectedSpan);
-        var expected = new string(expectedBuffer);
-        var actual = new string(buffer).TrimStart('\0');
-        actual.ShouldBe(expected);
+        int exactBufferLength = Base62Encoder.DetermineBufferLength(value);
+        var exactBuffer = new char[exactBufferLength];
+        var exactBufferSpan = exactBuffer.AsSpan();
+        Base62Encoder.Encode(value, ref exactBufferSpan);
+
+        output.WriteLine($"Value: {value}, Buffer Length: {exactBuffer.Length}, Buffer: {new string(exactBuffer)}");
+
+        // Convert the buffers to strings
+        var exactString = new string(exactBuffer);
+
+        // Trim off the null items from the oversize buffer
+        var oversizeStringTrimmed = new string(oversizeBuffer).TrimStart('\0');
+
+        // Assert the trimmed actual is the same as the "right-sized" buffer
+        // This ensures we didn't truncate or trim
+        oversizeStringTrimmed.ShouldBe(exactString);
+
+        // Assert the encoded value is the expected value
+        oversizeStringTrimmed.ShouldBe(expectedEncoded);
+        exactString.ShouldBe(expectedEncoded);
     }
 
     /// <summary>
