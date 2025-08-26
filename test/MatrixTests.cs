@@ -135,7 +135,7 @@ public class MatrixTests(ITestOutputHelper output)
 
     [SkippableTheory]
     [MemberData(nameof(MatrixData))]
-    public void GetOriginal_missing_returns_empty_span(IUrlShortener? shortener, IUrlRepository? repository)
+    public void GetOriginal_missing_span_returns_empty(IUrlShortener? shortener, IUrlRepository? repository)
     {
         Skip.If(shortener is null || repository is null, "Shortener or repository is not initialized.");
 
