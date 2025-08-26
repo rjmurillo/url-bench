@@ -54,7 +54,7 @@ public class MatrixTests(ITestOutputHelper output)
 
         output.WriteLine($"Original URL: {originalUrl}");
 
-        originalUrl.ToString().ShouldBe(longUrl);
+        originalUrl.ShouldBe(longUrl);
     }
 
     [Theory]

@@ -421,7 +421,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         var result2 = new string(buffer2);
         output.WriteLine($"Value: {value}, Result1: {result1}, Result2: {result2}");
 
-        result1.ToString().ShouldBe(result2.ToString());
+        result1.ShouldBe(result2);
     }
 
     /// <summary>
@@ -474,7 +474,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         output.WriteLine($"Hash2: {BitConverter.ToString(hash2)}, Result2: {result2}");
 
         // Results should be different due to different byte orderings
-        result1.ToString().ShouldNotBe(result2.ToString());
+        result1.ShouldNotBe(result2);
     }
 
     /// <summary>
@@ -548,7 +548,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
 
         output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {result}, Expected: {expected}");
 
-        result.ToString().ShouldBe(expected.ToString());
+        result.ShouldBe(expected);
     }
 
     /// <summary>
@@ -576,7 +576,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         output.WriteLine($"Little-endian bytes: {BitConverter.ToString(littleEndianBytes)}, Result: {littleEndianResult}");
 
         // Results should be different due to different byte orderings
-        bigEndianResult.ToString().ShouldNotBe(littleEndianResult.ToString());
+        bigEndianResult.ShouldNotBe(littleEndianResult);
     }
 
     /// <summary>
@@ -604,7 +604,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
         output.WriteLine($"Result: {result}, Expected: {expected}");
 
-        result.ToString().ShouldBe(expected.ToString());
+        result.ShouldBe(expected);
     }
 
     /// <summary>
@@ -653,7 +653,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
         output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, ULong value: {ulongValue}");
         output.WriteLine($"Expected: {expected}, Result: {result}");
 
-        result.ToString().ShouldBe(expected.ToString());
+        result.ShouldBe(expected);
     }
 
     /// <summary>
@@ -731,7 +731,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
             output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Expected value: {expectedValue}");
             output.WriteLine($"Result: {result}, Expected: {expected}");
 
-            result.ToString().ShouldBe(expected.ToString());
+            result.ShouldBe(expected);
         }
     }
 
@@ -766,7 +766,7 @@ public class Base62EncoderTests(ITestOutputHelper output)
             output.WriteLine($"Bytes: {BitConverter.ToString(bytes)}, Little-endian value: {littleEndian}");
             output.WriteLine($"Result: {result}, Expected: {expected}");
 
-            result.ToString().ShouldBe(expected.ToString());
+            result.ShouldBe(expected);
         }
     }
 }
