@@ -13,12 +13,20 @@ public static class UrlRepositoryExtensions
     /// Otherwise, fall back to the legacy string path (one allocation). Output
     /// is materialized as a string to satisfy the interface contract.
     /// </summary>
-    /// <param name="repository">The repository instance.</param>
-    /// <param name="shortUrl">The short URL to look up as a span.</param>
-    /// <returns>The original URL if found; otherwise, an empty string.</returns>
+    /// <remarks>
+    /// This method mirrors the null/empty semantics of the string-based <see cref="IUrlRepository"/>:
+    /// passing an empty span is equivalent to passing <see cref="string.Empty" />.
+    /// </remarks>
+    /// <param name="repository">The repository instance. Must not be <see langword="null"/>.</param>
+    /// <param name="shortUrl">The short URL to look up as a span. Empty is allowed and equivalent to <see cref="string.Empty" />.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="repository"/> is <see langword="null" />.</exception>
+    /// <returns>The original URL if found; otherwise, an <see cref="string.Empty"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="repository"/> is <see langword="null"/>.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string GetOriginalUrl(this IUrlRepository repository, scoped ReadOnlySpan<char> shortUrl)
     {
+        ArgumentNullException.ThrowIfNull(repository);
+
         // We cannot rely on JIT devirtualization. Even if the interface call devirtualizes, the bound
         // signature remains string overload of IUrlRepository. The JIT will not switch to another
         // overload if we're bound by the interface contract. We also can't do clever things with
@@ -44,10 +52,14 @@ public static class UrlRepositoryExtensions
         return GetOriginalUrlSlow(repository, shortUrl);
     }
 
+    /// <summary>
+    /// Span-based slow path used when the repository isn't span-capable. We keep this path
+    /// predictable and fast for common cases: allocating the span to a string when needed.
+    /// </summary>
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static string GetOriginalUrlSlow(IUrlRepository repository, ReadOnlySpan<char> shortUrl)
+    private static string GetOriginalUrlSlow(IUrlRepository repository, scoped ReadOnlySpan<char> shortUrl)
     {
-        // Fallback to legacy string-based lookup
+        // Allocate exactly once to satisfy the legacy string-based API.
         return repository.GetOriginalUrl(new string(shortUrl));
     }
 }

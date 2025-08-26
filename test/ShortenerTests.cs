@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net;
+using System.Text;
 using System.Web;
 using Logic.Contracts;
 using NonBlocking;
@@ -61,7 +62,7 @@ public class ShortenerTests(ITestOutputHelper output)
         string CreateTestUrl()
         {
             var baseUrl = "https://www.example.com:8080/search";
-            var query = $"q={HttpUtility.UrlEncode("testing browser capabilities")}&lang=en";
+            var query = $"q={WebUtility.UrlEncode("testing browser capabilities")}&lang=en";
             var hash = $"section1?nested=true&unicode={HttpUtility.UrlEncode("προσωπική δοκιμή")}&dataurl=data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==";
             return $"{baseUrl}?{query}#{hash}";
         }
