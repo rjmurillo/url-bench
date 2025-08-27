@@ -6,6 +6,7 @@ using System.Runtime;
 using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Mathematics;
 using Logic;
+using Logic.Benchmarking;
 using Logic.Contracts;
 using Logic.Repositories;
 using Logic.Shorteners;
@@ -39,7 +40,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             var shortenerType = UrlRepositoryHelper.GetShortenerType(settings.ShortenerType);
             var shortener = Factory.CreateShortener(shortenerType!);
             var facade = new UrlManager(shortener, repo);
-            var sw = new Stopwatch();
             string url = settings.Url!;
 
             long writeSampleCount = settings.Iterations * settings.NumberOfUrls;
@@ -57,8 +57,8 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             var readSamples = new List<double>((int)Math.Min(readSampleCount, int.MaxValue));
             var writeSamples = new List<double>((int)Math.Min(writeSampleCount, int.MaxValue));
 
-            RunWritePhase(settings, facade, url, sw, writeSamples);
-            RunReadPhase(settings, facade, sw, readSamples);
+            RunWritePhase(settings, facade, url, writeSamples);
+            RunReadPhase(settings, facade, readSamples);
         }
         catch (Exception ex)
         {
@@ -69,7 +69,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         return 0;
     }
 
-    private static void RunWritePhase(Settings settings, IUrlManager facade, string url, Stopwatch sw, List<double> samples)
+    private static void RunWritePhase(Settings settings, IUrlManager facade, string url, List<double> samples)
     {
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
@@ -77,36 +77,23 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             {
                 if (settings.MaxDegreeOfParallelism == 1)
                 {
-                    for (int j = 1; j <= settings.Iterations; j++)
-                    {
-                        sw.Restart();
-                        long lastMs = 0;
-                        for (long i = 0; i < settings.NumberOfUrls; i++)
+                    var iterSamples = BenchCore.RunWritePhaseSequential(
+                        iterations: settings.Iterations,
+                        numberOfUrls: settings.NumberOfUrls,
+                        url: url,
+                        manager: facade,
+                        onProgress: (i, j, ips) =>
                         {
-                            facade.ShortenAndSave(url);
-
-                            if (i != 0 && (i % ProgressInterval) == 0)
-                            {
-                                long elapsedMs = sw.ElapsedMilliseconds - lastMs;
-                                lastMs = sw.ElapsedMilliseconds;
-                                if (elapsedMs > 0)
-                                {
-                                    samples.Add(ProgressInterval / (elapsedMs / 1000.0));
-                                }
-
-                                long workingSet = Process.GetCurrentProcess().WorkingSet64;
-                                ctx.Status(string.Create(CultureInfo.InvariantCulture, $"Generating... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M"));
-                            }
-                        }
-
-                        sw.Stop();
-                        if (sw.ElapsedMilliseconds > 0)
+                            samples.Add(ips);
+                            long workingSet = Process.GetCurrentProcess().WorkingSet64;
+                            ctx.Status(string.Create(CultureInfo.InvariantCulture, $"Generating... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M"));
+                        },
+                        onIterationCompleted: (j, iterIps, elapsedMs) =>
                         {
-                            samples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                        }
+                            AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {elapsedMs / 1000.0:N3} secs ({(elapsedMs > 0 ? settings.NumberOfUrls / (elapsedMs / 1000.0) : double.NaN):N0} inserts/sec)");
+                        });
 
-                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({(sw.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0) : double.NaN):N0} inserts/sec)");
-                    }
+                    samples.AddRange(iterSamples);
                 }
                 else
                 {
@@ -128,52 +115,35 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 long workingSet2 = Process.GetCurrentProcess().WorkingSet64;
                 AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet2 / 1048576}M");
 
-                var writeStats = new Statistics(samples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
+                var writeStats = BenchCore.ComputeStats(samples);
                 StatisticsDumper.Dump(writeStats);
             });
     }
 
-    private static void RunReadPhase(Settings settings, IUrlManager facade, Stopwatch sw, List<double> samples)
+    private static void RunReadPhase(Settings settings, IUrlManager facade, List<double> samples)
     {
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
             .Start("Uniform random read...", ctx =>
             {
-                var rnd = new Random(0); // Initialize random number generator
-
                 if (settings.MaxDegreeOfParallelism == 1)
                 {
-                    for (int j = 1; j <= settings.Iterations; j++)
-                    {
-                        sw.Restart();
-                        long lastMs = 0;
-                        for (long i = 0; i < settings.NumberOfUrls; i++)
+                    var iterSamples = BenchCore.RunReadPhaseSequential(
+                        iterations: settings.Iterations,
+                        numberOfUrls: settings.NumberOfUrls,
+                        manager: facade,
+                        onProgress: (i, j, rps) =>
                         {
-                            ulong k = (ulong)rnd.NextInt64(1, settings.NumberOfUrls * j);
-                            ReadSingle(facade, k);
-
-                            if (i != 0 && (i % ProgressInterval) == 0)
-                            {
-                                long elapsedMs = sw.ElapsedMilliseconds - lastMs;
-                                lastMs = sw.ElapsedMilliseconds;
-                                if (elapsedMs > 0)
-                                {
-                                    samples.Add(ProgressInterval / (elapsedMs / 1000.0));
-                                }
-
-                                long workingSet = Process.GetCurrentProcess().WorkingSet64;
-                                ctx.Status(string.Create(CultureInfo.InvariantCulture, $"Reading... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M"));
-                            }
-                        }
-
-                        sw.Stop();
-                        if (sw.ElapsedMilliseconds > 0)
+                            samples.Add(rps);
+                            long workingSet = Process.GetCurrentProcess().WorkingSet64;
+                            ctx.Status(string.Create(CultureInfo.InvariantCulture, $"Reading... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M"));
+                        },
+                        onIterationCompleted: (j, iterRps, elapsedMs) =>
                         {
-                            samples.Add(settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0));
-                        }
+                            AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {elapsedMs / 1000.0:N3} secs ({(elapsedMs > 0 ? settings.NumberOfUrls / (elapsedMs / 1000.0) : double.NaN):N0} reads/sec)");
+                        });
 
-                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {sw.ElapsedMilliseconds / 1000.0:N3} secs ({(sw.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (sw.ElapsedMilliseconds / 1000.0) : double.NaN):N0} reads/sec)");
-                    }
+                    samples.AddRange(iterSamples);
                 }
                 else
                 {

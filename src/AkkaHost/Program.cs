@@ -12,6 +12,7 @@ using AkkaHost;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime;
+using Logic.UI;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
@@ -71,7 +72,7 @@ var writeSamples = BenchCore.RunWritePhaseSequential(
 long workingSetW = Process.GetCurrentProcess().WorkingSet64;
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Write complete. Total URLs: {NumberOfUrls * Iterations:N0} Working set: {workingSetW / 1048576}M"));
 var writeStats = BenchCore.ComputeStats(writeSamples);
-Console.WriteLine($"Write stats (ops/sec): {writeStats}");
+StatisticsDumper.Dump(writeStats);
 
 var readSamples = BenchCore.RunReadPhaseSequential(
     Iterations,
@@ -84,7 +85,7 @@ var readSamples = BenchCore.RunReadPhaseSequential(
 long workingSetR = Process.GetCurrentProcess().WorkingSet64;
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Read complete. Total URLs: {NumberOfUrls * Iterations:N0} Working set: {workingSetR / 1048576}M"));
 var readStats = BenchCore.ComputeStats(readSamples);
-Console.WriteLine($"Read stats (ops/sec): {readStats}");
+StatisticsDumper.Dump(readStats);
 
 Console.WriteLine("Benchmark complete.");
 

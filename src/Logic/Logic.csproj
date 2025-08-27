@@ -1,10 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
     <PackageReference Include="FastCache.Cached" />
     <PackageReference Include="IdGen" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
     <PackageReference Include="Microsoft.FASTER.Core" />
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Spectre.Console.Analyzer">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

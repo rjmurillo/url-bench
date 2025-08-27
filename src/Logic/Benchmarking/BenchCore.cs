@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+
+using BenchmarkDotNet.Mathematics;
+
 using Logic.Contracts;
 
 namespace Logic.Benchmarking;
@@ -104,40 +107,8 @@ public static class BenchCore
         return samples;
     }
 
-    public readonly record struct ThroughputStats(int Count, double Min, double P50, double P95, double Max, double Mean)
+    public static Statistics ComputeStats(IEnumerable<double> samples)
     {
-        public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"count={Count}, min={Min:N0}, p50={P50:N0}, p95={P95:N0}, max={Max:N0}, mean={Mean:N0}");
-    }
-
-    public static ThroughputStats ComputeStats(IEnumerable<double> samples)
-    {
-        var data = samples
-            .Where(p => !double.IsNaN(p) && !double.IsInfinity(p))
-            .OrderBy(p => p)
-            .ToArray();
-
-        if (data.Length == 0)
-        {
-            return new ThroughputStats(0, double.NaN, double.NaN, double.NaN, double.NaN, double.NaN);
-        }
-
-        static double Percentile(double[] arr, double p)
-        {
-            if (arr.Length == 0) return double.NaN;
-            if (p <= 0) return arr[0];
-            if (p >= 1) return arr[^1];
-            double pos = (arr.Length - 1) * p;
-            int lo = (int)Math.Floor(pos);
-            int hi = (int)Math.Ceiling(pos);
-            if (lo == hi) return arr[lo];
-            double frac = pos - lo;
-            return arr[lo] * (1 - frac) + arr[hi] * frac;
-        }
-
-        double mean = data.Average();
-        double p50 = Percentile(data, 0.5);
-        double p95 = Percentile(data, 0.95);
-
-        return new ThroughputStats(data.Length, data[0], p50, p95, data[^1], mean);
+        return new Statistics(samples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
     }
 }
