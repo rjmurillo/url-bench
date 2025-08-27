@@ -104,13 +104,14 @@ public static class BenchCore
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ReadSingle(IUrlManager manager, ulong k)
     {
-        Span<char> buf = stackalloc char[12];
         int len = Base62Encoder.DetermineBufferLength(k);
-        Span<char> slice = buf[..len];
+        Span<char> slice = stackalloc char[len];
         Base62Encoder.Encode(k, ref slice);
-        string result = manager.GetOriginalUrl(slice);
 
         // Ensure the result is not elided by making it observable
+        string result = manager.GetOriginalUrl(slice);
+
+        // Prevents the optimizer from removing the call
         GC.KeepAlive(result);
     }
 

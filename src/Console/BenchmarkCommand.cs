@@ -15,7 +15,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime;
-using System.Runtime.CompilerServices;
 
 #pragma warning disable SA1600
 #pragma warning disable HAA0301
@@ -25,8 +24,6 @@ namespace Console;
 [Description("Benchmark the URL shortener")]
 internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 {
-    private const int ProgressInterval = 524_288;
-
 #pragma warning disable MA0051
     public override int Execute(CommandContext context, Settings settings)
 #pragma warning restore MA0051
@@ -180,16 +177,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 var readStats = new Statistics(samples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
                 StatisticsConsoleRenderer.Dump(readStats);
             });
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ReadSingle(IUrlManager facade, ulong k)
-    {
-        Span<char> buf = stackalloc char[12];
-        int len = Base62Encoder.DetermineBufferLength(k);
-        Span<char> slice = buf[..len];
-        Base62Encoder.Encode(k, ref slice);
-        _ = facade.GetOriginalUrl(slice);
     }
 
     public sealed class Settings : CommandSettings
