@@ -72,7 +72,7 @@ var writeSamples = BenchCore.RunWritePhaseSequential(
 long workingSetW = Process.GetCurrentProcess().WorkingSet64;
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Write complete. Total URLs: {NumberOfUrls * Iterations:N0} Working set: {workingSetW / 1048576}M"));
 var writeStats = BenchCore.ComputeStats(writeSamples);
-StatisticsDumper.Dump(writeStats);
+StatisticsConsoleRenderer.Dump(writeStats);
 
 var readSamples = BenchCore.RunReadPhaseSequential(
     Iterations,
@@ -85,7 +85,7 @@ var readSamples = BenchCore.RunReadPhaseSequential(
 long workingSetR = Process.GetCurrentProcess().WorkingSet64;
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Read complete. Total URLs: {NumberOfUrls * Iterations:N0} Working set: {workingSetR / 1048576}M"));
 var readStats = BenchCore.ComputeStats(readSamples);
-StatisticsDumper.Dump(readStats);
+StatisticsConsoleRenderer.Dump(readStats);
 
 Console.WriteLine("Benchmark complete.");
 

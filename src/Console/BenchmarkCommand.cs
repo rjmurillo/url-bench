@@ -1,17 +1,21 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Runtime;
-using System.Runtime.CompilerServices;
-using BenchmarkDotNet.Mathematics;
+﻿using BenchmarkDotNet.Mathematics;
+
 using Logic;
 using Logic.Benchmarking;
 using Logic.Contracts;
 using Logic.Repositories;
 using Logic.Shorteners;
+using Logic.UI;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
+
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Runtime;
+using System.Runtime.CompilerServices;
 
 #pragma warning disable SA1600
 #pragma warning disable HAA0301
@@ -116,7 +120,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet2 / 1048576}M");
 
                 var writeStats = BenchCore.ComputeStats(samples);
-                StatisticsDumper.Dump(writeStats);
+                StatisticsConsoleRenderer.Dump(writeStats);
             });
     }
 
@@ -174,7 +178,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet2 / 1048576}M");
 
                 var readStats = new Statistics(samples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
-                StatisticsDumper.Dump(readStats);
+                StatisticsConsoleRenderer.Dump(readStats);
             });
     }
 
