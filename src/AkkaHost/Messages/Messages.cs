@@ -1,17 +1,17 @@
 ﻿namespace AkkaHost.Messages;
 
 // Commands
-public record struct ShortenUrl(string OriginalUrl);
+public record ShortenUrl(string OriginalUrl);
 
 // Events (Persisted)
-public record struct UrlShortened(string OriginalUrl, string ShortCode, DateTimeOffset CreatedAt);
+public record UrlShortened(string OriginalUrl, string ShortCode, DateTimeOffset CreatedAt);
 
 // Queries
-public record struct GetUrlByCode(string ShortCode);
+public record GetUrlByCode(string ShortCode);
 
 // Responses
 public sealed record ShortenUrlAccepted(string ShortCode);
 public sealed record ShortenUrlRejected(string Reason);
 
-public record struct UrlDetails(string ShortCode, string OriginalUrl);
-public record struct UrlNotFound(string ShortCode);
+public record UrlDetails(string ShortCode, string OriginalUrl);
+public record UrlNotFound(string ShortCode);
