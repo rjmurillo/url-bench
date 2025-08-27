@@ -158,7 +158,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         for (long i = 0; i < settings.NumberOfUrls; i++)
                         {
                             ulong k = (ulong)localRnd.NextInt64(1, settings.NumberOfUrls * j);
-                            ReadSingle(facade, k);
+                            BenchCore.ReadSingle(facade, k);
                         }
 
                         swLocal.Stop();
