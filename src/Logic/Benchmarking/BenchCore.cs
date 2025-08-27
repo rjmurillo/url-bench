@@ -17,7 +17,7 @@ namespace Logic.Benchmarking;
 /// </remarks>
 public static class BenchCore
 {
-    public const int ProgressInterval = 524_288;
+    public const int ProgressInterval = 65_536;
 
     /// <summary>
     /// Executes the write phase of the benchmark sequentially, performing URL shortening and saving operations.
@@ -44,6 +44,7 @@ public static class BenchCore
     /// <item><description>The elapsed time in milliseconds for the iteration.</description></item>
     /// </list>
     /// </param>
+    /// <param name="progressInterval">Optional progress sampling interval; defaults to <see cref="ProgressInterval"/>.</param>
     /// <returns>A read-only list of doubles representing the average inserts per second for each iteration.</returns>
     public static IReadOnlyList<double> RunWritePhaseSequential(
         int iterations,
@@ -51,7 +52,8 @@ public static class BenchCore
         string url,
         IUrlManager manager,
         Action<long, int, double>? onProgress = null,
-        Action<int, double, long>? onIterationCompleted = null)
+        Action<int, double, long>? onIterationCompleted = null,
+        int progressInterval = ProgressInterval)
     {
         var sw = new Stopwatch();
         var samples = new List<double>(iterations);
@@ -64,15 +66,30 @@ public static class BenchCore
             {
                 manager.ShortenAndSave(url);
 
-                if (i != 0 && (i % ProgressInterval) == 0)
+                if (i != 0 && (i % progressInterval) == 0)
                 {
                     long elapsedMs = sw.ElapsedMilliseconds - lastMs;
                     lastMs = sw.ElapsedMilliseconds;
                     if (elapsedMs > 0)
                     {
-                        double ips = ProgressInterval / (elapsedMs / 1000.0);
+                        double ips = progressInterval / (elapsedMs / 1000.0);
+                        samples.Add(ips);
                         onProgress?.Invoke(i, j, ips);
                     }
+                }
+            }
+
+            // Emit a final remainder sample if there are leftover operations not captured by the exact interval
+            long completedAtIntervals = (numberOfUrls / progressInterval) * progressInterval;
+            long remaining = numberOfUrls - completedAtIntervals;
+            if (remaining > 0)
+            {
+                long elapsedMsRemainder = sw.ElapsedMilliseconds - lastMs;
+                if (elapsedMsRemainder > 0)
+                {
+                    double ipsRemainder = remaining / (elapsedMsRemainder / 1000.0);
+                    samples.Add(ipsRemainder);
+                    onProgress?.Invoke(numberOfUrls, j, ipsRemainder);
                 }
             }
 
@@ -129,13 +146,15 @@ public static class BenchCore
     /// An optional callback invoked upon the completion of each iteration.
     /// Parameters include the iteration number, the read operations per second (RPS) for the iteration, and the elapsed time in milliseconds.
     /// </param>
+    /// <param name="progressInterval">Optional progress sampling interval; defaults to <see cref="ProgressInterval"/>.</param>
     /// <returns>A read-only list of doubles representing the read operations per second (RPS) for each iteration.</returns>
     public static IReadOnlyList<double> RunReadPhaseSequential(
         int iterations,
         long numberOfUrls,
         IUrlManager manager,
         Action<long, int, double>? onProgress = null,
-        Action<int, double, long>? onIterationCompleted = null)
+        Action<int, double, long>? onIterationCompleted = null,
+        int progressInterval = ProgressInterval)
     {
         var rnd = new Random(0);
         var sw = new Stopwatch();
@@ -150,15 +169,30 @@ public static class BenchCore
                 ulong k = (ulong)rnd.NextInt64(1, numberOfUrls * j);
                 ReadSingle(manager, k);
 
-                if (i != 0 && (i % ProgressInterval) == 0)
+                if (i != 0 && (i % progressInterval) == 0)
                 {
                     long elapsedMs = sw.ElapsedMilliseconds - lastMs;
                     lastMs = sw.ElapsedMilliseconds;
                     if (elapsedMs > 0)
                     {
-                        double rps = ProgressInterval / (elapsedMs / 1000.0);
+                        double rps = progressInterval / (elapsedMs / 1000.0);
+                        samples.Add(rps);
                         onProgress?.Invoke(i, j, rps);
                     }
+                }
+            }
+
+            // Emit a final remainder sample for reads as well
+            long completedAtIntervals = (numberOfUrls / progressInterval) * progressInterval;
+            long remaining = numberOfUrls - completedAtIntervals;
+            if (remaining > 0)
+            {
+                long elapsedMsRemainder = sw.ElapsedMilliseconds - lastMs;
+                if (elapsedMsRemainder > 0)
+                {
+                    double rpsRemainder = remaining / (elapsedMsRemainder / 1000.0);
+                    samples.Add(rpsRemainder);
+                    onProgress?.Invoke(numberOfUrls, j, rpsRemainder);
                 }
             }
 

@@ -92,7 +92,8 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         onIterationCompleted: (j, iterIps, elapsedMs) =>
                         {
                             AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {elapsedMs / 1000.0:N3} secs ({(elapsedMs > 0 ? settings.NumberOfUrls / (elapsedMs / 1000.0) : double.NaN):N0} inserts/sec)");
-                        });
+                        },
+                        progressInterval: settings.ProgressInterval);
 
                     samples.AddRange(iterSamples);
                 }
@@ -142,7 +143,8 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         onIterationCompleted: (j, iterRps, elapsedMs) =>
                         {
                             AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {elapsedMs / 1000.0:N3} secs ({(elapsedMs > 0 ? settings.NumberOfUrls / (elapsedMs / 1000.0) : double.NaN):N0} reads/sec)");
-                        });
+                        },
+                        progressInterval: settings.ProgressInterval);
 
                     samples.AddRange(iterSamples);
                 }
@@ -189,6 +191,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             internal const int Iterations = 3;
             internal static readonly Type RepoType = typeof(FASTERUrlRepository);
             internal static readonly Type ShortenerType = typeof(IncrementingIntegerUrlShortener);
+            internal const int ProgressInterval = BenchCore.ProgressInterval;
         }
 
         [CommandOption("-i|--iterations")]
@@ -212,6 +215,10 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         [CommandOption("-p|--maxdop")]
         [DefaultValue(1)]
         public int MaxDegreeOfParallelism { get; init; }
+
+        [CommandOption("--progress-interval")]
+        [DefaultValue(Defaults.ProgressInterval)]
+        public int ProgressInterval { get; init; }
 
         public override ValidationResult Validate()
         {
