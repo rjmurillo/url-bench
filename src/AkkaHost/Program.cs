@@ -13,32 +13,23 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime;
 using Logic.UI;
+using AkkaHost.Messages;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
     {
-        // Register your IUrlRepository / IUrlShortener implementations here if not already registered elsewhere
-        services.AddSingleton<IUrlRepository, ConcurrentUrlRepository>();
+        // Provide a shortener; repository is not used by the Akka-native aggregate
         services.AddSingleton<IUrlShortener, IncrementingIntegerUrlShortener>();
 
         services.AddAkka("UrlShortenerSystem", (builder, sp) =>
         {
-            // No HOCON: configure Akka.Persistence via Akka.Persistence.Hosting extensions
             builder
                 .WithInMemoryJournal()
                 .WithInMemorySnapshotStore()
                 .WithActors((system, registry) =>
                 {
-                    var repository = sp.GetRequiredService<IUrlRepository>();
-
-                    var projection = system.ActorOf(Props.Create(() => new ProjectionActor(repository)), "projection");
-                    registry.Register<ProjectionActor>(projection);
-
-                    var query = system.ActorOf(Props.Create(() => new QueryActor(repository)), "query");
-                    registry.Register<QueryActor>(query);
-
                     var shortener = sp.GetRequiredService<IUrlShortener>();
-                    var aggregate = system.ActorOf(Props.Create(() => new UrlShortenerAggregate(projection, shortener, repository)), "aggregate");
+                    var aggregate = system.ActorOf(Props.Create(() => new UrlShortenerAggregate(shortener)), "aggregate");
                     registry.Register<UrlShortenerAggregate>(aggregate);
                 });
         });
@@ -51,12 +42,13 @@ await host.StartAsync();
 GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
 
 const string Url = "https://www.microsoft.com/en-us/security/business/endpoint-security/microsoft-defender-endpoint";
-const long NumberOfUrls = 10_000_000L;
-const int Iterations = 3;
+const long NumberOfUrls = 1_000_000L;
+const int Iterations = 1;
 
-var repo = host.Services.GetRequiredService<IUrlRepository>();
+var registry = host.Services.GetRequiredService<ActorRegistry>();
+var aggregateRef = registry.Get<UrlShortenerAggregate>();
 var shortener = host.Services.GetRequiredService<IUrlShortener>();
-IUrlManager manager = new UrlManager(shortener, repo);
+IUrlManager manager = new AkkaUrlManager(aggregateRef, aggregateRef, shortener);
 
 Console.WriteLine("Starting benchmark (sequential)...");
 

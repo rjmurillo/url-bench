@@ -2,6 +2,7 @@
 
 // Commands
 public record ShortenUrl(string OriginalUrl);
+public record SaveShortened(string OriginalUrl, string ShortCode);
 
 // Events (Persisted)
 public record UrlShortened(string OriginalUrl, string ShortCode, DateTimeOffset CreatedAt);
