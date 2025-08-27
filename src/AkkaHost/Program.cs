@@ -65,7 +65,11 @@ var writeSamples = BenchCore.RunWritePhaseSequential(
     NumberOfUrls,
     Url,
     manager,
-    onProgress: (i, j, ips) => Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Progress: write iter {j}, at {i:N0}, {ips:N0} inserts/sec")),
+    onProgress: (i, j, ips) =>
+    {
+        long workingSet = Process.GetCurrentProcess().WorkingSet64;
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Progress: write iter {j}, at {i:N0}, {ips:N0} inserts/sec, Mem: {workingSet / 1048576}M"));
+    },
     onIterationCompleted: (j, ips, elapsedMs) => Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Iteration {j}: upserted {NumberOfUrls:N0} in {elapsedMs / 1000.0:N3}s ({ips:N0} inserts/sec)"))
 );
 
@@ -78,7 +82,11 @@ var readSamples = BenchCore.RunReadPhaseSequential(
     Iterations,
     NumberOfUrls,
     manager,
-    onProgress: (i, j, rps) => Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Progress: read iter {j}, at {i:N0}, {rps:N0} reads/sec")),
+    onProgress: (i, j, rps) =>
+    {
+        long workingSet = Process.GetCurrentProcess().WorkingSet64;
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Progress: read iter {j}, at {i:N0}, {rps:N0} reads/sec, Mem: {workingSet / 1048576}M"));
+    },
     onIterationCompleted: (j, rps, elapsedMs) => Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Iteration {j}: read {NumberOfUrls:N0} in {elapsedMs / 1000.0:N3}s ({rps:N0} reads/sec)"))
 );
 
