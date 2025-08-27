@@ -18,8 +18,9 @@ using AkkaHost.Messages;
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
     {
-        // Provide a shortener; repository is not used by the Akka-native aggregate
+        // Provide a shortener and repository
         services.AddSingleton<IUrlShortener, IncrementingIntegerUrlShortener>();
+        services.AddSingleton<IUrlRepository, ConcurrentUrlRepository>();
 
         services.AddAkka("UrlShortenerSystem", (builder, sp) =>
         {
@@ -29,8 +30,13 @@ var host = Host.CreateDefaultBuilder(args)
                 .WithActors((system, registry) =>
                 {
                     var shortener = sp.GetRequiredService<IUrlShortener>();
-                    var aggregate = system.ActorOf(Props.Create(() => new UrlShortenerAggregate(shortener)), "aggregate");
-                    registry.Register<UrlShortenerAggregate>(aggregate);
+                    var repo = sp.GetRequiredService<IUrlRepository>();
+
+                    var writer = system.ActorOf(Props.Create(() => new UrlWriteActor(shortener, repo)), "writer");
+                    var reader = system.ActorOf(Props.Create(() => new UrlReadActor(repo)), "reader");
+
+                    registry.Register<UrlWriteActor>(writer);
+                    registry.Register<UrlReadActor>(reader);
                 });
         });
     })
@@ -46,9 +52,10 @@ const long NumberOfUrls = 1_000_000L;
 const int Iterations = 1;
 
 var registry = host.Services.GetRequiredService<ActorRegistry>();
-var aggregateRef = registry.Get<UrlShortenerAggregate>();
+var writerRef = registry.Get<UrlWriteActor>();
+var readerRef = registry.Get<UrlReadActor>();
 var shortener = host.Services.GetRequiredService<IUrlShortener>();
-IUrlManager manager = new AkkaUrlManager(aggregateRef, aggregateRef, shortener);
+IUrlManager manager = new AkkaUrlManager(writerRef, readerRef, shortener);
 
 Console.WriteLine("Starting benchmark (sequential)...");
 
