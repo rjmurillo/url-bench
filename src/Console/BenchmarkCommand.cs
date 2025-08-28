@@ -70,12 +70,15 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         return 0;
     }
 
-    private static void RunWritePhase(Settings settings, IUrlManager facade, string url, List<double> samples)
+    private static void RunWritePhase(Settings settings, IUrlManager facade, string url, List<double> iterAggregates)
     {
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
             .Start("Generating...", ctx =>
             {
+                // bounded reservoir for per-window samples
+                ISampleCollector collector = new ReservoirSampleCollector(settings.ReservoirCapacity, settings.RandomSeed);
+
                 if (settings.MaxDegreeOfParallelism == 1)
                 {
                     var iterSamples = BenchCore.RunWritePhaseSequential(
@@ -85,7 +88,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         manager: facade,
                         onProgress: (i, j, ips) =>
                         {
-                            samples.Add(ips);
                             long workingSet = Process.GetCurrentProcess().WorkingSet64;
                             ctx.Status(string.Create(CultureInfo.InvariantCulture, $"Generating... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M"));
                         },
@@ -93,9 +95,10 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         {
                             AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {elapsedMs / 1000.0:N3} secs ({(elapsedMs > 0 ? settings.NumberOfUrls / (elapsedMs / 1000.0) : double.NaN):N0} inserts/sec)");
                         },
-                        progressInterval: settings.ProgressInterval);
+                        progressInterval: settings.ProgressInterval,
+                        collector: collector);
 
-                    samples.AddRange(iterSamples);
+                    iterAggregates.AddRange(iterSamples);
                 }
                 else
                 {
@@ -107,7 +110,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         swLocal.Stop();
                         if (swLocal.ElapsedMilliseconds > 0)
                         {
-                            samples.Add(settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0));
+                            iterAggregates.Add(settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0));
                         }
 
                         AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {swLocal.ElapsedMilliseconds / 1000.0:N3} secs ({(swLocal.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0) : double.NaN):N0} inserts/sec)");
@@ -117,17 +120,25 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 long workingSet2 = Process.GetCurrentProcess().WorkingSet64;
                 AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet2 / 1048576}M");
 
-                var writeStats = BenchCore.ComputeStats(samples);
-                StatisticsConsoleRenderer.Dump(writeStats);
+                // Compute stats from reservoir snapshot for fine-grained comparison
+                var writeWindowStats = BenchCore.ComputeStats(collector.Snapshot());
+                var writeIterStats = BenchCore.ComputeStats(iterAggregates);
+
+                AnsiConsole.MarkupLine("[bold]Window-level (IPS) stats:[/]");
+                StatisticsConsoleRenderer.Dump(writeWindowStats);
+                AnsiConsole.MarkupLine("[bold]Iteration-level (IPS) stats:[/]");
+                StatisticsConsoleRenderer.Dump(writeIterStats);
             });
     }
 
-    private static void RunReadPhase(Settings settings, IUrlManager facade, List<double> samples)
+    private static void RunReadPhase(Settings settings, IUrlManager facade, List<double> iterAggregates)
     {
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
             .Start("Uniform random read...", ctx =>
             {
+                ISampleCollector collector = new ReservoirSampleCollector(settings.ReservoirCapacity, settings.RandomSeed);
+
                 if (settings.MaxDegreeOfParallelism == 1)
                 {
                     var iterSamples = BenchCore.RunReadPhaseSequential(
@@ -136,7 +147,6 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         manager: facade,
                         onProgress: (i, j, rps) =>
                         {
-                            samples.Add(rps);
                             long workingSet = Process.GetCurrentProcess().WorkingSet64;
                             ctx.Status(string.Create(CultureInfo.InvariantCulture, $"Reading... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M"));
                         },
@@ -144,9 +154,10 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         {
                             AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {elapsedMs / 1000.0:N3} secs ({(elapsedMs > 0 ? settings.NumberOfUrls / (elapsedMs / 1000.0) : double.NaN):N0} reads/sec)");
                         },
-                        progressInterval: settings.ProgressInterval);
+                        progressInterval: settings.ProgressInterval,
+                        collector: collector);
 
-                    samples.AddRange(iterSamples);
+                    iterAggregates.AddRange(iterSamples);
                 }
                 else
                 {
@@ -163,9 +174,9 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                         swLocal.Stop();
                         if (swLocal.ElapsedMilliseconds > 0)
                         {
-                            lock (samples)
+                            lock (iterAggregates)
                             {
-                                samples.Add(settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0));
+                                iterAggregates.Add(settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0));
                             }
                         }
 
@@ -176,8 +187,13 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 long workingSet2 = Process.GetCurrentProcess().WorkingSet64;
                 AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet2 / 1048576}M");
 
-                var readStats = new Statistics(samples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
-                StatisticsConsoleRenderer.Dump(readStats);
+                var readWindowStats = BenchCore.ComputeStats(collector.Snapshot());
+                var readIterStats = BenchCore.ComputeStats(iterAggregates);
+
+                AnsiConsole.MarkupLine("[bold]Window-level (RPS) stats:[/]");
+                StatisticsConsoleRenderer.Dump(readWindowStats);
+                AnsiConsole.MarkupLine("[bold]Iteration-level (RPS) stats:[/]");
+                StatisticsConsoleRenderer.Dump(readIterStats);
             });
     }
 
@@ -192,6 +208,8 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             internal static readonly Type RepoType = typeof(FASTERUrlRepository);
             internal static readonly Type ShortenerType = typeof(IncrementingIntegerUrlShortener);
             internal const int ProgressInterval = BenchCore.ProgressInterval;
+            internal const int ReservoirCapacity = 8192;
+            internal const int RandomSeed = 0;
         }
 
         [CommandOption("-i|--iterations")]
@@ -219,6 +237,14 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         [CommandOption("--progress-interval")]
         [DefaultValue(Defaults.ProgressInterval)]
         public int ProgressInterval { get; init; }
+
+        [CommandOption("--reservoir")]
+        [DefaultValue(Defaults.ReservoirCapacity)]
+        public int ReservoirCapacity { get; init; }
+
+        [CommandOption("--seed")]
+        [DefaultValue(Defaults.RandomSeed)]
+        public int RandomSeed { get; init; }
 
         public override ValidationResult Validate()
         {
@@ -251,7 +277,22 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
                 : ValidationResult.Error(
                     $"Unrecognized URL shortener type '{ShortenerType}'. Use: {string.Join(", ", typesImplementingIUrlShortener.Select(t => t.Name))}");
 
-            return shortenerValidationResult;
+            if (!shortenerValidationResult.Successful)
+            {
+                return shortenerValidationResult;
+            }
+
+            if (ProgressInterval <= 0)
+            {
+                return ValidationResult.Error("--progress-interval must be > 0");
+            }
+
+            if (ReservoirCapacity <= 0)
+            {
+                return ValidationResult.Error("--reservoir must be > 0");
+            }
+
+            return ValidationResult.Success();
         }
     }
 }

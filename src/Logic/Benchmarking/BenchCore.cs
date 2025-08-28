@@ -45,6 +45,7 @@ public static class BenchCore
     /// </list>
     /// </param>
     /// <param name="progressInterval">Optional progress sampling interval; defaults to <see cref="ProgressInterval"/>.</param>
+    /// <param name="collector">Optional sample collector which will receive per-window samples to allow scalable statistics.</param>
     /// <returns>A read-only list of doubles representing the average inserts per second for each iteration.</returns>
     public static IReadOnlyList<double> RunWritePhaseSequential(
         int iterations,
@@ -53,10 +54,10 @@ public static class BenchCore
         IUrlManager manager,
         Action<long, int, double>? onProgress = null,
         Action<int, double, long>? onIterationCompleted = null,
-        int progressInterval = ProgressInterval)
+        int progressInterval = ProgressInterval,
+        ISampleCollector? collector = null)
     {
         var sw = new Stopwatch();
-        var samples = new List<double>(iterations);
 
         for (int j = 1; j <= iterations; j++)
         {
@@ -73,7 +74,7 @@ public static class BenchCore
                     if (elapsedMs > 0)
                     {
                         double ips = progressInterval / (elapsedMs / 1000.0);
-                        samples.Add(ips);
+                        collector?.Add(ips);
                         onProgress?.Invoke(i, j, ips);
                     }
                 }
@@ -88,7 +89,7 @@ public static class BenchCore
                 if (elapsedMsRemainder > 0)
                 {
                     double ipsRemainder = remaining / (elapsedMsRemainder / 1000.0);
-                    samples.Add(ipsRemainder);
+                    collector?.Add(ipsRemainder);
                     onProgress?.Invoke(numberOfUrls, j, ipsRemainder);
                 }
             }
@@ -97,11 +98,11 @@ public static class BenchCore
             double iterIps = sw.ElapsedMilliseconds > 0
                 ? numberOfUrls / (sw.ElapsedMilliseconds / 1000.0)
                 : double.NaN;
-            samples.Add(iterIps);
+            collector?.Add(iterIps);
             onIterationCompleted?.Invoke(j, iterIps, sw.ElapsedMilliseconds);
         }
 
-        return samples;
+        return collector?.Snapshot() ?? [];
     }
 
     /// <summary>
@@ -147,6 +148,7 @@ public static class BenchCore
     /// Parameters include the iteration number, the read operations per second (RPS) for the iteration, and the elapsed time in milliseconds.
     /// </param>
     /// <param name="progressInterval">Optional progress sampling interval; defaults to <see cref="ProgressInterval"/>.</param>
+    /// <param name="collector">Optional sample collector which will receive per-window samples to allow scalable statistics.</param>
     /// <returns>A read-only list of doubles representing the read operations per second (RPS) for each iteration.</returns>
     public static IReadOnlyList<double> RunReadPhaseSequential(
         int iterations,
@@ -154,11 +156,11 @@ public static class BenchCore
         IUrlManager manager,
         Action<long, int, double>? onProgress = null,
         Action<int, double, long>? onIterationCompleted = null,
-        int progressInterval = ProgressInterval)
+        int progressInterval = ProgressInterval,
+        ISampleCollector? collector = null)
     {
         var rnd = new Random(0);
         var sw = new Stopwatch();
-        var samples = new List<double>(iterations);
 
         for (int j = 1; j <= iterations; j++)
         {
@@ -176,7 +178,7 @@ public static class BenchCore
                     if (elapsedMs > 0)
                     {
                         double rps = progressInterval / (elapsedMs / 1000.0);
-                        samples.Add(rps);
+                        collector?.Add(rps);
                         onProgress?.Invoke(i, j, rps);
                     }
                 }
@@ -191,7 +193,7 @@ public static class BenchCore
                 if (elapsedMsRemainder > 0)
                 {
                     double rpsRemainder = remaining / (elapsedMsRemainder / 1000.0);
-                    samples.Add(rpsRemainder);
+                    collector?.Add(rpsRemainder);
                     onProgress?.Invoke(numberOfUrls, j, rpsRemainder);
                 }
             }
@@ -200,11 +202,11 @@ public static class BenchCore
             double iterRps = sw.ElapsedMilliseconds > 0
                 ? numberOfUrls / (sw.ElapsedMilliseconds / 1000.0)
                 : double.NaN;
-            samples.Add(iterRps);
+            collector?.Add(iterRps);
             onIterationCompleted?.Invoke(j, iterRps, sw.ElapsedMilliseconds);
         }
 
-        return samples;
+        return collector?.Snapshot() ?? [];
     }
 
     /// <summary>
@@ -219,8 +221,5 @@ public static class BenchCore
     /// This method is designed to process performance data collected during benchmarking phases,
     /// providing insights into the distribution and variability of the measured samples.
     /// </remarks>
-    public static Statistics ComputeStats(IEnumerable<double> samples)
-    {
-        return new Statistics(samples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
-    }
+    public static Statistics ComputeStats(IEnumerable<double> samples) => new(samples.Where(p => !double.IsNaN(p) && !double.IsInfinity(p)));
 }
