@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Runtime;
+using System.Threading;
 using Akka.Actor;
 using Akka.Hosting;
-using Akka.Persistence.Hosting;
 using AkkaHost;
 using AkkaHost.Messages;
 using Logic;
@@ -15,6 +15,11 @@ using Logic.UI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+// Bump ThreadPool minimum threads to reduce ramp-up stalls under load
+ThreadPool.GetMinThreads(out var minWorkers, out var minIoThreads);
+var targetWorkers = Math.Max(minWorkers, Environment.ProcessorCount * 4);
+ThreadPool.SetMinThreads(targetWorkers, minIoThreads);
+
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
     {
@@ -24,20 +29,40 @@ var host = Host.CreateDefaultBuilder(args)
 
         services.AddAkka("UrlShortenerSystem", (builder, sp) =>
         {
-            builder
-                .WithInMemoryJournal()
-                .WithInMemorySnapshotStore()
-                .WithActors((system, registry) =>
-                {
-                    var shortener = sp.GetRequiredService<IUrlShortener>();
-                    var repo = sp.GetRequiredService<IUrlRepository>();
+            // Disable verbose logging, dead-letters, and increase dispatcher throughput
+            builder.AddHocon(@"akka {
+              log-config-on-start = off
+              loglevel = ERROR
+              stdout-loglevel = ERROR
+              log-dead-letters = off
+              log-dead-letters-during-shutdown = off
+              actor {
+                debug {
+                  receive = off
+                  autoreceive = off
+                  lifecycle = off
+                  event-stream = off
+                  unhandled = off
+                }
+                default-dispatcher {
+                  # Larger throughput reduces scheduler context switching
+                  throughput = 1000
+                }
+              }
+            }", HoconAddMode.Prepend);
 
-                    var writer = system.ActorOf(Props.Create(() => new UrlWriteActor(shortener, repo)), "writer");
-                    var reader = system.ActorOf(Props.Create(() => new UrlReadActor(repo)), "reader");
+            // No persistence plugins configured - we are in-memory only
+            builder.WithActors((system, registry) =>
+            {
+                var shortener = sp.GetRequiredService<IUrlShortener>();
+                var repo = sp.GetRequiredService<IUrlRepository>();
 
-                    registry.Register<UrlWriteActor>(writer);
-                    registry.Register<UrlReadActor>(reader);
-                });
+                var writer = system.ActorOf(Props.Create(() => new UrlWriteActor(shortener, repo)), "writer");
+                var reader = system.ActorOf(Props.Create(() => new UrlReadActor(repo)), "reader");
+
+                registry.Register<UrlWriteActor>(writer);
+                registry.Register<UrlReadActor>(reader);
+            });
         });
     })
     .Build();
