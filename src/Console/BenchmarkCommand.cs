@@ -1,20 +1,17 @@
-﻿using BenchmarkDotNet.Mathematics;
-
+﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Runtime;
+using BenchmarkDotNet.Mathematics;
 using Logic;
 using Logic.Benchmarking;
 using Logic.Contracts;
 using Logic.Repositories;
 using Logic.Shorteners;
 using Logic.UI;
-
 using Spectre.Console;
 using Spectre.Console.Cli;
-
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Runtime;
 
 #pragma warning disable SA1600
 #pragma warning disable HAA0301
