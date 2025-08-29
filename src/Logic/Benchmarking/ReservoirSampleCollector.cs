@@ -80,12 +80,12 @@ public sealed class ReservoirSampleCollector : ISampleCollector
         long count = Count;
         if (count == _buffer.Length)
         {
-            return _buffer;
+            return Array.AsReadOnly(_buffer);
         }
 
         // copy only when partially filled
         var tmp = new double[count];
         Array.Copy(_buffer, tmp, count);
-        return tmp;
+        return Array.AsReadOnly(tmp);
     }
 }
