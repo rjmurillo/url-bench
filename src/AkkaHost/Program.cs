@@ -55,8 +55,8 @@ const int ProgressInterval = BenchCore.ProgressInterval;
 var registry = host.Services.GetRequiredService<ActorRegistry>();
 var writerRef = registry.Get<UrlWriteActor>();
 var readerRef = registry.Get<UrlReadActor>();
-var shortener = host.Services.GetRequiredService<IUrlShortener>();
-IUrlManager manager = new AkkaUrlManager(writerRef, readerRef, shortener);
+
+IUrlManager manager = new AkkaUrlManager(writerRef, readerRef);
 
 Console.WriteLine("Starting benchmark (sequential)...");
 

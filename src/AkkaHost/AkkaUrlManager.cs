@@ -11,14 +11,12 @@ public sealed class AkkaUrlManager : IUrlManagerSpan
 {
     private readonly IActorRef _writer;
     private readonly IActorRef _reader;
-    private readonly IUrlShortener? _shortener;
     private readonly TimeSpan _timeout;
 
-    public AkkaUrlManager(IActorRef writer, IActorRef reader, IUrlShortener? shortener = null, TimeSpan? timeout = null)
+    public AkkaUrlManager(IActorRef writer, IActorRef reader, TimeSpan? timeout = null)
     {
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _reader = reader ?? throw new ArgumentNullException(nameof(reader));
-        _shortener = shortener;
         _timeout = timeout ?? TimeSpan.FromSeconds(30);
     }
 
@@ -30,18 +28,18 @@ public sealed class AkkaUrlManager : IUrlManagerSpan
         {
             ShortenUrlAccepted ok => ok.ShortCode,
             ShortenUrlRejected rej => throw new InvalidOperationException(rej.Reason),
-            _ => throw new InvalidOperationException("Unexpected response from writer")
+            _ => throw new InvalidOperationException("Unexpected response from writer"),
         };
     }
 
     public string GetOriginalUrl(string shortUrl)
-    {
+        {
         var response = _reader.Ask(new GetUrlByCode(shortUrl), _timeout).GetAwaiter().GetResult();
         return response switch
         {
             UrlDetails details => details.OriginalUrl,
             UrlNotFound => string.Empty,
-            _ => string.Empty
+            _ => string.Empty,
         };
     }
 
