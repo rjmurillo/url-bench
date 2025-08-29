@@ -33,7 +33,7 @@ public sealed class AkkaUrlManager : IUrlManagerSpan
     }
 
     public string GetOriginalUrl(string shortUrl)
-        {
+    {
         var response = _reader.Ask(new GetUrlByCode(shortUrl), _timeout).GetAwaiter().GetResult();
         return response switch
         {
