@@ -1,12 +1,9 @@
 ﻿namespace AkkaHost.Messages;
 
 // Commands
-public record ShortenUrl(string OriginalUrl);
+public sealed record ShortenUrl(string OriginalUrl);
 
-public record SaveShortened(string OriginalUrl, string ShortCode);
-
-// Events (Persisted)
-public record UrlShortened(string OriginalUrl, string ShortCode, DateTimeOffset CreatedAt);
+public sealed record SaveShortened(string OriginalUrl, string ShortCode);
 
 // Queries
 public record GetUrlByCode(string ShortCode);
@@ -16,6 +13,6 @@ public sealed record ShortenUrlAccepted(string ShortCode);
 
 public sealed record ShortenUrlRejected(string Reason);
 
-public record UrlDetails(string ShortCode, string OriginalUrl);
+public sealed record UrlDetails(string ShortCode, string OriginalUrl);
 
-public record UrlNotFound(string ShortCode);
+public sealed record UrlNotFound(string ShortCode);
