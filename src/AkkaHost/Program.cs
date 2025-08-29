@@ -1,19 +1,19 @@
-﻿using Akka.Actor;
+﻿using System.Diagnostics;
+using System.Globalization;
+using System.Runtime;
+using Akka.Actor;
+using Akka.Hosting;
+using Akka.Persistence.Hosting;
+using AkkaHost;
+using AkkaHost.Messages;
 using Logic;
 using Logic.Benchmarking;
 using Logic.Contracts;
 using Logic.Repositories;
 using Logic.Shorteners;
+using Logic.UI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Akka.Hosting;
-using Akka.Persistence.Hosting;
-using AkkaHost;
-using System.Diagnostics;
-using System.Globalization;
-using System.Runtime;
-using Logic.UI;
-using AkkaHost.Messages;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
@@ -42,7 +42,7 @@ var host = Host.CreateDefaultBuilder(args)
     })
     .Build();
 
-await host.StartAsync();
+await host.StartAsync().ConfigureAwait(false);
 
 // Bench mode (hard-coded defaults)
 GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
@@ -73,8 +73,7 @@ var writeSamples = BenchCore.RunWritePhaseSequential(
     },
     onIterationCompleted: (j, ips, elapsedMs) => Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Iteration {j}: upserted {NumberOfUrls:N0} in {elapsedMs / 1000.0:N3}s ({ips:N0} inserts/sec)")),
     progressInterval: ProgressInterval,
-    collector: writeCollector
-);
+    collector: writeCollector);
 
 long workingSetW = Process.GetCurrentProcess().WorkingSet64;
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Write complete. Total URLs: {NumberOfUrls * Iterations:N0} Working set: {workingSetW / 1048576}M"));
@@ -95,8 +94,7 @@ var readSamples = BenchCore.RunReadPhaseSequential(
     },
     onIterationCompleted: (j, rps, elapsedMs) => Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Iteration {j}: read {NumberOfUrls:N0} in {elapsedMs / 1000.0:N3}s ({rps:N0} reads/sec)")),
     progressInterval: ProgressInterval,
-    collector: readCollector
-);
+    collector: readCollector);
 
 long workingSetR = Process.GetCurrentProcess().WorkingSet64;
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Read complete. Total URLs: {NumberOfUrls * Iterations:N0} Working set: {workingSetR / 1048576}M"));
@@ -107,4 +105,4 @@ StatisticsConsoleRenderer.Dump(readStats);
 
 Console.WriteLine("Benchmark complete.");
 
-await host.StopAsync();
+await host.StopAsync().ConfigureAwait(false);
