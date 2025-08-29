@@ -36,6 +36,7 @@ public sealed class ReservoirSampleCollector : ISampleCollector
         _seen = 0;
     }
 
+    /// <inheritdoc/>
     public int Count => (int)Math.Min(_seen, _buffer.Length);
 
     /// <summary>
