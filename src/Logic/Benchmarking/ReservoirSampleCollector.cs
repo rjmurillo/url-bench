@@ -37,7 +37,7 @@ public sealed class ReservoirSampleCollector : ISampleCollector
     }
 
     /// <inheritdoc/>
-    public int Count => (int)Math.Min(_seen, _buffer.Length);
+    public long Count => Math.Min(_seen, _buffer.Length);
 
     /// <summary>
     /// Adds a numeric sample to the reservoir.
@@ -60,7 +60,7 @@ public sealed class ReservoirSampleCollector : ISampleCollector
         }
 
         // Algorithm R: replace a random index with decreasing probability
-        int j = _rng.Next((int)_seen); // uniform in [0, seen)
+        long j = _rng.NextInt64(_seen); // uniform in [0, seen)
         if (j < _buffer.Length)
         {
             _buffer[j] = value;
@@ -77,7 +77,7 @@ public sealed class ReservoirSampleCollector : ISampleCollector
     public IReadOnlyList<double> Snapshot()
     {
         // Return just the filled portion
-        int count = Count;
+        long count = Count;
         if (count == _buffer.Length)
         {
             return _buffer;

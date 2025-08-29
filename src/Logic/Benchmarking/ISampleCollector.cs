@@ -17,5 +17,5 @@ public interface ISampleCollector
     IReadOnlyList<double> Snapshot();
 
     /// <summary>Gets number of samples currently retained.</summary>
-    int Count { get; }
+    long Count { get; }
 }
