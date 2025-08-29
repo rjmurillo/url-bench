@@ -66,7 +66,9 @@ public sealed class UrlWriteActor : ReceiveActor
         // Optimistic insert: expect the key to not exist
         var ok = _repository.TrySaveUrlMapping(shortCode, originalUrl, expectedValue: null, out var currentValue);
         if (ok)
+        {
             return true;
+        }
 
         // Idempotent accept if the existing value matches the request
         return string.Equals(currentValue, originalUrl, StringComparison.Ordinal);
