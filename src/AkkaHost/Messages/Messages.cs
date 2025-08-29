@@ -2,6 +2,7 @@
 
 // Commands
 public record ShortenUrl(string OriginalUrl);
+
 public record SaveShortened(string OriginalUrl, string ShortCode);
 
 // Events (Persisted)
@@ -12,7 +13,9 @@ public record GetUrlByCode(string ShortCode);
 
 // Responses
 public sealed record ShortenUrlAccepted(string ShortCode);
+
 public sealed record ShortenUrlRejected(string Reason);
 
 public record UrlDetails(string ShortCode, string OriginalUrl);
+
 public record UrlNotFound(string ShortCode);
