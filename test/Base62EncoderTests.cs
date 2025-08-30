@@ -769,4 +769,30 @@ public class Base62EncoderTests(ITestOutputHelper output)
             result.ShouldBe(expected);
         }
     }
+
+    /// <summary>
+    /// Tests DetermineBufferLength for exact base-62 digit boundaries.
+    /// Verifies both the value just below each threshold and the threshold value itself.
+    /// </summary>
+    /// <param name="value">The ulong value to determine buffer length for.</param>
+    /// <param name="expected">The expected buffer length (int) for the given value.</param>
+    [Theory]
+    [InlineData(238327UL, 3)]
+    [InlineData(238328UL, 4)]
+    [InlineData(14776335UL, 4)]
+    [InlineData(14776336UL, 5)]
+    [InlineData(916132831UL, 5)]
+    [InlineData(916132832UL, 6)]
+    [InlineData(56800235583UL, 6)]
+    [InlineData(56800235584UL, 7)]
+    [InlineData(3521614606207UL, 7)]
+    [InlineData(3521614606208UL, 8)]
+    [InlineData(218340105584895UL, 8)]
+    [InlineData(218340105584896UL, 9)]
+    public void DetermineBufferLength_BoundaryValues_ReturnExpected(ulong value, int expected)
+    {
+        int actual = Base62Encoder.DetermineBufferLength(value);
+        output.WriteLine($"Value: {value}, Expected: {expected}, Actual: {actual}");
+        actual.ShouldBe(expected);
+    }
 }
