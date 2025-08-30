@@ -67,6 +67,80 @@ public static class Base62Encoder
     }
 
     /// <summary>
+    /// Converts a 64-bit unsigned integer to its Base62 string representation efficiently.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <returns>The Base62 string representation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string EncodeToString(ulong value)
+    {
+        int length = DetermineBufferLength(value);
+        return string.Create(length, value, static (span, val) =>
+        {
+            Encode(val, ref span);
+        });
+    }
+
+    /// <summary>
+    /// Converts a 64-bit unsigned integer to its Base62 string representation efficiently,
+    /// with maximum length constraint.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <param name="maxLength">The maximum length of the result string.</param>
+    /// <returns>The Base62 string representation, truncated to maxLength if necessary.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string EncodeToString(ulong value, int maxLength)
+    {
+        int length = Math.Min(DetermineBufferLength(value), maxLength);
+        return string.Create(length, value, static (span, val) =>
+        {
+            Encode(val, ref span);
+        });
+    }
+
+    /// <summary>
+    /// Converts a byte array to its Base62 string representation efficiently,
+    /// with maximum length constraint.
+    /// </summary>
+    /// <param name="bytes">The byte array to convert.</param>
+    /// <param name="maxLength">The maximum length of the result string.</param>
+    /// <returns>The Base62 string representation, truncated to maxLength if necessary.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string EncodeToString(ReadOnlySpan<byte> bytes, int maxLength)
+    {
+        if (bytes.Length < sizeof(ulong))
+        {
+            throw new ArgumentException("Hash must be at least 8 bytes", nameof(bytes));
+        }
+
+        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(bytes) % Constants.Base62Power8;
+        int bufferLength = DetermineBufferLength(index);
+        int length = Math.Min(bufferLength, maxLength);
+
+        return string.Create(length, index, static (span, value) =>
+        {
+            Encode(value, ref span);
+        });
+    }
+
+    /// <summary>
+    /// Converts a byte span to its Base62 string representation efficiently.
+    /// </summary>
+    /// <param name="hash">The byte span to convert.</param>
+    /// <returns>The Base62 string representation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string EncodeToString(ReadOnlySpan<byte> hash)
+    {
+        if (hash.Length < sizeof(ulong))
+        {
+            throw new ArgumentException("Hash must be at least 8 bytes", nameof(hash));
+        }
+
+        ulong index = BinaryPrimitives.ReadUInt64LittleEndian(hash) % Constants.Base62Power8;
+        return EncodeToString(index);
+    }
+
+    /// <summary>
     /// Determines the required buffer length for converting a value to Base62 string representation.
     /// </summary>
     /// <param name="value">The value to determine buffer length for.</param>
