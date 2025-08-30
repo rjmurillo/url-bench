@@ -12,6 +12,69 @@ public class Base62EncoderTests(ITestOutputHelper output)
     private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     /// <summary>
+    /// Tests that EncodeToString method produces same result as Encode method.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    [Theory]
+    [InlineData(0UL)]
+    [InlineData(1UL)]
+    [InlineData(61UL)]
+    [InlineData(62UL)]
+    [InlineData(3844UL)]
+    [InlineData(1_000_000UL)]
+    [InlineData(ulong.MaxValue)]
+    public void EncodeToString_ProducesSameResultAsEncode(ulong value)
+    {
+        // Test the new EncodeToString method
+        var stringResult = Base62Encoder.EncodeToString(value);
+
+        // Test the original Encode method
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(value, ref span);
+        var bufferResult = new string(buffer);
+
+        output.WriteLine($"Value: {value}, EncodeToString: {stringResult}, Encode: {bufferResult}");
+
+        stringResult.ShouldBe(bufferResult);
+    }
+
+    /// <summary>
+    /// Tests that EncodeToString method with byte array produces same result as Encode method.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    [Theory]
+    [InlineData(0UL)]
+    [InlineData(1UL)]
+    [InlineData(61UL)]
+    [InlineData(62UL)]
+    [InlineData(3844UL)]
+    [InlineData(1_000_000UL)]
+    [InlineData(ulong.MaxValue)]
+    public void EncodeToString_WithByteArray_ProducesSameResultAsEncode(ulong value)
+    {
+        // Create byte array from ulong value
+        var bytes = new byte[sizeof(ulong)];
+        BinaryPrimitives.WriteUInt64LittleEndian(bytes, value);
+
+        // Test the new EncodeToString method with byte array
+        var stringResult = Base62Encoder.EncodeToString(bytes);
+
+        // Test the original Encode method with byte array
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(bytes, ref span);
+        var bufferResult = new string(buffer);
+
+        output.WriteLine($"Value: {value}, EncodeToString: {stringResult}, Encode: {bufferResult}");
+
+        // The EncodeToString result should match the trimmed buffer result (without leading nulls)
+        stringResult.ShouldBe(bufferResult.TrimStart('\0'));
+    }
+
+    /// <summary>
     /// Tests conversion of zero value.
     /// </summary>
     [Fact]
