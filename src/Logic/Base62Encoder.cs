@@ -74,7 +74,8 @@ public static class Base62Encoder
     /// <remarks>
     /// This lets us be a little smarter about the allocation. We don't always need the full length as a buffer,
     /// and if we know the length we can build the buffer in the correct order and avoid the reversal at the end.
-    /// Uses binary search pattern for optimal branch prediction and reduced cyclomatic complexity.
+    /// Uses a threshold-based early-return allocation strategy (two-tier range checks) that performs at most
+    /// three comparisons for the common cases to determine length and avoid an extra buffer reversal.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int DetermineBufferLength(ulong value)
