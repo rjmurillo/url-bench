@@ -142,6 +142,9 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
     {
         // For string interning, we can work directly with chars without UTF-8 encoding overhead
         // This provides consistent hashing without the encoding step
+        // The magic number '32' below shifts the string length into the upper 32 bits of the 64-bit hash.
+        // This helps distinguish strings with identical content but different lengths, improving hash distribution
+        // and reducing the likelihood of collisions. The lower 32 bits are the hash of the string content.
         return (ulong)MemoryStringEqualityComparer.Ordinal.GetHashCode(value.AsMemory())
                ^ ((ulong)value.Length << 32);
     }
