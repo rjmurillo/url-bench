@@ -23,8 +23,28 @@ public static class Base62Encoder
         int bufferIndex = buffer.Length - 1;
         do
         {
-            buffer[bufferIndex--] = Base62Chars[(int)(value % CharLength)];
-            value /= CharLength;
+            // Compute quotient = value / 62 using multiplication by reciprocal (magic multiplier)
+            ulong q = MultiplyHigh(value, (ulong.MaxValue / CharLength) + 1UL);
+
+            // t = q * 62 (will not overflow for valid q)
+            ulong t = q * CharLength;
+
+            // If t > value then q is too large; decrement until t <= value (usually at most once)
+            if (t > value)
+            {
+                do
+                {
+                    q--;
+                    t -= CharLength;
+                }
+                while (t > value);
+            }
+
+            // remainder now in [0,62)
+            ulong rem = value - t;
+
+            buffer[bufferIndex--] = Base62Chars[(int)rem];
+            value = q;
         }
         while (value > 0UL && bufferIndex >= 0);
     }
@@ -92,5 +112,26 @@ public static class Base62Encoder
         while (size > 0UL);
 
         return bufferLength;
+    }
+
+    // Private helpers (kept after public API to satisfy style rules)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong MultiplyHigh(ulong x, ulong y)
+    {
+        const ulong mask32 = 0xFFFFFFFFUL;
+        ulong x0 = x & mask32;
+        ulong x1 = x >> 32;
+        ulong y0 = y & mask32;
+        ulong y1 = y >> 32;
+
+        ulong p0 = x0 * y0;
+        ulong p1 = x0 * y1;
+        ulong p2 = x1 * y0;
+        ulong p3 = x1 * y1;
+
+        // Combine partial products to form the high 64 bits of the 128-bit product
+        ulong t = (p0 >> 32) + (p1 & mask32) + (p2 & mask32);
+        ulong high = p3 + (p1 >> 32) + (p2 >> 32) + (t >> 32);
+        return high;
     }
 }
