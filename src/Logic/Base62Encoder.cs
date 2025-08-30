@@ -49,6 +49,10 @@ public static class Base62Encoder
     /// </summary>
     /// <param name="value">The value to determine buffer length for.</param>
     /// <returns>The required buffer length.</returns>
+    /// <remarks>
+    /// This lets us be a little smarter about the allocation. We don't always need the full length as a buffer,
+    /// and if we know the length we can build the buffer in the correct order and avoid the reversal at the end.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int DetermineBufferLength(ulong value)
     {
