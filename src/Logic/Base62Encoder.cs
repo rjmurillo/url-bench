@@ -24,7 +24,7 @@ public static class Base62Encoder
         do
         {
             // Compute quotient = value / 62 using multiplication by reciprocal (magic multiplier)
-            ulong q = MultiplyHigh(value, (ulong.MaxValue / CharLength) + 1UL);
+            ulong q = MultiplyHigh(value, Constants.Base62MagicMultiplier);
 
             // t = q * 62 (will not overflow for valid q)
             ulong t = q * CharLength;

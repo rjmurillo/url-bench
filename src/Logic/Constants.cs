@@ -63,6 +63,15 @@ internal static class Constants
     internal const ulong Base62Power8 = 218_340_105_584_896;
 
     /// <summary>
+    /// Magic multiplier for fast Base62 division using multiplication by reciprocal.
+    /// </summary>
+    /// <remarks>
+    /// This is calculated as (ulong.MaxValue / 62) + 1UL = 297,528,130,221,121,801.
+    /// Used in the MultiplyHigh technique to avoid expensive division operations.
+    /// </remarks>
+    internal const ulong Base62MagicMultiplier = 297_528_130_221_121_801UL;
+
+    /// <summary>
     /// The maximum length of a short URL slug.
     /// </summary>
     /// <remarks>
