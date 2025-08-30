@@ -24,6 +24,41 @@ internal static class Constants
     internal const int MaxStackUnicodeCharByteCount = MaxStackSize / UnicodeCharByteCount;
 
     /// <summary>
+    /// The maximum number of unique URLs that can be generated with 1-character base62 slugs.
+    /// </summary>
+    internal static readonly ulong Base62Power1 = 62;
+
+    /// <summary>
+    /// The maximum number of unique URLs that can be generated with 2-character base62 slugs.
+    /// </summary>
+    internal static readonly ulong Base62Power2 = 3_844;
+
+    /// <summary>
+    /// The maximum number of unique URLs that can be generated with 3-character base62 slugs.
+    /// </summary>
+    internal static readonly ulong Base62Power3 = 238_328;
+
+    /// <summary>
+    /// The maximum number of unique URLs that can be generated with 4-character base62 slugs.
+    /// </summary>
+    internal static readonly ulong Base62Power4 = 14_776_336;
+
+    /// <summary>
+    /// The maximum number of unique URLs that can be generated with 5-character base62 slugs.
+    /// </summary>
+    internal static readonly ulong Base62Power5 = 916_132_832;
+
+    /// <summary>
+    /// The maximum number of unique URLs that can be generated with 6-character base62 slugs.
+    /// </summary>
+    internal static readonly ulong Base62Power6 = 56_800_235_584;
+
+    /// <summary>
+    /// The maximum number of unique URLs that can be generated with 7-character base62 slugs.
+    /// </summary>
+    internal static readonly ulong Base62Power7 = 3_521_614_606_208;
+
+    /// <summary>
     /// The maximum number of unique URLs that can be generated with 8-character base62 slugs.
     /// </summary>
     internal static readonly ulong Base62Power8 = 218_340_105_584_896;

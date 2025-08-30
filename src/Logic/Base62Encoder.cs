@@ -56,23 +56,46 @@ public static class Base62Encoder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int DetermineBufferLength(ulong value)
     {
-        // Fast path for common small values to avoid division loop
-        if (value < 62UL)
+        if (value < Constants.Base62Power1)
         {
             return 1;
         }
 
-        if (value < 3844UL)
+        if (value < Constants.Base62Power2)
         {
-            return 2;  // 62^2
+            return 2;
         }
 
-        if (value < 238328UL)
+        if (value < Constants.Base62Power3)
         {
-            return 3; // 62^3
+            return 3;
         }
 
-        // For larger values, use the division loop
+        if (value < Constants.Base62Power4)
+        {
+            return 4;
+        }
+
+        if (value < Constants.Base62Power5)
+        {
+            return 5;
+        }
+
+        if (value < Constants.Base62Power6)
+        {
+            return 6;
+        }
+
+        if (value < Constants.Base62Power7)
+        {
+            return 7;
+        }
+
+        if (value < Constants.Base62Power8)
+        {
+            return 8;
+        }
+
         ulong size = value;
         int bufferLength = 0;
         do
