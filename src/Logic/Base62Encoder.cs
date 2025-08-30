@@ -52,11 +52,23 @@ public static class Base62Encoder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int DetermineBufferLength(ulong value)
     {
-        // Let's be a little smarter about the allocation
-        //
-        // We don't always need the full Length as a buffer
-        // and if we know the length we can build the buffer
-        // in the correct order and avoid the reversal at the end
+        // Fast path for common small values to avoid division loop
+        if (value < 62UL)
+        {
+            return 1;
+        }
+
+        if (value < 3844UL)
+        {
+            return 2;  // 62^2
+        }
+
+        if (value < 238328UL)
+        {
+            return 3; // 62^3
+        }
+
+        // For larger values, use the division loop
         ulong size = value;
         int bufferLength = 0;
         do
