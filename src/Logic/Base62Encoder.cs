@@ -52,50 +52,34 @@ public static class Base62Encoder
     /// <remarks>
     /// This lets us be a little smarter about the allocation. We don't always need the full length as a buffer,
     /// and if we know the length we can build the buffer in the correct order and avoid the reversal at the end.
+    /// Uses binary search pattern for optimal branch prediction and reduced cyclomatic complexity.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int DetermineBufferLength(ulong value)
     {
-        if (value < Constants.Base62Power1)
-        {
-            return 1;
-        }
-
-        if (value < Constants.Base62Power2)
-        {
-            return 2;
-        }
-
-        if (value < Constants.Base62Power3)
-        {
-            return 3;
-        }
-
+        // Handle the most common case first - values requiring 1-4 digits
         if (value < Constants.Base62Power4)
         {
-            return 4;
+            if (value < Constants.Base62Power2)
+            {
+                return value < Constants.Base62Power1 ? 1 : 2;
+            }
+
+            return value < Constants.Base62Power3 ? 3 : 4;
         }
 
-        if (value < Constants.Base62Power5)
-        {
-            return 5;
-        }
-
-        if (value < Constants.Base62Power6)
-        {
-            return 6;
-        }
-
-        if (value < Constants.Base62Power7)
-        {
-            return 7;
-        }
-
+        // Handle larger values requiring 5-8 digits
         if (value < Constants.Base62Power8)
         {
-            return 8;
+            if (value < Constants.Base62Power6)
+            {
+                return value < Constants.Base62Power5 ? 5 : 6;
+            }
+
+            return value < Constants.Base62Power7 ? 7 : 8;
         }
 
+        // Fallback for values larger than Base62Power8
         ulong size = value;
         int bufferLength = 0;
         do
