@@ -8,8 +8,10 @@ namespace Logic;
 /// </summary>
 public static class Base62Encoder
 {
-    private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static readonly ulong CharLength = 62UL;
+#pragma warning disable ECS0200 // Consider using readonly instead of const for better flexibility
+    private const string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private const ulong CharLength = 62UL;
+#pragma warning restore ECS0200 // Consider using readonly instead of const for better flexibility
 
     /// <summary>
     /// Converts a 64-bit unsigned integer to its Base62 string representation and writes it to the provided buffer.
