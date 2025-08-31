@@ -140,32 +140,13 @@ public class CompactUrlRepository(int concurrencyLevel, int capacity) : IUrlRepo
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong GetHash64(string value)
     {
-        const ulong seed = 0xC0FFEEUL;
-
-        // Encode as UTF-8 with minimal allocation; fall back to pooled buffer for larger strings.
-        ReadOnlySpan<char> chars = value.AsSpan();
-        int byteCount = Encoding.UTF8.GetByteCount(chars);
-
-        if (byteCount <= Constants.MaxStackUnicodeCharByteCount)
-        {
-            Span<byte> buffer = stackalloc byte[byteCount];
-            _ = Encoding.UTF8.GetBytes(chars, buffer);
-            ReadOnlySpan<byte> ro = buffer;
-            return Murmur3.Hash64(ref ro, seed);
-        }
-
-        byte[] rented = ArrayPool<byte>.Shared.Rent(byteCount);
-        try
-        {
-            Span<byte> span = rented.AsSpan(0, byteCount);
-            _ = Encoding.UTF8.GetBytes(chars, span);
-            ReadOnlySpan<byte> ro = span;
-            return Murmur3.Hash64(ref ro, seed);
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(rented);
-        }
+        // For string interning, we can work directly with chars without UTF-8 encoding overhead
+        // This provides consistent hashing without the encoding step
+        // The magic number '32' below shifts the string length into the upper 32 bits of the 64-bit hash.
+        // This helps distinguish strings with identical content but different lengths, improving hash distribution
+        // and reducing the likelihood of collisions. The lower 32 bits are the hash of the string content.
+        return (ulong)MemoryStringEqualityComparer.Ordinal.GetHashCode(value.AsMemory())
+               ^ ((ulong)value.Length << 32);
     }
 
     // Intern an original URL and return its stable integer ID.

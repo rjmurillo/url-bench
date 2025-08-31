@@ -67,10 +67,7 @@ public class VectorizedUrlShortener : IUrlShortener
         // Only hash the bytes written
         var value = FlexibleHash(bytes[..byteCount]);
 
-        Span<char> base62Buffer = stackalloc char[Math.Min(Base62Encoder.DetermineBufferLength(value), Constants.MaxSlugLength)];
-        Base62Encoder.Encode(value, ref base62Buffer);
-
-        return base62Buffer.ToString();
+        return Base62Encoder.EncodeToString(value, Constants.MaxSlugLength);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,17 +109,19 @@ public class VectorizedUrlShortener : IUrlShortener
     {
         Vector256<uint> hash = Vector256<uint>.Zero;
         int i = 0;
+        ref byte dataRef = ref MemoryMarshal.GetReference(data);
+
         for (; i <= data.Length - 32; i += 32)
         {
             var block = Vector256.Create(
-                BitConverter.ToUInt32(data.Slice(i, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 4, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 8, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 12, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 16, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 20, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 24, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 28, 4)));
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 4)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 8)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 12)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 16)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 20)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 24)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 28)));
             hash = Avx2.Xor(hash, block);
         }
 
@@ -134,13 +133,15 @@ public class VectorizedUrlShortener : IUrlShortener
     {
         Vector128<uint> hash = Vector128<uint>.Zero;
         int i = 0;
+        ref byte dataRef = ref MemoryMarshal.GetReference(data);
+
         for (; i <= data.Length - 16; i += 16)
         {
             var block = Vector128.Create(
-                BitConverter.ToUInt32(data.Slice(i, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 4, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 8, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 12, 4)));
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 4)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 8)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 12)));
             hash = Sse2.Xor(hash, block);
         }
 
@@ -152,13 +153,15 @@ public class VectorizedUrlShortener : IUrlShortener
     {
         Vector128<uint> hash = Vector128<uint>.Zero;
         int i = 0;
+        ref byte dataRef = ref MemoryMarshal.GetReference(data);
+
         for (; i <= data.Length - 16; i += 16)
         {
             var block = Vector128.Create(
-                BitConverter.ToUInt32(data.Slice(i, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 4, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 8, 4)),
-                BitConverter.ToUInt32(data.Slice(i + 12, 4)));
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 4)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 8)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 12)));
             hash = AdvSimd.Xor(hash, block);
         }
 
