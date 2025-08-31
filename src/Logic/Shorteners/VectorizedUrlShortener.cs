@@ -246,7 +246,7 @@ public class VectorizedUrlShortener : IUrlShortener
         where T : struct
     {
         ulong result;
-        
+
         if (hash is Vector512<uint> v512)
         {
             // Extract quarters of Vector512<uint> and reduce step by step
@@ -309,7 +309,7 @@ public class VectorizedUrlShortener : IUrlShortener
         hash ^= hash >> 27;
         hash *= 0x94d049bb133111ebUL;
         hash ^= hash >> 31;
-        
+
         return hash;
     }
 }
