@@ -102,5 +102,77 @@ internal static class HashConstants
     /// </summary>
     internal const uint VectorSeed15 = 0x456789abU;
 
+    /// <summary>
+    /// Golden ratio constant (2^32 * φ - 1) used for hash mixing and salting.
+    /// This value provides good bit distribution and is commonly used in hash functions
+    /// to reduce clustering and improve avalanche properties.
+    /// Value: 0x9e3779b9 = 2654435769 decimal.
+    /// </summary>
+    internal const uint GoldenRatioConstant = 0x9e3779b9U;
+
+    /// <summary>
+    /// FNV-1a 64-bit offset basis used for initializing the hash state when processing remaining bytes.
+    /// This is the standard FNV-1a basis value defined in the FNV specification (RFC draft).
+    /// Value: 0xcbf29ce484222325 = 14695981039346656037 decimal.
+    /// </summary>
+    internal const ulong FnvOffsetBasis = 0xcbf29ce484222325UL;
+
+    /// <summary>
+    /// FNV-1a 64-bit prime multiplier used for hash mixing when processing remaining bytes.
+    /// This is the standard FNV-1a prime value defined in the FNV specification (RFC draft).
+    /// Value: 0x100000001b3 = 1099511628211 decimal.
+    /// </summary>
+    internal const ulong FnvPrime = 0x100000001b3UL;
+
+    /// <summary>
+    /// SplitMix64 first multiplier constant used in final hash mixing.
+    /// This value provides excellent avalanche properties for hash finalization.
+    /// Value: 0xbf58476d1ce4e5b9 = 13787848793156543929 decimal.
+    /// </summary>
+    internal const ulong SplitMix64Multiplier1 = 0xbf58476d1ce4e5b9UL;
+
+    /// <summary>
+    /// SplitMix64 second multiplier constant used in final hash mixing.
+    /// This value provides excellent avalanche properties for hash finalization.
+    /// Value: 0x94d049bb133111eb = 10723151780598845931 decimal.
+    /// </summary>
+    internal const ulong SplitMix64Multiplier2 = 0x94d049bb133111ebUL;
+
+    /// <summary>
+    /// First right shift amount used in SplitMix64 final mixing.
+    /// This shift amount is optimized for 64-bit hash distribution.
+    /// </summary>
+    internal const int SplitMix64Shift1 = 30;
+
+    /// <summary>
+    /// Second right shift amount used in SplitMix64 final mixing.
+    /// This shift amount is optimized for 64-bit hash distribution.
+    /// </summary>
+    internal const int SplitMix64Shift2 = 27;
+
+    /// <summary>
+    /// Third right shift amount used in SplitMix64 final mixing.
+    /// This shift amount is optimized for 64-bit hash distribution.
+    /// </summary>
+    internal const int SplitMix64Shift3 = 31;
+
+    /// <summary>
+    /// Threshold for switching to 128-bit vectorization (512 bytes).
+    /// Below this threshold, scalar hashing is more efficient due to setup overhead.
+    /// </summary>
+    internal const int Vector128Threshold = 512;
+
+    /// <summary>
+    /// Threshold for switching to 256-bit vectorization (4KB).
+    /// Below this threshold, 128-bit vectors are more efficient.
+    /// </summary>
+    internal const int Vector256Threshold = 4096;
+
+    /// <summary>
+    /// Threshold for switching to 512-bit vectorization (16KB).
+    /// Below this threshold, 256-bit vectors are more efficient.
+    /// </summary>
+    internal const int Vector512Threshold = 16384;
+
 #pragma warning restore ECS0200 // Prefer readonly over const
 }

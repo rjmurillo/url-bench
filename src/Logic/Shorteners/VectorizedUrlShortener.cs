@@ -19,100 +19,6 @@ namespace Logic.Shorteners;
 public class VectorizedUrlShortener : IUrlShortener
 {
     /// <summary>
-    /// Golden ratio constant (2^32 * φ - 1) used for hash mixing and salting.
-    /// This value provides good bit distribution and is commonly used in hash functions
-    /// to reduce clustering and improve avalanche properties.
-    /// Value: 0x9e3779b9 = 2654435769 decimal.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const uint GoldenRatioConstant = 0x9e3779b9U;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// FNV-1a 64-bit offset basis used for initializing the hash state when processing remaining bytes.
-    /// This is the standard FNV-1a basis value defined in the FNV specification (RFC draft).
-    /// Value: 0xcbf29ce484222325 = 14695981039346656037 decimal.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const ulong FnvOffsetBasis = 0xcbf29ce484222325UL;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// FNV-1a 64-bit prime multiplier used for hash mixing when processing remaining bytes.
-    /// This is the standard FNV-1a prime value defined in the FNV specification (RFC draft).
-    /// Value: 0x100000001b3 = 1099511628211 decimal.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const ulong FnvPrime = 0x100000001b3UL;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// SplitMix64 first multiplier constant used in final hash mixing.
-    /// This value provides excellent avalanche properties for hash finalization.
-    /// Value: 0xbf58476d1ce4e5b9 = 13787848793156543929 decimal.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const ulong SplitMix64Multiplier1 = 0xbf58476d1ce4e5b9UL;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// SplitMix64 second multiplier constant used in final hash mixing.
-    /// This value provides excellent avalanche properties for hash finalization.
-    /// Value: 0x94d049bb133111eb = 10723151780598845931 decimal.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const ulong SplitMix64Multiplier2 = 0x94d049bb133111ebUL;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// First right shift amount used in SplitMix64 final mixing.
-    /// This shift amount is optimized for 64-bit hash distribution.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const int SplitMix64Shift1 = 30;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// Second right shift amount used in SplitMix64 final mixing.
-    /// This shift amount is optimized for 64-bit hash distribution.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const int SplitMix64Shift2 = 27;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// Third right shift amount used in SplitMix64 final mixing.
-    /// This shift amount is optimized for 64-bit hash distribution.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const int SplitMix64Shift3 = 31;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// Threshold for switching to 128-bit vectorization (512 bytes).
-    /// Below this threshold, scalar hashing is more efficient due to setup overhead.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const int Vector128Threshold = 512;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// Threshold for switching to 256-bit vectorization (4KB).
-    /// Below this threshold, 128-bit vectors are more efficient.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const int Vector256Threshold = 4096;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
-    /// Threshold for switching to 512-bit vectorization (16KB).
-    /// Below this threshold, 256-bit vectors are more efficient.
-    /// </summary>
-#pragma warning disable ECS0200 // Prefer readonly over const
-    private const int Vector512Threshold = 16384;
-#pragma warning restore ECS0200 // Prefer readonly over const
-
-    /// <summary>
     /// Shortens the specified original URL by generating a unique short URL using vectorized hashing.
     /// </summary>
     /// <param name="originalUrl">The original (long) URL to shorten. May be any valid URL string.</param>
@@ -172,13 +78,13 @@ public class VectorizedUrlShortener : IUrlShortener
         int dataLength = data.Length;
 
         // For very small inputs (typical URLs), use fast scalar hashing
-        if (dataLength < Vector128Threshold)
+        if (dataLength < HashConstants.Vector128Threshold)
         {
             return FastScalarHash(data);
         }
 
         // For medium inputs, use 128-bit vectors if supported
-        if (dataLength < Vector256Threshold && (Sse2.IsSupported || AdvSimd.IsSupported)
+        if (dataLength < HashConstants.Vector256Threshold && (Sse2.IsSupported || AdvSimd.IsSupported)
 #if NET8_0_OR_GREATER
             && Vector128.IsHardwareAccelerated
 #endif
@@ -198,7 +104,7 @@ public class VectorizedUrlShortener : IUrlShortener
         }
 
         // For large inputs, use 256-bit vectors if supported
-        if (dataLength < Vector512Threshold && Avx2.IsSupported
+        if (dataLength < HashConstants.Vector512Threshold && Avx2.IsSupported
 #if NET8_0_OR_GREATER
             && Vector256.IsHardwareAccelerated
 #endif
@@ -261,7 +167,7 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong FastScalarHash(ReadOnlySpan<byte> data)
     {
         // Use a simple but fast FNV-1a style hash for small data
-        ulong hash = FnvOffsetBasis;
+        ulong hash = HashConstants.FnvOffsetBasis;
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
         // Process 8 bytes at a time when possible
@@ -273,13 +179,13 @@ public class VectorizedUrlShortener : IUrlShortener
         for (; i + 8 <= length; i += 8)
         {
             ulong chunk = Unsafe.ReadUnaligned<ulong>(ref Unsafe.Add(ref dataRef, i));
-            hash = (hash ^ chunk) * FnvPrime;
+            hash = (hash ^ chunk) * HashConstants.FnvPrime;
         }
 
         // Process remaining bytes
         for (; i < length; i++)
         {
-            hash = (hash ^ Unsafe.Add(ref dataRef, i)) * FnvPrime;
+            hash = (hash ^ Unsafe.Add(ref dataRef, i)) * HashConstants.FnvPrime;
         }
 
         return FinalHashMixing(hash);
@@ -290,7 +196,7 @@ public class VectorizedUrlShortener : IUrlShortener
     {
         // Initialize with a non-zero seed to improve hash quality
         Vector512<uint> hash = Vector512.Create(
-            GoldenRatioConstant,
+            HashConstants.GoldenRatioConstant,
             HashConstants.VectorSeed1,
             HashConstants.VectorSeed2,
             HashConstants.VectorSeed3,
@@ -315,7 +221,7 @@ public class VectorizedUrlShortener : IUrlShortener
             var block = Unsafe.ReadUnaligned<Vector512<uint>>(ref Unsafe.Add(ref dataRef, i));
 
             // Salt with block index (i >> 6) to make mixing order-dependent
-            var salt = Vector512.Create(unchecked(GoldenRatioConstant * (uint)(1 + (i >> 6))));
+            var salt = Vector512.Create(unchecked(HashConstants.GoldenRatioConstant * (uint)(1 + (i >> 6))));
             block = Avx512F.Xor(block, salt);
             hash = Avx512F.Xor(hash, block);
         }
@@ -328,7 +234,7 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong ComputeHash256(ReadOnlySpan<byte> data)
     {
         Vector256<uint> hash = Vector256.Create(
-            GoldenRatioConstant,
+            HashConstants.GoldenRatioConstant,
             HashConstants.VectorSeed1,
             HashConstants.VectorSeed2,
             HashConstants.VectorSeed3,
@@ -344,7 +250,7 @@ public class VectorizedUrlShortener : IUrlShortener
             var block = Unsafe.ReadUnaligned<Vector256<uint>>(ref Unsafe.Add(ref dataRef, i));
 
             // Salt with block index (i >> 5) to make mixing order-dependent
-            var salt = Vector256.Create(unchecked(GoldenRatioConstant * (uint)(1 + (i >> 5))));
+            var salt = Vector256.Create(unchecked(HashConstants.GoldenRatioConstant * (uint)(1 + (i >> 5))));
             block = Avx2.Xor(block, salt);
             hash = Avx2.Xor(hash, block);
         }
@@ -356,7 +262,7 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong ComputeSseHash128(ReadOnlySpan<byte> data)
     {
         Vector128<uint> hash = Vector128.Create(
-            GoldenRatioConstant,
+            HashConstants.GoldenRatioConstant,
             HashConstants.VectorSeed1,
             HashConstants.VectorSeed2,
             HashConstants.VectorSeed3);
@@ -368,7 +274,7 @@ public class VectorizedUrlShortener : IUrlShortener
             var block = Unsafe.ReadUnaligned<Vector128<uint>>(ref Unsafe.Add(ref dataRef, i));
 
             // Salt with block index (i >> 4) to make mixing order-dependent
-            var salt = Vector128.Create(unchecked(GoldenRatioConstant * (uint)(1 + (i >> 4))));
+            var salt = Vector128.Create(unchecked(HashConstants.GoldenRatioConstant * (uint)(1 + (i >> 4))));
             block = Sse2.Xor(block, salt);
             hash = Sse2.Xor(hash, block);
         }
@@ -380,7 +286,7 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong ComputeAdvSimdHash128(ReadOnlySpan<byte> data)
     {
         Vector128<uint> hash = Vector128.Create(
-            GoldenRatioConstant,
+            HashConstants.GoldenRatioConstant,
             HashConstants.VectorSeed1,
             HashConstants.VectorSeed2,
             HashConstants.VectorSeed3);
@@ -392,7 +298,7 @@ public class VectorizedUrlShortener : IUrlShortener
             var block = Unsafe.ReadUnaligned<Vector128<uint>>(ref Unsafe.Add(ref dataRef, i));
 
             // Salt with block index (i >> 4) to make mixing order-dependent
-            var salt = Vector128.Create(unchecked(GoldenRatioConstant * (uint)(1 + (i >> 4))));
+            var salt = Vector128.Create(unchecked(HashConstants.GoldenRatioConstant * (uint)(1 + (i >> 4))));
             block = AdvSimd.Xor(block, salt);
             hash = AdvSimd.Xor(hash, block);
         }
@@ -410,14 +316,14 @@ public class VectorizedUrlShortener : IUrlShortener
             return 0;
         }
 
-        ulong remainingHash = FnvOffsetBasis; // FNV-1a basis
+        ulong remainingHash = HashConstants.FnvOffsetBasis; // FNV-1a basis
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
         // Process remaining bytes with better mixing using FNV-1a approach
         for (int i = startIndex; i < data.Length; i++)
         {
             remainingHash ^= (ulong)Unsafe.Add(ref dataRef, i) << (((i - startIndex) & 7) * 8);
-            remainingHash *= FnvPrime; // FNV-1a prime for better mixing
+            remainingHash *= HashConstants.FnvPrime; // FNV-1a prime for better mixing
         }
 
         return remainingHash;
@@ -484,11 +390,11 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong FinalHashMixing(ulong hash)
     {
         // Apply final mixing for better avalanche effect (inspired by SplitMix64)
-        hash ^= hash >> SplitMix64Shift1;
-        hash *= SplitMix64Multiplier1;
-        hash ^= hash >> SplitMix64Shift2;
-        hash *= SplitMix64Multiplier2;
-        hash ^= hash >> SplitMix64Shift3;
+        hash ^= hash >> HashConstants.SplitMix64Shift1;
+        hash *= HashConstants.SplitMix64Multiplier1;
+        hash ^= hash >> HashConstants.SplitMix64Shift2;
+        hash *= HashConstants.SplitMix64Multiplier2;
+        hash ^= hash >> HashConstants.SplitMix64Shift3;
 
         return hash;
     }
