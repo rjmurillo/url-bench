@@ -426,7 +426,7 @@ public class VectorizedUrlShortener : IUrlShortener
         }
         else
         {
-            throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Unsupported vector type for hashing.");
+            throw new ShortenerException(string.Empty, nameof(VectorizedUrlShortener), $"Unsupported vector type '{hash.GetType().FullName}' for hashing.");
         }
 
         return FinalHashMixing(result);
