@@ -19,6 +19,16 @@ namespace Logic.Shorteners;
 public class VectorizedUrlShortener : IUrlShortener
 {
     /// <summary>
+    /// Golden ratio constant (2^32 * φ - 1) used for hash mixing and salting.
+    /// This value provides good bit distribution and is commonly used in hash functions
+    /// to reduce clustering and improve avalanche properties.
+    /// Value: 0x9e3779b9 = 2654435769 decimal.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint GoldenRatioConstant = 0x9e3779b9U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
     /// Shortens the specified original URL by generating a unique short URL using vectorized hashing.
     /// </summary>
     /// <param name="originalUrl">The original (long) URL to shorten. May be any valid URL string.</param>
@@ -79,7 +89,9 @@ public class VectorizedUrlShortener : IUrlShortener
 #if NET8_0_OR_GREATER
             && Vector512.IsHardwareAccelerated
 #endif
-            )
+#pragma warning disable SA1009
+           )
+#pragma warning restore SA1009
         {
             return ComputeHash512(data);
         }
@@ -124,7 +136,7 @@ public class VectorizedUrlShortener : IUrlShortener
     {
         // Initialize with a non-zero seed to improve hash quality
         Vector512<uint> hash = Vector512.Create(
-            0x9e3779b9U,
+            GoldenRatioConstant,
             0x7f4a7c15U,
             0x93ea7575U,
             0xe9b279b5U,
@@ -147,6 +159,10 @@ public class VectorizedUrlShortener : IUrlShortener
         for (; i <= data.Length - 64; i += 64)
         {
             var block = Unsafe.ReadUnaligned<Vector512<uint>>(ref Unsafe.Add(ref dataRef, i));
+
+            // Salt with block index (i >> 6) to make mixing order-dependent
+            var salt = Vector512.Create(unchecked(GoldenRatioConstant * (uint)(1 + (i >> 6))));
+            block = Avx512F.Xor(block, salt);
             hash = Avx512F.Xor(hash, block);
         }
 
@@ -158,7 +174,7 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong ComputeHash256(Span<byte> data)
     {
         Vector256<uint> hash = Vector256.Create(
-            0x9e3779b9U,
+            GoldenRatioConstant,
             0x7f4a7c15U,
             0x93ea7575U,
             0xe9b279b5U,
@@ -172,6 +188,10 @@ public class VectorizedUrlShortener : IUrlShortener
         for (; i <= data.Length - 32; i += 32)
         {
             var block = Unsafe.ReadUnaligned<Vector256<uint>>(ref Unsafe.Add(ref dataRef, i));
+
+            // Salt with block index (i >> 5) to make mixing order-dependent
+            var salt = Vector256.Create(unchecked(GoldenRatioConstant * (uint)(1 + (i >> 5))));
+            block = Avx2.Xor(block, salt);
             hash = Avx2.Xor(hash, block);
         }
 
@@ -182,7 +202,7 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong ComputeSseHash128(Span<byte> data)
     {
         Vector128<uint> hash = Vector128.Create(
-            0x9e3779b9U,
+            GoldenRatioConstant,
             0x7f4a7c15U,
             0x93ea7575U,
             0xe9b279b5U);
@@ -192,6 +212,10 @@ public class VectorizedUrlShortener : IUrlShortener
         for (; i <= data.Length - 16; i += 16)
         {
             var block = Unsafe.ReadUnaligned<Vector128<uint>>(ref Unsafe.Add(ref dataRef, i));
+
+            // Salt with block index (i >> 4) to make mixing order-dependent
+            var salt = Vector128.Create(unchecked(GoldenRatioConstant * (uint)(1 + (i >> 4))));
+            block = Sse2.Xor(block, salt);
             hash = Sse2.Xor(hash, block);
         }
 
@@ -202,7 +226,7 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong ComputeAdvSimdHash128(Span<byte> data)
     {
         Vector128<uint> hash = Vector128.Create(
-            0x9e3779b9U,
+            GoldenRatioConstant,
             0x7f4a7c15U,
             0x93ea7575U,
             0xe9b279b5U);
@@ -212,6 +236,10 @@ public class VectorizedUrlShortener : IUrlShortener
         for (; i <= data.Length - 16; i += 16)
         {
             var block = Unsafe.ReadUnaligned<Vector128<uint>>(ref Unsafe.Add(ref dataRef, i));
+
+            // Salt with block index (i >> 4) to make mixing order-dependent
+            var salt = Vector128.Create(unchecked(GoldenRatioConstant * (uint)(1 + (i >> 4))));
+            block = AdvSimd.Xor(block, salt);
             hash = AdvSimd.Xor(hash, block);
         }
 
