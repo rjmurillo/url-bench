@@ -118,7 +118,7 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong FlexibleHash(Span<byte> data)
+    private static ulong FlexibleHash(ReadOnlySpan<byte> data)
     {
         // Use tiered approach based on data size to minimize overhead
         int dataLength = data.Length;
@@ -210,7 +210,7 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong FastScalarHash(Span<byte> data)
+    private static ulong FastScalarHash(ReadOnlySpan<byte> data)
     {
         // Use a simple but fast FNV-1a style hash for small data
         ulong hash = FnvOffsetBasis;
@@ -238,7 +238,7 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ComputeHash512(Span<byte> data)
+    private static ulong ComputeHash512(ReadOnlySpan<byte> data)
     {
         // Initialize with a non-zero seed to improve hash quality
         Vector512<uint> hash = Vector512.Create(
@@ -277,7 +277,7 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ComputeHash256(Span<byte> data)
+    private static ulong ComputeHash256(ReadOnlySpan<byte> data)
     {
         Vector256<uint> hash = Vector256.Create(
             GoldenRatioConstant,
@@ -305,7 +305,7 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ComputeSseHash128(Span<byte> data)
+    private static ulong ComputeSseHash128(ReadOnlySpan<byte> data)
     {
         Vector128<uint> hash = Vector128.Create(
             GoldenRatioConstant,
@@ -329,7 +329,7 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ComputeAdvSimdHash128(Span<byte> data)
+    private static ulong ComputeAdvSimdHash128(ReadOnlySpan<byte> data)
     {
         Vector128<uint> hash = Vector128.Create(
             GoldenRatioConstant,
@@ -353,7 +353,7 @@ public class VectorizedUrlShortener : IUrlShortener
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ProcessRemainingBytes(Span<byte> data, int startIndex)
+    private static ulong ProcessRemainingBytes(ReadOnlySpan<byte> data, int startIndex)
     {
         int remaining = data.Length - startIndex;
 
