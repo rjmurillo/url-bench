@@ -387,18 +387,19 @@ public class VectorizedUrlShortener : IUrlShortener
             var lower256 = v512.GetLower();
             var upper256 = v512.GetUpper();
 
-            // XOR the lower and upper halves to get a Vector256<uint>
-            var reduced256 = Avx2.Xor(lower256, upper256);
+            // XOR the lower and upper halves to get a Vector256<uint> (architecture-agnostic)
+            var reduced256 = lower256 ^ upper256;
 
             // Now reduce the Vector256<uint> using existing logic
             var lower128 = reduced256.GetLower();
             var upper128 = reduced256.GetUpper();
-            var reduced128 = Sse2.Xor(lower128, upper128);
+            var reduced128 = lower128 ^ upper128;
 
-            // Final reduction to ulong
-            reduced128 = Sse2.Xor(reduced128, Sse2.ShiftRightLogical128BitLane(reduced128, 8));
+            // Final reduction to ulong using manual lane extraction
             var reduced64 = reduced128.AsUInt64();
-            result = reduced64.GetElement(0) ^ reduced64.GetElement(1);
+            var element0 = reduced64.GetElement(0);
+            var element1 = reduced64.GetElement(1);
+            result = element0 ^ element1;
         }
         else if (hash is Vector256<uint> v256)
         {
@@ -406,25 +407,22 @@ public class VectorizedUrlShortener : IUrlShortener
             var lower = v256.GetLower();
             var upper = v256.GetUpper();
 
-            // XOR the lower and upper parts to combine into a single Vector128<uint>
-            var reduced = Sse2.Xor(lower, upper);
+            // XOR the lower and upper parts to combine into a single Vector128<uint> (architecture-agnostic)
+            var reduced = lower ^ upper;
 
-            // Further reduce the size by XOR folding the remaining 128-bit vector
-            reduced = Sse2.Xor(reduced, Sse2.ShiftRightLogical128BitLane(reduced, 8));
-
-            // Convert to Vector128<ulong> and extract the final result
+            // Convert to Vector128<ulong> and extract elements for manual XOR folding
             var reduced64 = reduced.AsUInt64();
-            result = reduced64.GetElement(0) ^ reduced64.GetElement(1);
+            var element0 = reduced64.GetElement(0);
+            var element1 = reduced64.GetElement(1);
+            result = element0 ^ element1;
         }
         else if (hash is Vector128<uint> v128)
         {
-            // Reduce Vector128<uint> by XOR folding it down to 64 bits
-            var shifted = Sse2.ShiftRightLogical128BitLane(v128, 8);
-            var reduced = Sse2.Xor(v128, shifted);
-
-            // Convert to Vector128<ulong> and extract the final result
-            var reduced64 = reduced.AsUInt64();
-            result = reduced64.GetElement(0) ^ reduced64.GetElement(1);
+            // Convert to Vector128<ulong> and extract elements for manual XOR folding
+            var reduced64 = v128.AsUInt64();
+            var element0 = reduced64.GetElement(0);
+            var element1 = reduced64.GetElement(1);
+            result = element0 ^ element1;
         }
         else
         {
