@@ -122,7 +122,24 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeHash512(Span<byte> data)
     {
-        Vector512<uint> hash = Vector512<uint>.Zero;
+        // Initialize with a non-zero seed to improve hash quality
+        Vector512<uint> hash = Vector512.Create(
+            0x9e3779b9U,
+            0x7f4a7c15U,
+            0x93ea7575U,
+            0xe9b279b5U,
+            0xa2c2a44dU,
+            0x5b9d5bcdU,
+            0x3c6ef372U,
+            0x78dde6e5U,
+            0x87b0b0fdU,
+            0x2767f0b1U,
+            0xcf72b09eU,
+            0xa99a7b85U,
+            0x64916f35U,
+            0x519ba6c7U,
+            0x9db1a5a9U,
+            0x456789abU);
         int i = 0;
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
@@ -140,7 +157,15 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeHash256(Span<byte> data)
     {
-        Vector256<uint> hash = Vector256<uint>.Zero;
+        Vector256<uint> hash = Vector256.Create(
+            0x9e3779b9U,
+            0x7f4a7c15U,
+            0x93ea7575U,
+            0xe9b279b5U,
+            0xa2c2a44dU,
+            0x5b9d5bcdU,
+            0x3c6ef372U,
+            0x78dde6e5U);
         int i = 0;
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
@@ -156,7 +181,11 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeSseHash128(Span<byte> data)
     {
-        Vector128<uint> hash = Vector128<uint>.Zero;
+        Vector128<uint> hash = Vector128.Create(
+            0x9e3779b9U,
+            0x7f4a7c15U,
+            0x93ea7575U,
+            0xe9b279b5U);
         int i = 0;
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
@@ -172,7 +201,11 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ComputeAdvSimdHash128(Span<byte> data)
     {
-        Vector128<uint> hash = Vector128<uint>.Zero;
+        Vector128<uint> hash = Vector128.Create(
+            0x9e3779b9U,
+            0x7f4a7c15U,
+            0x93ea7575U,
+            0xe9b279b5U);
         int i = 0;
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
@@ -188,7 +221,7 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ProcessRemainingBytes(Span<byte> data, int startIndex)
     {
-        ulong remainingHash = 0UL;
+        ulong remainingHash = 0xcbf29ce484222325UL; // FNV-1a basis
         int remaining = data.Length - startIndex;
 
         if (remaining == 0)
@@ -198,10 +231,11 @@ public class VectorizedUrlShortener : IUrlShortener
 
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
-        // Process remaining bytes as scalar operations
+        // Process remaining bytes with better mixing using FNV-1a approach
         for (int i = startIndex; i < data.Length; i++)
         {
             remainingHash ^= (ulong)Unsafe.Add(ref dataRef, i) << (((i - startIndex) & 7) * 8);
+            remainingHash *= 0x100000001b3UL; // FNV-1a prime for better mixing
         }
 
         return remainingHash;
@@ -211,6 +245,8 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong ReduceHashToUInt64<T>(T hash)
         where T : struct
     {
+        ulong result;
+        
         if (hash is Vector512<uint> v512)
         {
             // Extract quarters of Vector512<uint> and reduce step by step
@@ -228,10 +264,9 @@ public class VectorizedUrlShortener : IUrlShortener
             // Final reduction to ulong
             reduced128 = Sse2.Xor(reduced128, Sse2.ShiftRightLogical128BitLane(reduced128, 8));
             var reduced64 = reduced128.AsUInt64();
-            return reduced64.GetElement(0) ^ reduced64.GetElement(1);
+            result = reduced64.GetElement(0) ^ reduced64.GetElement(1);
         }
-
-        if (hash is Vector256<uint> v256)
+        else if (hash is Vector256<uint> v256)
         {
             // Extract lower and upper halves of Vector256<uint>
             var lower = v256.GetLower();
@@ -245,10 +280,9 @@ public class VectorizedUrlShortener : IUrlShortener
 
             // Convert to Vector128<ulong> and extract the final result
             var reduced64 = reduced.AsUInt64();
-            return reduced64.GetElement(0) ^ reduced64.GetElement(1);
+            result = reduced64.GetElement(0) ^ reduced64.GetElement(1);
         }
-
-        if (hash is Vector128<uint> v128)
+        else if (hash is Vector128<uint> v128)
         {
             // Reduce Vector128<uint> by XOR folding it down to 64 bits
             var shifted = Sse2.ShiftRightLogical128BitLane(v128, 8);
@@ -256,9 +290,26 @@ public class VectorizedUrlShortener : IUrlShortener
 
             // Convert to Vector128<ulong> and extract the final result
             var reduced64 = reduced.AsUInt64();
-            return reduced64.GetElement(0) ^ reduced64.GetElement(1);
+            result = reduced64.GetElement(0) ^ reduced64.GetElement(1);
+        }
+        else
+        {
+            throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Unsupported vector type for hashing.");
         }
 
-        throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Unsupported vector type for hashing.");
+        return FinalHashMixing(result);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong FinalHashMixing(ulong hash)
+    {
+        // Apply final mixing for better avalanche effect (inspired by SplitMix64)
+        hash ^= hash >> 30;
+        hash *= 0xbf58476d1ce4e5b9UL;
+        hash ^= hash >> 27;
+        hash *= 0x94d049bb133111ebUL;
+        hash ^= hash >> 31;
+        
+        return hash;
     }
 }
