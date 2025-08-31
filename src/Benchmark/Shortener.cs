@@ -38,7 +38,7 @@ public class Shortener
     /// Gets or sets the long URL to use for benchmarking.
     /// </summary>
     [Params(
-        "https://jobs.careers.microsoft.com/us/en/job/1613473")]
+        "https://www.microsoft.com/en-us/security/business/endpoint-security/microsoft-defender-endpoint")]
     public string? LongUrl;
 
     /// <summary>
