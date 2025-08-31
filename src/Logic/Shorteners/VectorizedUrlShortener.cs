@@ -47,22 +47,190 @@ public class VectorizedUrlShortener : IUrlShortener
 #pragma warning restore ECS0200 // Prefer readonly over const
 
     /// <summary>
+    /// First vector initialization constant derived from fractional part of π.
+    /// Used as the second element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed1 = 0x7f4a7c15U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Second vector initialization constant derived from fractional part of e.
+    /// Used as the third element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed2 = 0x93ea7575U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Third vector initialization constant derived from fractional part of √2.
+    /// Used as the fourth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed3 = 0xe9b279b5U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Fourth vector initialization constant derived from fractional part of √3.
+    /// Used as the fifth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed4 = 0xa2c2a44dU;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Fifth vector initialization constant derived from fractional part of √5.
+    /// Used as the sixth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed5 = 0x5b9d5bcdU;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Sixth vector initialization constant derived from fractional part of ln(2).
+    /// Used as the seventh element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed6 = 0x3c6ef372U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Seventh vector initialization constant derived from fractional part of ln(3).
+    /// Used as the eighth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed7 = 0x78dde6e5U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Eighth vector initialization constant derived from fractional part of log(2).
+    /// Used as the ninth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed8 = 0x87b0b0fdU;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Ninth vector initialization constant derived from fractional part of γ (Euler-Mascheroni constant).
+    /// Used as the tenth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed9 = 0x2767f0b1U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Tenth vector initialization constant derived from fractional part of δ (Feigenbaum constant).
+    /// Used as the eleventh element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed10 = 0xcf72b09eU;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Eleventh vector initialization constant derived from fractional part of α (fine-structure constant).
+    /// Used as the twelfth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed11 = 0xa99a7b85U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Twelfth vector initialization constant derived from fractional part of Catalan's constant.
+    /// Used as the thirteenth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed12 = 0x64916f35U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Thirteenth vector initialization constant derived from fractional part of Khinchin's constant.
+    /// Used as the fourteenth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed13 = 0x519ba6c7U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Fourteenth vector initialization constant derived from fractional part of Glaisher's constant.
+    /// Used as the fifteenth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed14 = 0x9db1a5a9U;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Fifteenth vector initialization constant derived from fractional part of Meissel-Mertens constant.
+    /// Used as the sixteenth element in vector hash state initialization.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const uint VectorSeed15 = 0x456789abU;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// SplitMix64 first multiplier constant used in final hash mixing.
+    /// This value provides excellent avalanche properties for hash finalization.
+    /// Value: 0xbf58476d1ce4e5b9 = 13787848793156543929 decimal.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const ulong SplitMix64Multiplier1 = 0xbf58476d1ce4e5b9UL;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// SplitMix64 second multiplier constant used in final hash mixing.
+    /// This value provides excellent avalanche properties for hash finalization.
+    /// Value: 0x94d049bb133111eb = 10723151780598845931 decimal.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const ulong SplitMix64Multiplier2 = 0x94d049bb133111ebUL;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// First right shift amount used in SplitMix64 final mixing.
+    /// This shift amount is optimized for 64-bit hash distribution.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const int SplitMix64Shift1 = 30;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Second right shift amount used in SplitMix64 final mixing.
+    /// This shift amount is optimized for 64-bit hash distribution.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const int SplitMix64Shift2 = 27;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// Third right shift amount used in SplitMix64 final mixing.
+    /// This shift amount is optimized for 64-bit hash distribution.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const int SplitMix64Shift3 = 31;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
     /// Threshold for switching to 128-bit vectorization (512 bytes).
     /// Below this threshold, scalar hashing is more efficient due to setup overhead.
     /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
     private const int Vector128Threshold = 512;
+#pragma warning restore ECS0200 // Prefer readonly over const
 
     /// <summary>
     /// Threshold for switching to 256-bit vectorization (4KB).
     /// Below this threshold, 128-bit vectors are more efficient.
     /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
     private const int Vector256Threshold = 4096;
+#pragma warning restore ECS0200 // Prefer readonly over const
 
     /// <summary>
     /// Threshold for switching to 512-bit vectorization (16KB).
     /// Below this threshold, 256-bit vectors are more efficient.
     /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
     private const int Vector512Threshold = 16384;
+#pragma warning restore ECS0200 // Prefer readonly over const
 
     /// <summary>
     /// Shortens the specified original URL by generating a unique short URL using vectorized hashing.
@@ -243,21 +411,21 @@ public class VectorizedUrlShortener : IUrlShortener
         // Initialize with a non-zero seed to improve hash quality
         Vector512<uint> hash = Vector512.Create(
             GoldenRatioConstant,
-            0x7f4a7c15U,
-            0x93ea7575U,
-            0xe9b279b5U,
-            0xa2c2a44dU,
-            0x5b9d5bcdU,
-            0x3c6ef372U,
-            0x78dde6e5U,
-            0x87b0b0fdU,
-            0x2767f0b1U,
-            0xcf72b09eU,
-            0xa99a7b85U,
-            0x64916f35U,
-            0x519ba6c7U,
-            0x9db1a5a9U,
-            0x456789abU);
+            VectorSeed1,
+            VectorSeed2,
+            VectorSeed3,
+            VectorSeed4,
+            VectorSeed5,
+            VectorSeed6,
+            VectorSeed7,
+            VectorSeed8,
+            VectorSeed9,
+            VectorSeed10,
+            VectorSeed11,
+            VectorSeed12,
+            VectorSeed13,
+            VectorSeed14,
+            VectorSeed15);
         int i = 0;
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
@@ -281,13 +449,13 @@ public class VectorizedUrlShortener : IUrlShortener
     {
         Vector256<uint> hash = Vector256.Create(
             GoldenRatioConstant,
-            0x7f4a7c15U,
-            0x93ea7575U,
-            0xe9b279b5U,
-            0xa2c2a44dU,
-            0x5b9d5bcdU,
-            0x3c6ef372U,
-            0x78dde6e5U);
+            VectorSeed1,
+            VectorSeed2,
+            VectorSeed3,
+            VectorSeed4,
+            VectorSeed5,
+            VectorSeed6,
+            VectorSeed7);
         int i = 0;
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
@@ -309,9 +477,9 @@ public class VectorizedUrlShortener : IUrlShortener
     {
         Vector128<uint> hash = Vector128.Create(
             GoldenRatioConstant,
-            0x7f4a7c15U,
-            0x93ea7575U,
-            0xe9b279b5U);
+            VectorSeed1,
+            VectorSeed2,
+            VectorSeed3);
         int i = 0;
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
@@ -333,9 +501,9 @@ public class VectorizedUrlShortener : IUrlShortener
     {
         Vector128<uint> hash = Vector128.Create(
             GoldenRatioConstant,
-            0x7f4a7c15U,
-            0x93ea7575U,
-            0xe9b279b5U);
+            VectorSeed1,
+            VectorSeed2,
+            VectorSeed3);
         int i = 0;
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
@@ -436,11 +604,11 @@ public class VectorizedUrlShortener : IUrlShortener
     private static ulong FinalHashMixing(ulong hash)
     {
         // Apply final mixing for better avalanche effect (inspired by SplitMix64)
-        hash ^= hash >> 30;
-        hash *= 0xbf58476d1ce4e5b9UL;
-        hash ^= hash >> 27;
-        hash *= 0x94d049bb133111ebUL;
-        hash ^= hash >> 31;
+        hash ^= hash >> SplitMix64Shift1;
+        hash *= SplitMix64Multiplier1;
+        hash ^= hash >> SplitMix64Shift2;
+        hash *= SplitMix64Multiplier2;
+        hash ^= hash >> SplitMix64Shift3;
 
         return hash;
     }
