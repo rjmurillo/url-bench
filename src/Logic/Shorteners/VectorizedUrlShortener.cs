@@ -201,7 +201,7 @@ public class VectorizedUrlShortener : IUrlShortener
         // Process remaining bytes as scalar operations
         for (int i = startIndex; i < data.Length; i++)
         {
-            remainingHash ^= (ulong)Unsafe.Add(ref dataRef, i) << ((i - startIndex) & 7);
+            remainingHash ^= (ulong)Unsafe.Add(ref dataRef, i) << (((i - startIndex) & 7) * 8);
         }
 
         return remainingHash;
