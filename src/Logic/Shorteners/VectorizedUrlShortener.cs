@@ -14,6 +14,7 @@ namespace Logic.Shorteners;
 
 /// <summary>
 /// A URL shortener that generates short URLs using vectorized hashing algorithms.
+/// Optimized for AVX-512, AVX2, SSE2, and ARM AdvSimd instruction sets.
 /// </summary>
 public class VectorizedUrlShortener : IUrlShortener
 {
@@ -73,6 +74,17 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong FlexibleHash(Span<byte> data)
     {
+        // Check for AVX-512 support first (best performance)
+        if (Avx512F.IsSupported
+#if NET8_0_OR_GREATER
+            && Vector512.IsHardwareAccelerated
+#endif
+            )
+        {
+            return ComputeHash512(data);
+        }
+
+        // Fall back to AVX2 (256-bit vectors)
         if (Avx2.IsSupported
 #if NET8_0_OR_GREATER
             && Vector256.IsHardwareAccelerated
@@ -84,11 +96,14 @@ public class VectorizedUrlShortener : IUrlShortener
             return ComputeHash256(data);
         }
 
+        // Fall back to 128-bit vectors (SSE2 or ARM AdvSimd)
         if ((Sse2.IsSupported || AdvSimd.IsSupported)
 #if NET8_0_OR_GREATER
             && Vector128.IsHardwareAccelerated
 #endif
-        )
+#pragma warning disable SA1009
+            )
+#pragma warning restore SA1009
         {
             if (Sse2.IsSupported)
             {
@@ -101,7 +116,41 @@ public class VectorizedUrlShortener : IUrlShortener
             }
         }
 
-        throw new ShortenerException(string.Empty, nameof(VectorizedUrlShortener), "Neither ARM.AdvSimd, AVX2 nor SSE2 is supported on this processor.");
+        throw new ShortenerException(string.Empty, nameof(VectorizedUrlShortener), "Neither ARM.AdvSimd, AVX-512, AVX2 nor SSE2 is supported on this processor.");
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ComputeHash512(Span<byte> data)
+    {
+        Vector512<uint> hash = Vector512<uint>.Zero;
+        int i = 0;
+        ref byte dataRef = ref MemoryMarshal.GetReference(data);
+
+        // Process 64-byte chunks using AVX-512
+        for (; i <= data.Length - 64; i += 64)
+        {
+            var block = Vector512.Create(
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 4)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 8)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 12)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 16)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 20)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 24)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 28)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 32)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 36)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 40)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 44)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 48)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 52)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 56)),
+                Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref dataRef, i + 60)));
+            hash = Avx512F.Xor(hash, block);
+        }
+
+        // Handle remaining bytes using smaller vector sizes
+        return ReduceHashToUInt64(hash) ^ ProcessRemainingBytes(data, i);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -125,7 +174,7 @@ public class VectorizedUrlShortener : IUrlShortener
             hash = Avx2.Xor(hash, block);
         }
 
-        return ReduceHashToUInt64(hash);
+        return ReduceHashToUInt64(hash) ^ ProcessRemainingBytes(data, i);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -145,7 +194,7 @@ public class VectorizedUrlShortener : IUrlShortener
             hash = Sse2.Xor(hash, block);
         }
 
-        return ReduceHashToUInt64(hash);
+        return ReduceHashToUInt64(hash) ^ ProcessRemainingBytes(data, i);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -165,13 +214,55 @@ public class VectorizedUrlShortener : IUrlShortener
             hash = AdvSimd.Xor(hash, block);
         }
 
-        return ReduceHashToUInt64(hash);
+        return ReduceHashToUInt64(hash) ^ ProcessRemainingBytes(data, i);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ProcessRemainingBytes(Span<byte> data, int startIndex)
+    {
+        ulong remainingHash = 0UL;
+        int remaining = data.Length - startIndex;
+
+        if (remaining == 0)
+        {
+            return remainingHash;
+        }
+
+        ref byte dataRef = ref MemoryMarshal.GetReference(data);
+
+        // Process remaining bytes as scalar operations
+        for (int i = startIndex; i < data.Length; i++)
+        {
+            remainingHash ^= (ulong)Unsafe.Add(ref dataRef, i) << ((i - startIndex) & 7);
+        }
+
+        return remainingHash;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ReduceHashToUInt64<T>(T hash)
         where T : struct
     {
+        if (hash is Vector512<uint> v512)
+        {
+            // Extract quarters of Vector512<uint> and reduce step by step
+            var lower256 = v512.GetLower();
+            var upper256 = v512.GetUpper();
+
+            // XOR the lower and upper halves to get a Vector256<uint>
+            var reduced256 = Avx2.Xor(lower256, upper256);
+
+            // Now reduce the Vector256<uint> using existing logic
+            var lower128 = reduced256.GetLower();
+            var upper128 = reduced256.GetUpper();
+            var reduced128 = Sse2.Xor(lower128, upper128);
+
+            // Final reduction to ulong
+            reduced128 = Sse2.Xor(reduced128, Sse2.ShiftRightLogical128BitLane(reduced128, 8));
+            var reduced64 = reduced128.AsUInt64();
+            return reduced64.GetElement(0) ^ reduced64.GetElement(1);
+        }
+
         if (hash is Vector256<uint> v256)
         {
             // Extract lower and upper halves of Vector256<uint>
@@ -186,19 +277,18 @@ public class VectorizedUrlShortener : IUrlShortener
 
             // Convert to Vector128<ulong> and extract the final result
             var reduced64 = reduced.AsUInt64();
-            var result = reduced64.GetElement(0) ^ reduced64.GetElement(1);
-            return result;
+            return reduced64.GetElement(0) ^ reduced64.GetElement(1);
         }
 
-        if (hash is Vector128<uint> v128 && Sse2.IsSupported)
+        if (hash is Vector128<uint> v128)
         {
             // Reduce Vector128<uint> by XOR folding it down to 64 bits
-            var shuffled = Sse2.Shuffle(v128, 0b_00_00_00_01);
-            var reduced = Sse2.Xor(v128, shuffled);
+            var shifted = Sse2.ShiftRightLogical128BitLane(v128, 8);
+            var reduced = Sse2.Xor(v128, shifted);
 
             // Convert to Vector128<ulong> and extract the final result
             var reduced64 = reduced.AsUInt64();
-            return reduced64.GetElement(0) ^ Sse2.Extract(reduced.AsUInt16(), 1);
+            return reduced64.GetElement(0) ^ reduced64.GetElement(1);
         }
 
         throw new ShortenerException(string.Empty, "VectorizedUrlShortener", "Unsupported vector type for hashing.");
