@@ -284,7 +284,7 @@ public class HashQualityTests(ITestOutputHelper output)
         foreach (var hash in hashes)
         {
             hash.ShouldNotBeNullOrEmpty("Hash should not be empty");
-            hash.Length.ShouldBeLessThan(12, "Hash should not be excessively long");
+            hash.Length.ShouldBeLessThanOrEqualTo(Constants.MaxSlugLength, "Hash should not exceed the max slug length");
 
             // Should contain diverse characters (not all the same)
             int uniqueChars = hash.ToCharArray().Distinct().Count();
