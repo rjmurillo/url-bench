@@ -47,6 +47,24 @@ public class VectorizedUrlShortener : IUrlShortener
 #pragma warning restore ECS0200 // Prefer readonly over const
 
     /// <summary>
+    /// Threshold for switching to 128-bit vectorization (512 bytes).
+    /// Below this threshold, scalar hashing is more efficient due to setup overhead.
+    /// </summary>
+    private const int Vector128Threshold = 512;
+
+    /// <summary>
+    /// Threshold for switching to 256-bit vectorization (4KB).
+    /// Below this threshold, 128-bit vectors are more efficient.
+    /// </summary>
+    private const int Vector256Threshold = 4096;
+
+    /// <summary>
+    /// Threshold for switching to 512-bit vectorization (16KB).
+    /// Below this threshold, 256-bit vectors are more efficient.
+    /// </summary>
+    private const int Vector512Threshold = 16384;
+
+    /// <summary>
     /// Shortens the specified original URL by generating a unique short URL using vectorized hashing.
     /// </summary>
     /// <param name="originalUrl">The original (long) URL to shorten. May be any valid URL string.</param>
@@ -102,7 +120,48 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong FlexibleHash(Span<byte> data)
     {
-        // Check for AVX-512 support first (best performance)
+        // Use tiered approach based on data size to minimize overhead
+        int dataLength = data.Length;
+
+        // For very small inputs (typical URLs), use fast scalar hashing
+        if (dataLength < Vector128Threshold)
+        {
+            return FastScalarHash(data);
+        }
+
+        // For medium inputs, use 128-bit vectors if supported
+        if (dataLength < Vector256Threshold && (Sse2.IsSupported || AdvSimd.IsSupported)
+#if NET8_0_OR_GREATER
+            && Vector128.IsHardwareAccelerated
+#endif
+#pragma warning disable SA1009
+            )
+#pragma warning restore SA1009
+        {
+            if (Sse2.IsSupported)
+            {
+                return ComputeSseHash128(data);
+            }
+
+            if (AdvSimd.IsSupported)
+            {
+                return ComputeAdvSimdHash128(data);
+            }
+        }
+
+        // For large inputs, use 256-bit vectors if supported
+        if (dataLength < Vector512Threshold && Avx2.IsSupported
+#if NET8_0_OR_GREATER
+            && Vector256.IsHardwareAccelerated
+#endif
+#pragma warning disable SA1009
+           )
+#pragma warning restore SA1009
+        {
+            return ComputeHash256(data);
+        }
+
+        // For very large inputs, use 512-bit vectors if supported
         if (Avx512F.IsSupported
 #if NET8_0_OR_GREATER
             && Vector512.IsHardwareAccelerated
@@ -114,7 +173,7 @@ public class VectorizedUrlShortener : IUrlShortener
             return ComputeHash512(data);
         }
 
-        // Fall back to AVX2 (256-bit vectors)
+        // Fall back to 256-bit if available
         if (Avx2.IsSupported
 #if NET8_0_OR_GREATER
             && Vector256.IsHardwareAccelerated
@@ -126,7 +185,7 @@ public class VectorizedUrlShortener : IUrlShortener
             return ComputeHash256(data);
         }
 
-        // Fall back to 128-bit vectors (SSE2 or ARM AdvSimd)
+        // Fall back to 128-bit if available
         if ((Sse2.IsSupported || AdvSimd.IsSupported)
 #if NET8_0_OR_GREATER
             && Vector128.IsHardwareAccelerated
@@ -146,7 +205,35 @@ public class VectorizedUrlShortener : IUrlShortener
             }
         }
 
-        throw new ShortenerException(string.Empty, nameof(VectorizedUrlShortener), "Neither ARM.AdvSimd, AVX-512, AVX2 nor SSE2 is supported on this processor.");
+        // Final fallback to scalar hash
+        return FastScalarHash(data);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong FastScalarHash(Span<byte> data)
+    {
+        // Use a simple but fast FNV-1a style hash for small data
+        ulong hash = FnvOffsetBasis;
+        ref byte dataRef = ref MemoryMarshal.GetReference(data);
+
+        // Process 8 bytes at a time when possible
+        int i = 0;
+        int length = data.Length;
+        
+        // Process in 8-byte chunks for better performance
+        for (; i <= length - 8; i += 8)
+        {
+            ulong chunk = Unsafe.ReadUnaligned<ulong>(ref Unsafe.Add(ref dataRef, i));
+            hash = (hash ^ chunk) * FnvPrime;
+        }
+
+        // Process remaining bytes
+        for (; i < length; i++)
+        {
+            hash = (hash ^ Unsafe.Add(ref dataRef, i)) * FnvPrime;
+        }
+
+        return FinalHashMixing(hash);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
