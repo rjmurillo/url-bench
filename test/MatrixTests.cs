@@ -213,27 +213,27 @@ public class MatrixTests(ITestOutputHelper output)
     {
         Skip.If(shortener is null, "Shortener is not initialized.");
 
-        // Test edge cases that could trigger buffer underflow
-        var testCases = new[]
+        // Test deterministic edge cases for 0-4 characters (including surrogate pairs)
+        var deterministicTestCases = new[]
         {
-            string.Empty,           // 0 characters (0 bytes)
-            "a",          // 1 character (2 bytes as UTF-16)
-            "ab",         // 2 characters (4 bytes as UTF-16)
-            "abc",        // 3 characters (6 bytes as UTF-16)
-            "abcd",       // 4 characters (8 bytes as UTF-16) - boundary case
-            "x",          // Single character
-            "🚀",         // Single emoji (4 bytes as UTF-16 surrogate pair)
-            "a.co",       // Minimal domain-like URL
-            "x.y", // Another minimal case
+            string.Empty,                    // 0 characters (0 bytes)
+            "a",                            // 1 character (2 bytes as UTF-16)
+            "ab",                           // 2 characters (4 bytes as UTF-16)
+            "abc",                          // 3 characters (6 bytes as UTF-16)
+            "abcd",                         // 4 characters (8 bytes as UTF-16) - boundary case
+            "🚀",                           // Single emoji (4 bytes as UTF-16 surrogate pair)
+            "🚀a",                          // Emoji + ASCII (6 bytes as UTF-16)
+            "a🚀",                          // ASCII + emoji (6 bytes as UTF-16)
+            "🚀🎯",                         // Two emojis (8 bytes as UTF-16)
         };
 
-        foreach (var testUrl in testCases)
+        foreach (var testUrl in deterministicTestCases)
         {
             // Should not crash, throw exceptions, or cause buffer overflow
             var result = shortener!.ShortenUrl(testUrl);
 
             // Verify result is safe and reasonable
-            result.ShouldNotBeNull($"Shortener returned null for input: '{testUrl}'");
+            result.ShouldNotBeNull($"Shortener returned null for input: '{testUrl}' (length: {testUrl.Length})");
 
             // Empty input should return empty result
             if (string.IsNullOrWhiteSpace(testUrl))
@@ -242,8 +242,79 @@ public class MatrixTests(ITestOutputHelper output)
             }
             else
             {
-                result.ShouldNotBeEmpty($"Expected non-empty result for non-empty input: '{testUrl}'");
-                result.IndexOf('\0').ShouldBeLessThan(0, $"Result should not contain NUL characters for input: '{testUrl}'");
+                result.ShouldNotBeEmpty($"Expected non-empty result for non-empty input: '{testUrl}' (length: {testUrl.Length})");
+                result.IndexOf('\0').ShouldBeLessThan(0, $"Result should not contain NUL characters for input: '{testUrl}' (length: {testUrl.Length})");
+
+                // Verify result is valid Base62 (only contains 0-9, A-Z, a-z)
+                result.All(c => char.IsAsciiLetterOrDigit(c)).ShouldBeTrue($"Result should only contain Base62 characters for input: '{testUrl}' (length: {testUrl.Length})");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Tests URL shorteners with inputs at vectorized processing tier boundaries.
+    /// This validates stability across tier switches for VectorizedUrlShortener:
+    /// - SSE2/AdvSimd: 16-byte boundaries
+    /// - AVX2: 32-byte boundaries
+    /// - AVX-512: 64-byte boundaries
+    /// - Stack allocation: 2,096-byte boundary.
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
+    /// <param name="repository">The URL repository (unused for this test).</param>
+    [Theory]
+    [MemberData(nameof(MatrixData))]
+    public void ShortenUrl_tier_boundary_stability(IUrlShortener? shortener, IUrlRepository? repository)
+    {
+        Skip.If(shortener is null, "Shortener is not initialized.");
+
+        // Repository parameter is required for matrix test pattern but not used in this test
+        _ = repository;
+
+        // Test boundaries for vectorized processing tiers (measured in UTF-16 characters)
+        var tierBoundaries = new[]
+        {
+            8,      // 16 bytes (SSE2/AdvSimd boundary)
+            16,     // 32 bytes (AVX2 boundary)
+            32,     // 64 bytes (AVX-512 boundary)
+            1048,   // 2,096 bytes (MaxStackSize boundary)
+        };
+
+        foreach (var boundary in tierBoundaries)
+        {
+            // Test N-1, N, N+1 around each boundary
+            var testSizes = new[] { boundary - 1, boundary, boundary + 1 };
+
+            for (var i = 0; i < testSizes.Length; i++)
+            {
+                int size = testSizes[i];
+                if (size <= 0)
+                {
+                    continue;
+                }
+
+                // Create deterministic test string of exact size
+                var testUrl = new string('x', size);
+
+                // Should not crash or produce inconsistent results
+                var result1 = shortener!.ShortenUrl(testUrl);
+                var result2 = shortener!.ShortenUrl(testUrl);
+
+                // Verify consistency (deterministic shorteners should produce same result)
+                if (Utilities.IsDeterministicHashShortener(shortener))
+                {
+                    result1.ShouldBe(result2, $"Deterministic shortener produced different results for size {size} (boundary: {boundary})");
+                }
+
+                // Verify result quality
+                result1.ShouldNotBeNull($"Shortener returned null for size {size} (boundary: {boundary})");
+                result1.ShouldNotBeEmpty($"Shortener returned empty for size {size} (boundary: {boundary})");
+                result1.IndexOf('\0').ShouldBeLessThan(0, $"Result contains NUL for size {size} (boundary: {boundary})");
+
+                // Verify result is valid Base62 (only contains 0-9, A-Z, a-z)
+                result1.All(c => char.IsAsciiLetterOrDigit(c)).ShouldBeTrue($"Result contains invalid Base62 characters for size {size} (boundary: {boundary})");
+
+                // Verify reasonable length (should not be excessively long)
+                result1.Length.ShouldBeLessThanOrEqualTo(12, $"Result too long for size {size} (boundary: {boundary}): {result1}");
             }
         }
     }
