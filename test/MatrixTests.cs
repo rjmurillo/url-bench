@@ -199,4 +199,52 @@ public class MatrixTests(ITestOutputHelper output)
         repository.TrySaveUrlMapping("missing", "https://b", expectedValue: "https://a", out var current).ShouldBeFalse();
         current.ShouldBeNull();
     }
+
+    /// <summary>
+    /// Tests that URL shorteners handle very short URLs without buffer underflow or crashes.
+    /// This specifically tests the fix for the buffer underflow bug where URLs shorter than 8 bytes
+    /// could cause integer underflow in the loop condition (i &lt;= length - 8).
+    /// </summary>
+    /// <param name="shortener">The URL shortener to test.</param>
+    /// <param name="_">The URL repository to test.</param>
+    [Theory]
+    [MemberData(nameof(MatrixData))]
+    public void ShortenUrl_very_short_urls_no_buffer_underflow(IUrlShortener? shortener, IUrlRepository? _)
+    {
+        Skip.If(shortener is null, "Shortener is not initialized.");
+
+        // Test edge cases that could trigger buffer underflow
+        var testCases = new[]
+        {
+            string.Empty,           // 0 characters (0 bytes)
+            "a",          // 1 character (2 bytes as UTF-16)
+            "ab",         // 2 characters (4 bytes as UTF-16)
+            "abc",        // 3 characters (6 bytes as UTF-16)
+            "abcd",       // 4 characters (8 bytes as UTF-16) - boundary case
+            "x",          // Single character
+            "🚀",         // Single emoji (4 bytes as UTF-16 surrogate pair)
+            "a.co",       // Minimal domain-like URL
+            "x.y", // Another minimal case
+        };
+
+        foreach (var testUrl in testCases)
+        {
+            // Should not crash, throw exceptions, or cause buffer overflow
+            var result = shortener!.ShortenUrl(testUrl);
+
+            // Verify result is safe and reasonable
+            result.ShouldNotBeNull($"Shortener returned null for input: '{testUrl}'");
+
+            // Empty input should return empty result
+            if (string.IsNullOrWhiteSpace(testUrl))
+            {
+                result.ShouldBeEmpty($"Expected empty result for empty/whitespace input: '{testUrl}'");
+            }
+            else
+            {
+                result.ShouldNotBeEmpty($"Expected non-empty result for non-empty input: '{testUrl}'");
+                result.IndexOf('\0').ShouldBeLessThan(0, $"Result should not contain NUL characters for input: '{testUrl}'");
+            }
+        }
+    }
 }

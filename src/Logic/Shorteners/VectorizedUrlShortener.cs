@@ -219,9 +219,10 @@ public class VectorizedUrlShortener : IUrlShortener
         // Process 8 bytes at a time when possible
         int i = 0;
         int length = data.Length;
-        
+
         // Process in 8-byte chunks for better performance
-        for (; i <= length - 8; i += 8)
+        // Guard against underflow when length < 8
+        for (; i + 8 <= length; i += 8)
         {
             ulong chunk = Unsafe.ReadUnaligned<ulong>(ref Unsafe.Add(ref dataRef, i));
             hash = (hash ^ chunk) * FnvPrime;
