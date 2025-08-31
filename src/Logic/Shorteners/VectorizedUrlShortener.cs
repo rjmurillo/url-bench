@@ -29,6 +29,24 @@ public class VectorizedUrlShortener : IUrlShortener
 #pragma warning restore ECS0200 // Prefer readonly over const
 
     /// <summary>
+    /// FNV-1a 64-bit offset basis used for initializing the hash state when processing remaining bytes.
+    /// This is the standard FNV-1a basis value defined in the FNV specification (RFC draft).
+    /// Value: 0xcbf29ce484222325 = 14695981039346656037 decimal.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const ulong FnvOffsetBasis = 0xcbf29ce484222325UL;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
+    /// FNV-1a 64-bit prime multiplier used for hash mixing when processing remaining bytes.
+    /// This is the standard FNV-1a prime value defined in the FNV specification (RFC draft).
+    /// Value: 0x100000001b3 = 1099511628211 decimal.
+    /// </summary>
+#pragma warning disable ECS0200 // Prefer readonly over const
+    private const ulong FnvPrime = 0x100000001b3UL;
+#pragma warning restore ECS0200 // Prefer readonly over const
+
+    /// <summary>
     /// Shortens the specified original URL by generating a unique short URL using vectorized hashing.
     /// </summary>
     /// <param name="originalUrl">The original (long) URL to shorten. May be any valid URL string.</param>
@@ -249,21 +267,21 @@ public class VectorizedUrlShortener : IUrlShortener
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ProcessRemainingBytes(Span<byte> data, int startIndex)
     {
-        ulong remainingHash = 0xcbf29ce484222325UL; // FNV-1a basis
         int remaining = data.Length - startIndex;
 
         if (remaining == 0)
         {
-            return remainingHash;
+            return 0;
         }
 
+        ulong remainingHash = FnvOffsetBasis; // FNV-1a basis
         ref byte dataRef = ref MemoryMarshal.GetReference(data);
 
         // Process remaining bytes with better mixing using FNV-1a approach
         for (int i = startIndex; i < data.Length; i++)
         {
             remainingHash ^= (ulong)Unsafe.Add(ref dataRef, i) << (((i - startIndex) & 7) * 8);
-            remainingHash *= 0x100000001b3UL; // FNV-1a prime for better mixing
+            remainingHash *= FnvPrime; // FNV-1a prime for better mixing
         }
 
         return remainingHash;
