@@ -76,16 +76,10 @@ public sealed class ReservoirSampleCollector : ISampleCollector
     /// </returns>
     public IReadOnlyList<double> Snapshot()
     {
-        // Return just the filled portion
+        // Return a defensive copy of the filled portion to guarantee immutability
         long count = Count;
-        if (count == _buffer.Length)
-        {
-            return Array.AsReadOnly(_buffer);
-        }
-
-        // copy only when partially filled
         var tmp = new double[count];
-        Array.Copy(_buffer, tmp, count);
+        Array.Copy(_buffer, tmp, (int)count);
         return Array.AsReadOnly(tmp);
     }
 }
