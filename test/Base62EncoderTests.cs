@@ -12,6 +12,69 @@ public class Base62EncoderTests(ITestOutputHelper output)
     private static readonly string Base62Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     /// <summary>
+    /// Tests that EncodeToString method produces same result as Encode method.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    [Theory]
+    [InlineData(0UL)]
+    [InlineData(1UL)]
+    [InlineData(61UL)]
+    [InlineData(62UL)]
+    [InlineData(3844UL)]
+    [InlineData(1_000_000UL)]
+    [InlineData(ulong.MaxValue)]
+    public void EncodeToString_ProducesSameResultAsEncode(ulong value)
+    {
+        // Test the new EncodeToString method
+        var stringResult = Base62Encoder.EncodeToString(value);
+
+        // Test the original Encode method
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(value, ref span);
+        var bufferResult = new string(buffer);
+
+        output.WriteLine($"Value: {value}, EncodeToString: {stringResult}, Encode: {bufferResult}");
+
+        stringResult.ShouldBe(bufferResult);
+    }
+
+    /// <summary>
+    /// Tests that EncodeToString method with byte array produces same result as Encode method.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    [Theory]
+    [InlineData(0UL)]
+    [InlineData(1UL)]
+    [InlineData(61UL)]
+    [InlineData(62UL)]
+    [InlineData(3844UL)]
+    [InlineData(1_000_000UL)]
+    [InlineData(ulong.MaxValue)]
+    public void EncodeToString_WithByteArray_ProducesSameResultAsEncode(ulong value)
+    {
+        // Create byte array from ulong value
+        var bytes = new byte[sizeof(ulong)];
+        BinaryPrimitives.WriteUInt64LittleEndian(bytes, value);
+
+        // Test the new EncodeToString method with byte array
+        var stringResult = Base62Encoder.EncodeToString(bytes);
+
+        // Test the original Encode method with byte array
+        int bufferLength = Base62Encoder.DetermineBufferLength(value);
+        var buffer = new char[bufferLength];
+        var span = buffer.AsSpan();
+        Base62Encoder.Encode(bytes, ref span);
+        var bufferResult = new string(buffer);
+
+        output.WriteLine($"Value: {value}, EncodeToString: {stringResult}, Encode: {bufferResult}");
+
+        // The EncodeToString result should match the trimmed buffer result (without leading nulls)
+        stringResult.ShouldBe(bufferResult.TrimStart('\0'));
+    }
+
+    /// <summary>
     /// Tests conversion of zero value.
     /// </summary>
     [Fact]
@@ -768,5 +831,31 @@ public class Base62EncoderTests(ITestOutputHelper output)
 
             result.ShouldBe(expected);
         }
+    }
+
+    /// <summary>
+    /// Tests DetermineBufferLength for exact base-62 digit boundaries.
+    /// Verifies both the value just below each threshold and the threshold value itself.
+    /// </summary>
+    /// <param name="value">The ulong value to determine buffer length for.</param>
+    /// <param name="expected">The expected buffer length (int) for the given value.</param>
+    [Theory]
+    [InlineData(238327UL, 3)]
+    [InlineData(238328UL, 4)]
+    [InlineData(14776335UL, 4)]
+    [InlineData(14776336UL, 5)]
+    [InlineData(916132831UL, 5)]
+    [InlineData(916132832UL, 6)]
+    [InlineData(56800235583UL, 6)]
+    [InlineData(56800235584UL, 7)]
+    [InlineData(3521614606207UL, 7)]
+    [InlineData(3521614606208UL, 8)]
+    [InlineData(218340105584895UL, 8)]
+    [InlineData(218340105584896UL, 9)]
+    public void DetermineBufferLength_BoundaryValues_ReturnExpected(ulong value, int expected)
+    {
+        int actual = Base62Encoder.DetermineBufferLength(value);
+        output.WriteLine($"Value: {value}, Expected: {expected}, Actual: {actual}");
+        actual.ShouldBe(expected);
     }
 }

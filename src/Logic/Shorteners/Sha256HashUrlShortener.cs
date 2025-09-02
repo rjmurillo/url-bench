@@ -31,20 +31,20 @@ public class Sha256HashUrlShortener()
             return string.Empty;
         }
 
-        int byteCount = Encoding.Unicode.GetByteCount(originalUrl);
+        int byteCount = Encoding.UTF8.GetByteCount(originalUrl);
 
         // Decide between stackalloc and ArrayPool
         if (byteCount <= Constants.MaxStackSize)
         {
             Span<byte> inputBuffer = stackalloc byte[byteCount];
-            return ProcessUrl(originalUrl, inputBuffer);
+            return ProcessUrl(originalUrl, inputBuffer, byteCount);
         }
 
         byte[] arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
             Span<byte> poolBuffer = arrayFromPool.AsSpan(0, byteCount);
-            return ProcessUrl(originalUrl, poolBuffer);
+            return ProcessUrl(originalUrl, poolBuffer, byteCount);
         }
         finally
         {
@@ -54,11 +54,11 @@ public class Sha256HashUrlShortener()
 
     // This is unlikely to inline (too many IL bytes)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
+    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer, int byteCount)
     {
         // Copy the original URL into the buffer
 #pragma warning disable ECS0900 // false positive
-        int bytesUsed = Encoding.Unicode.GetBytes(originalUrl, inputBuffer);
+        int bytesUsed = Encoding.UTF8.GetBytes(originalUrl, inputBuffer);
 #pragma warning restore ECS0900
 
         // SHA256 outputs 32 bytes, 256 bits
@@ -74,10 +74,6 @@ public class Sha256HashUrlShortener()
 #endif
 
         // Base62 encode the SHA256 hash
-        ulong index = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(hashBuffer) % Constants.Base62Power8;
-        Span<char> base62Buffer = stackalloc char[Base62Encoder.DetermineBufferLength(index)];
-        Base62Encoder.Encode(hashBuffer, ref base62Buffer);
-
-        return base62Buffer.ToString();
+        return Base62Encoder.EncodeToString(hashBuffer, Constants.MaxSlugLength);
     }
 }

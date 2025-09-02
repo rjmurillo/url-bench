@@ -50,9 +50,6 @@ public class IncrementingIntegerUrlShortener(ulong initialValue) : IUrlShortener
         // Convert the numeric value to a base62 string. Base62 encoding uses characters 0-9, A-Z, and a-z.
         // This encoding helps in generating a shorter URL identifier from large numeric values.
         // For example, the first short URL will be "A", the second will be "B", and so on.
-        Span<char> base62Buffer = stackalloc char[Math.Min(Base62Encoder.DetermineBufferLength(value), Constants.MaxSlugLength)];
-        Base62Encoder.Encode(value, ref base62Buffer);
-
-        return base62Buffer.ToString();
+        return Base62Encoder.EncodeToString(value, Constants.MaxSlugLength);
     }
 }

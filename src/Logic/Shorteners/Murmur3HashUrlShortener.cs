@@ -39,20 +39,20 @@ public class Murmur3HashUrlShortener(uint seed)
             return string.Empty;
         }
 
-        int byteCount = Encoding.Unicode.GetMaxByteCount(originalUrl.Length);
+        int byteCount = Encoding.UTF8.GetByteCount(originalUrl);
 
         // Decide between stackalloc and ArrayPool
         if (byteCount <= Constants.MaxStackSize)
         {
             Span<byte> inputBuffer = stackalloc byte[byteCount];
-            return ProcessUrl(originalUrl, inputBuffer);
+            return ProcessUrl(originalUrl, inputBuffer, byteCount);
         }
 
         byte[] arrayFromPool = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
             Span<byte> poolBuffer = arrayFromPool.AsSpan(0, byteCount);
-            return ProcessUrl(originalUrl, poolBuffer);
+            return ProcessUrl(originalUrl, poolBuffer, byteCount);
         }
         finally
         {
@@ -62,19 +62,17 @@ public class Murmur3HashUrlShortener(uint seed)
 
     // REVIEW: This isn't inlining: localloc size unknown
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer)
+    private string ProcessUrl(string originalUrl, Span<byte> inputBuffer, int byteCount)
     {
         // Copy the original URL into the buffer
 #pragma warning disable ECS0900 // false-positive
-        int bytesUsed = Encoding.Unicode.GetBytes(originalUrl, inputBuffer);
+        int bytesUsed = Encoding.UTF8.GetBytes(originalUrl, inputBuffer);
 #pragma warning restore ECS0900
         ReadOnlySpan<byte> inputSpan = inputBuffer[..bytesUsed];
 
         // Calculate hash and convert to Base62
         ulong value = Murmur3.Hash64(ref inputSpan, seed);
 
-        Span<char> base62Buffer = stackalloc char[Math.Min(Base62Encoder.DetermineBufferLength(value), Constants.MaxSlugLength)];
-        Base62Encoder.Encode(value, ref base62Buffer);
-        return base62Buffer.ToString();
+        return Base62Encoder.EncodeToString(value, Constants.MaxSlugLength);
     }
 }
