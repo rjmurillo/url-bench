@@ -3,7 +3,7 @@ using Logic.Contracts;
 namespace Logic;
 
 /// <summary>
-/// Factory class for creating URL shorteners and repositories.
+/// Factory class for creating <see cref="IUrlShortener"/> and <see cref="IUrlRepository"/> instances.
 /// </summary>
 public static class Factory
 {

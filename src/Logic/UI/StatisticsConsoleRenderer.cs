@@ -5,12 +5,12 @@ using Perfolizer.Horology;
 using Perfolizer.Mathematics.OutlierDetection;
 using Spectre.Console;
 
-namespace Console;
+namespace Logic.UI;
 
 /// <summary>
 /// Provides utility methods for displaying benchmark statistics in a formatted manner.
 /// </summary>
-public static class StatisticsDumper
+public static class StatisticsConsoleRenderer
 {
     /// <summary>
     /// Displays the benchmark statistics in a formatted table and handles outlier detection.
