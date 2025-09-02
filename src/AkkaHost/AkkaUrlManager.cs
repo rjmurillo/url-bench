@@ -17,6 +17,12 @@ public sealed class AkkaUrlManager : IUrlManagerSpan
     {
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _reader = reader ?? throw new ArgumentNullException(nameof(reader));
+
+        if (timeout is not null)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout.Value, TimeSpan.Zero);
+        }
+
         _timeout = timeout ?? TimeSpan.FromSeconds(30);
     }
 
