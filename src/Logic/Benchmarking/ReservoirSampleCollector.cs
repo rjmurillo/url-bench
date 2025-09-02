@@ -37,7 +37,7 @@ public sealed class ReservoirSampleCollector : ISampleCollector
     }
 
     /// <inheritdoc/>
-    public long Count => Math.Min(_seen, _buffer.Length);
+    public long Count => Math.Min(_seen, _buffer.LongLength);
 
     /// <summary>
     /// Adds a numeric sample to the reservoir.
