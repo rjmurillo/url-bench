@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Security.Principal;
+﻿using System.Security.Principal;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;

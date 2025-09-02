@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime;
-using BenchmarkDotNet.Mathematics;
 using Logic;
 using Logic.Benchmarking;
 using Logic.Contracts;
