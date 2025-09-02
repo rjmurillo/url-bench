@@ -1,12 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Runtime;
-using System.Threading;
 using Akka.Actor;
 using Akka.Hosting;
 using AkkaHost;
-using AkkaHost.Messages;
-using Logic;
 using Logic.Benchmarking;
 using Logic.Contracts;
 using Logic.Repositories;
