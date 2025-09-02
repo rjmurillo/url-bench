@@ -6,6 +6,7 @@ using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 using Logic.Contracts;
 using Logic.Exceptions;
+using Logic.Hashing;
 
 namespace Logic.Shorteners;
 
