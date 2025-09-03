@@ -25,7 +25,19 @@
             "presentation": {
                 "reveal": "silent"
             },
-            "problemMatcher": "$msCompile"
+            "problemMatcher": [
+                "$msCompile",
+                {
+                    "owner": "dotnet-test",
+                    "severity": "error",
+                    "pattern": {
+                        "regexp": "^\\s*(.+)\\s+in\\s+(.*\\.cs):line\\s+(\\d+)$",
+                        "message": 1,
+                        "file": 2,
+                        "line": 3
+                    }
+                }
+            ]
         },
         {
             "label": "format",
@@ -77,7 +89,19 @@
             "presentation": {
                 "reveal": "silent"
             },
-            "problemMatcher": "$msCompile"
+            "problemMatcher": [
+                "$msCompile",
+                {
+                    "owner": "dotnet-test",
+                    "severity": "error",
+                    "pattern": {
+                        "regexp": "^\\s*(.+)\\s+in\\s+(.*\\.cs):line\\s+(\\d+)$",
+                        "message": 1,
+                        "file": 2,
+                        "line": 3
+                    }
+                }
+            ]
         },
         {
             "label": "build:non-pedantic",
@@ -137,9 +161,7 @@
             "presentation": {
                 "reveal": "always"
             },
-            "problemMatcher": [
-                "$msCompile"
-            ]
+            "problemMatcher": []
         },
         {
             "label": "verify:non-pedantic",
@@ -157,9 +179,7 @@
             "presentation": {
                 "reveal": "always"
             },
-            "problemMatcher": [
-                "$msCompile"
-            ]
+            "problemMatcher": []
         }
     ]
 }
