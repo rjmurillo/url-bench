@@ -40,6 +40,38 @@
             ]
         },
         {
+            "label": "test:pedantic:no-build",
+            "command": "dotnet",
+            "type": "shell",
+            "args": [
+                "test",
+                "--configuration",
+                "Release",
+                "--settings",
+                "./build/targets/tests/test.runsettings",
+                "-p:PedanticMode=true",
+                "-p:GenerateFullPaths=true",
+                "--no-build",
+                "-clp:NoSummary"
+            ],
+            "group": "test",
+            "options": { "cwd": "${workspaceFolder}" },
+            "presentation": { "reveal": "silent" },
+            "problemMatcher": [
+                "$msCompile",
+                {
+                    "owner": "dotnet-test",
+                    "severity": "error",
+                    "pattern": {
+                        "regexp": "^\\s*(.+)\\s+in\\s+(.*\\.cs):line\\s+(\\d+)$",
+                        "message": 1,
+                        "file": 2,
+                        "line": 3
+                    }
+                }
+            ]
+        },
+        {
             "label": "format",
             "command": "dotnet",
             "type": "shell",
@@ -155,13 +187,44 @@
             "dependsOn": [
                 "format:check",
                 "build",
-                "test"
+                "test:pedantic:no-build"
             ],
             "dependsOrder": "sequence",
             "presentation": {
                 "reveal": "always"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "test:non-pedantic:no-build",
+            "command": "dotnet",
+            "type": "shell",
+            "args": [
+                "test",
+                "--configuration",
+                "Release",
+                "--settings",
+                "./build/targets/tests/test.runsettings",
+                "-p:GenerateFullPaths=true",
+                "--no-build",
+                "-clp:NoSummary"
+            ],
+            "group": "test",
+            "options": { "cwd": "${workspaceFolder}" },
+            "presentation": { "reveal": "silent" },
+            "problemMatcher": [
+                "$msCompile",
+                {
+                    "owner": "dotnet-test",
+                    "severity": "error",
+                    "pattern": {
+                        "regexp": "^\\s*(.+)\\s+in\\s+(.*\\.cs):line\\s+(\\d+)$",
+                        "message": 1,
+                        "file": 2,
+                        "line": 3
+                    }
+                }
+            ]
         },
         {
             "label": "verify:non-pedantic",
@@ -173,7 +236,7 @@
             "dependsOn": [
                 "format",
                 "build:non-pedantic",
-                "test:non-pedantic"
+                "test:non-pedantic:no-build"
             ],
             "dependsOrder": "sequence",
             "presentation": {
