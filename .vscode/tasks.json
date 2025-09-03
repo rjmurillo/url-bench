@@ -11,9 +11,9 @@
                 "build",
                 "-c",
                 "Release",
-                "/p:PedanticMode=true",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "-p:PedanticMode=true",
+                "-p:GenerateFullPaths=true",
+                "-clp:NoSummary"
             ],
             "group": {
                 "kind": "build",
@@ -66,9 +66,9 @@
                 "Release",
                 "--settings",
                 "./build/targets/tests/test.runsettings",
-                "/p:PedanticMode=true",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "-p:PedanticMode=true",
+                "-p:GenerateFullPaths=true",
+                "-clp:NoSummary"
             ],
             "group": "test",
             "options": {
@@ -87,8 +87,8 @@
                 "build",
                 "-c",
                 "Release",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "-p:GenerateFullPaths=true",
+                "-clp:NoSummary"
             ],
             "group": "build",
             "options": {
@@ -109,8 +109,8 @@
                 "Release",
                 "--settings",
                 "./build/targets/tests/test.runsettings",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "-p:GenerateFullPaths=true",
+                "-clp:NoSummary"
             ],
             "group": "test",
             "options": {
