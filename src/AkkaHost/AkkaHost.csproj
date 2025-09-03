@@ -3,6 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
       <IsPackable>false</IsPackable>
+      <TieredCompilation>true</TieredCompilation>
+      <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+      <TieredCompilationQuickJitForLoops>true</TieredCompilationQuickJitForLoops>
   </PropertyGroup>
 
   <ItemGroup>
