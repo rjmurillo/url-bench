@@ -1,6 +1,4 @@
-using System.Linq;
 using Logic.Benchmarking;
-using Xunit;
 
 namespace UrlConverterPermutations;
 

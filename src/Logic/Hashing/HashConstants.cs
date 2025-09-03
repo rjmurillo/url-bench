@@ -1,4 +1,4 @@
-namespace Logic.Shorteners;
+namespace Logic.Hashing;
 
 /// <summary>
 /// Hash constants used by vectorized URL shortening algorithms.

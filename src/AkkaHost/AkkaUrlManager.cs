@@ -6,11 +6,16 @@ namespace AkkaHost;
 
 /// <summary>
 /// IUrlManager implementation that delegates operations to Akka.NET actors.
+/// Provides both synchronous and asynchronous APIs. Prefer the async members for
+/// non-blocking behavior and deterministic timeout/cancellation.
+/// Optionally supports a fast-path that bypasses actors when a local shortener and repository are provided.
 /// </summary>
 public sealed class AkkaUrlManager : IUrlManagerSpan
 {
-    private readonly IActorRef _writer;
-    private readonly IActorRef _reader;
+    private readonly IActorRef? _writer;
+    private readonly IActorRef? _reader;
+    private readonly IUrlShortener? _shortener;
+    private readonly IUrlRepository? _repository;
     private readonly TimeSpan _timeout;
 
     public AkkaUrlManager(IActorRef writer, IActorRef reader, TimeSpan? timeout = null)
@@ -26,11 +31,83 @@ public sealed class AkkaUrlManager : IUrlManagerSpan
         _timeout = timeout ?? TimeSpan.FromSeconds(30);
     }
 
+    /// <summary>
+    /// Fast-path constructor: bypass actors and use local shortener + repository.
+    /// </summary>
+    public AkkaUrlManager(IUrlShortener shortener, IUrlRepository repository, TimeSpan? timeout = null)
+    {
+        _shortener = shortener ?? throw new ArgumentNullException(nameof(shortener));
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+
+        if (timeout is not null)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout.Value, TimeSpan.Zero);
+        }
+
+        _timeout = timeout ?? TimeSpan.FromSeconds(30);
+    }
+
+    /// <summary>
+    /// Shortens the specified URL and persists it, returning the short code.
+    /// This synchronous method is a compatibility shim over <see cref="ShortenAndSaveAsync"/>.
+    /// </summary>
     public string ShortenAndSave(string longUrl)
     {
-        // Use Ask to ensure replies are delivered and avoid dead letters
-        var resp = _writer.Ask(new ShortenUrl(longUrl), _timeout).GetAwaiter().GetResult();
-        return resp switch
+        return ShortenAndSaveAsync(longUrl).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Gets the original URL associated with the specified short code.
+    /// This synchronous method is a compatibility shim over <see cref="GetOriginalUrlAsync"/>.
+    /// </summary>
+    public string GetOriginalUrl(string shortUrl)
+    {
+        return GetOriginalUrlAsync(shortUrl).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Retrieves the original URL given a short code as a span. This is a thin shim over the string-based API.
+    /// </summary>
+    /// <param name="shortUrl">The short code as a read-only character span.</param>
+    /// <returns>The original URL if found; otherwise, an empty string.</returns>
+    public string GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl)
+    {
+        return GetOriginalUrl(shortUrl.ToString());
+    }
+
+    /// <summary>
+    /// Asynchronously shortens the specified URL and persists it, returning the short code.
+    /// Respects the manager's default timeout unless overridden at construction.
+    /// Throws <see cref="TimeoutException"/> on timeout and <see cref="OperationCanceledException"/> on cancellation.
+    /// </summary>
+    /// <param name="longUrl">The original URL to shorten.</param>
+    /// <param name="cancellationToken">An optional token to observe while awaiting the operation.</param>
+    /// <returns>The generated short code.</returns>
+    public async Task<string> ShortenAndSaveAsync(string longUrl, CancellationToken cancellationToken = default)
+    {
+        // Fast-path: bypass actors entirely
+        if (_shortener is not null && _repository is not null)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var shortCode = _shortener.ShortenUrl(longUrl);
+            if (shortCode.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var ok = _repository.TrySaveUrlMapping(shortCode, longUrl, expectedValue: null, out var currentValue);
+            if (ok || string.Equals(currentValue, longUrl, StringComparison.Ordinal))
+            {
+                return shortCode;
+            }
+
+            throw new InvalidOperationException($"Collision detected for short code '{shortCode}'");
+        }
+
+        // Fallback Ask path
+        var askTask = _writer!.Ask(new ShortenUrl(longUrl), System.Threading.Timeout.InfiniteTimeSpan);
+        var response = await askTask.WaitAsync(_timeout, cancellationToken).ConfigureAwait(false);
+        return response switch
         {
             ShortenUrlAccepted ok => ok.ShortCode,
             ShortenUrlRejected rej => throw new InvalidOperationException(rej.Reason),
@@ -38,19 +115,31 @@ public sealed class AkkaUrlManager : IUrlManagerSpan
         };
     }
 
-    public string GetOriginalUrl(string shortUrl)
+    /// <summary>
+    /// Asynchronously retrieves the original URL associated with the specified short code.
+    /// Respects the manager's default timeout unless overridden at construction.
+    /// Throws <see cref="TimeoutException"/> on timeout and <see cref="OperationCanceledException"/> on cancellation.
+    /// </summary>
+    /// <param name="shortUrl">The short code.</param>
+    /// <param name="cancellationToken">An optional token to observe while awaiting the operation.</param>
+    /// <returns>The original URL if found; otherwise, an empty string.</returns>
+    public async Task<string> GetOriginalUrlAsync(string shortUrl, CancellationToken cancellationToken = default)
     {
-        var response = _reader.Ask(new GetUrlByCode(shortUrl), _timeout).GetAwaiter().GetResult();
-        return response switch
+        // Fast-path: bypass actors entirely
+        if (_repository is not null)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return _repository.GetOriginalUrl(shortUrl) ?? string.Empty;
+        }
+
+        // Fallback Ask path
+        var askTask = _reader!.Ask(new GetUrlByCode(shortUrl), System.Threading.Timeout.InfiniteTimeSpan);
+        var resp = await askTask.WaitAsync(_timeout, cancellationToken).ConfigureAwait(false);
+        return resp switch
         {
             UrlDetails details => details.OriginalUrl,
             UrlNotFound => string.Empty,
             _ => string.Empty,
         };
-    }
-
-    public string GetOriginalUrl(scoped ReadOnlySpan<char> shortUrl)
-    {
-        return GetOriginalUrl(shortUrl.ToString());
     }
 }

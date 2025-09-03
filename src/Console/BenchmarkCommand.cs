@@ -1,15 +1,8 @@
 ﻿using System.ComponentModel;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Runtime;
-using BenchmarkDotNet.Mathematics;
 using Logic;
 using Logic.Benchmarking;
-using Logic.Contracts;
-using Logic.Repositories;
-using Logic.Shorteners;
-using Logic.UI;
+using Logic.Cli;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -30,8 +23,8 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             SettingsDumper.Dump(settings);
 
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-
-            const int maxDictionaryCapacity = 2_000_000_000;
+            var oldLatency = GCSettings.LatencyMode;
+            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
 
             var repoType = UrlRepositoryHelper.GetRepositoryType(settings.StorageType);
             var repo = Factory.CreateRepository(repoType!);
@@ -40,23 +33,18 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
             var facade = new UrlManager(shortener, repo);
             string url = settings.Url!;
 
-            long writeSampleCount = settings.Iterations * settings.NumberOfUrls;
-            if (writeSampleCount < 0 || writeSampleCount > maxDictionaryCapacity)
-            {
-                writeSampleCount = maxDictionaryCapacity;
-            }
+            BenchmarkRunner.Run(
+                facade,
+                settings.Iterations,
+                settings.NumberOfUrls,
+                url,
+                settings.MaxDegreeOfParallelism,
+                settings.ProgressInterval,
+                settings.ReservoirCapacity,
+                settings.RandomSeed,
+                settings.MinimalOverhead);
 
-            long readSampleCount = settings.Iterations * settings.NumberOfUrls;
-            if (readSampleCount < 0 || readSampleCount > maxDictionaryCapacity)
-            {
-                readSampleCount = maxDictionaryCapacity;
-            }
-
-            var readSamples = new List<double>((int)Math.Min(readSampleCount, int.MaxValue));
-            var writeSamples = new List<double>((int)Math.Min(writeSampleCount, int.MaxValue));
-
-            RunWritePhase(settings, facade, url, writeSamples);
-            RunReadPhase(settings, facade, readSamples);
+            GCSettings.LatencyMode = oldLatency;
         }
         catch (Exception ex)
         {
@@ -67,229 +55,7 @@ internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
         return 0;
     }
 
-    private static void RunWritePhase(Settings settings, IUrlManager facade, string url, List<double> iterAggregates)
+    public sealed class Settings : SharedSettings
     {
-        AnsiConsole.Status()
-            .Spinner(Spinner.Known.Dots)
-            .Start("Generating...", ctx =>
-            {
-                // bounded reservoir for per-window samples
-                ISampleCollector collector = new ReservoirSampleCollector(settings.ReservoirCapacity, settings.RandomSeed);
-
-                if (settings.MaxDegreeOfParallelism == 1)
-                {
-                    var iterSamples = BenchCore.RunWritePhaseSequential(
-                        iterations: settings.Iterations,
-                        numberOfUrls: settings.NumberOfUrls,
-                        url: url,
-                        manager: facade,
-                        onProgress: (i, j, ips) =>
-                        {
-                            long workingSet = Process.GetCurrentProcess().WorkingSet64;
-                            ctx.Status(string.Create(CultureInfo.InvariantCulture, $"Generating... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M"));
-                        },
-                        onIterationCompleted: (j, iterIps, elapsedMs) =>
-                        {
-                            AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {elapsedMs / 1000.0:N3} secs ({(elapsedMs > 0 ? settings.NumberOfUrls / (elapsedMs / 1000.0) : double.NaN):N0} inserts/sec)");
-                        },
-                        progressInterval: settings.ProgressInterval,
-                        collector: collector);
-
-                    iterAggregates.AddRange(iterSamples);
-                }
-                else
-                {
-                    for (int j = 1; j <= settings.Iterations; j++)
-                    {
-                        var swLocal = Stopwatch.StartNew();
-                        var options = new ParallelOptions { MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism };
-                        Parallel.For(0L, settings.NumberOfUrls, options, _ => facade.ShortenAndSave(url));
-                        swLocal.Stop();
-                        if (swLocal.ElapsedMilliseconds > 0)
-                        {
-                            iterAggregates.Add(settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0));
-                        }
-
-                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to upsert {settings.NumberOfUrls:N0} elements: {swLocal.ElapsedMilliseconds / 1000.0:N3} secs ({(swLocal.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0) : double.NaN):N0} inserts/sec)");
-                    }
-                }
-
-                long workingSet2 = Process.GetCurrentProcess().WorkingSet64;
-                AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet2 / 1048576}M");
-
-                // Compute stats from reservoir snapshot for fine-grained comparison
-                var writeWindowStats = BenchCore.ComputeStats(collector.Snapshot());
-                var writeIterStats = BenchCore.ComputeStats(iterAggregates);
-
-                AnsiConsole.MarkupLine("[bold]Window-level (IPS) stats:[/]");
-                StatisticsConsoleRenderer.Dump(writeWindowStats);
-                AnsiConsole.MarkupLine("[bold]Iteration-level (IPS) stats:[/]");
-                StatisticsConsoleRenderer.Dump(writeIterStats);
-            });
-    }
-
-    private static void RunReadPhase(Settings settings, IUrlManager facade, List<double> iterAggregates)
-    {
-        AnsiConsole.Status()
-            .Spinner(Spinner.Known.Dots)
-            .Start("Uniform random read...", ctx =>
-            {
-                ISampleCollector collector = new ReservoirSampleCollector(settings.ReservoirCapacity, settings.RandomSeed);
-
-                if (settings.MaxDegreeOfParallelism == 1)
-                {
-                    var iterSamples = BenchCore.RunReadPhaseSequential(
-                        iterations: settings.Iterations,
-                        numberOfUrls: settings.NumberOfUrls,
-                        manager: facade,
-                        onProgress: (i, j, rps) =>
-                        {
-                            long workingSet = Process.GetCurrentProcess().WorkingSet64;
-                            ctx.Status(string.Create(CultureInfo.InvariantCulture, $"Reading... Iteration: {j}, URLs {i:N0}: {workingSet / 1048576}M"));
-                        },
-                        onIterationCompleted: (j, iterRps, elapsedMs) =>
-                        {
-                            AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {elapsedMs / 1000.0:N3} secs ({(elapsedMs > 0 ? settings.NumberOfUrls / (elapsedMs / 1000.0) : double.NaN):N0} reads/sec)");
-                        },
-                        progressInterval: settings.ProgressInterval,
-                        collector: collector);
-
-                    iterAggregates.AddRange(iterSamples);
-                }
-                else
-                {
-                    Parallel.For(1, settings.Iterations + 1, new ParallelOptions { MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism }, j =>
-                    {
-                        var localRnd = new Random(unchecked(397 ^ j));
-                        var swLocal = Stopwatch.StartNew();
-                        for (long i = 0; i < settings.NumberOfUrls; i++)
-                        {
-                            ulong k = (ulong)localRnd.NextInt64(1, settings.NumberOfUrls * j);
-                            BenchCore.ReadSingle(facade, k);
-                        }
-
-                        swLocal.Stop();
-                        if (swLocal.ElapsedMilliseconds > 0)
-                        {
-                            lock (iterAggregates)
-                            {
-                                iterAggregates.Add(settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0));
-                            }
-                        }
-
-                        AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"Iteration {j}: Total time to read {settings.NumberOfUrls:N0} elements: {swLocal.ElapsedMilliseconds / 1000.0:N3} secs ({(swLocal.ElapsedMilliseconds > 0 ? settings.NumberOfUrls / (swLocal.ElapsedMilliseconds / 1000.0) : double.NaN):N0} reads/sec)");
-                    });
-                }
-
-                long workingSet2 = Process.GetCurrentProcess().WorkingSet64;
-                AnsiConsole.MarkupLineInterpolated(CultureInfo.InvariantCulture, $"URLs: {settings.NumberOfUrls * settings.Iterations} Working set: {workingSet2 / 1048576}M");
-
-                var readWindowStats = BenchCore.ComputeStats(collector.Snapshot());
-                var readIterStats = BenchCore.ComputeStats(iterAggregates);
-
-                AnsiConsole.MarkupLine("[bold]Window-level (RPS) stats:[/]");
-                StatisticsConsoleRenderer.Dump(readWindowStats);
-                AnsiConsole.MarkupLine("[bold]Iteration-level (RPS) stats:[/]");
-                StatisticsConsoleRenderer.Dump(readIterStats);
-            });
-    }
-
-    public sealed class Settings : CommandSettings
-    {
-        internal static class Defaults
-        {
-            [SuppressMessage("Security", "S1075:URIs should not be hardcoded", Justification = "Benchmark default only; no network calls")]
-            internal const string Url = "https://www.microsoft.com/en-us/security/business/endpoint-security/microsoft-defender-endpoint";
-            internal const long NumberOfUrls = 10_000_000L;
-            internal const int Iterations = 3;
-            internal static readonly Type RepoType = typeof(FASTERUrlRepository);
-            internal static readonly Type ShortenerType = typeof(IncrementingIntegerUrlShortener);
-            internal const int ProgressInterval = BenchCore.ProgressInterval;
-            internal const int ReservoirCapacity = 8192;
-            internal const int RandomSeed = 0;
-        }
-
-        [CommandOption("-i|--iterations")]
-        [DefaultValue(Defaults.Iterations)]
-        public int Iterations { get; init; }
-
-        [CommandOption("-n|--urls")]
-        [DefaultValue(Defaults.NumberOfUrls)]
-        public long NumberOfUrls { get; init; }
-
-        [CommandOption("-u|--url")]
-        [DefaultValue(Defaults.Url)]
-        public string? Url { get; init; }
-
-        [CommandOption("-s|--storage")]
-        public string? StorageType { get; private set; }
-
-        [CommandOption("-t|--urlshortener")]
-        public string? ShortenerType { get; private set; }
-
-        [CommandOption("-p|--maxdop")]
-        [DefaultValue(1)]
-        public int MaxDegreeOfParallelism { get; init; }
-
-        [CommandOption("--progress-interval")]
-        [DefaultValue(Defaults.ProgressInterval)]
-        public int ProgressInterval { get; init; }
-
-        [CommandOption("--reservoir")]
-        [DefaultValue(Defaults.ReservoirCapacity)]
-        public int ReservoirCapacity { get; init; }
-
-        [CommandOption("--seed")]
-        [DefaultValue(Defaults.RandomSeed)]
-        public int RandomSeed { get; init; }
-
-        public override ValidationResult Validate()
-        {
-            if (string.IsNullOrWhiteSpace(StorageType))
-            {
-                StorageType = Defaults.RepoType.Name;
-            }
-
-            if (string.IsNullOrWhiteSpace(ShortenerType))
-            {
-                ShortenerType = Defaults.ShortenerType.Name;
-            }
-
-            var typesImplementingIUrlRepository = UrlRepositoryHelper.GetConcreteTypes<IUrlRepository>();
-
-            var storageValidationResult = UrlRepositoryHelper.GetRepositoryType(StorageType) != null
-                ? ValidationResult.Success()
-                : ValidationResult.Error(
-                    $"Unrecognized storage type '{StorageType}'. Use: {string.Join(", ", typesImplementingIUrlRepository.Select(t => t.Name))}");
-
-            if (!storageValidationResult.Successful)
-            {
-                return storageValidationResult;
-            }
-
-            var typesImplementingIUrlShortener = UrlRepositoryHelper.GetConcreteTypes<IUrlShortener>();
-
-            var shortenerValidationResult = UrlRepositoryHelper.GetShortenerType(ShortenerType) != null
-                ? ValidationResult.Success()
-                : ValidationResult.Error(
-                    $"Unrecognized URL shortener type '{ShortenerType}'. Use: {string.Join(", ", typesImplementingIUrlShortener.Select(t => t.Name))}");
-
-            if (!shortenerValidationResult.Successful)
-            {
-                return shortenerValidationResult;
-            }
-
-            if (ProgressInterval <= 0)
-            {
-                return ValidationResult.Error("--progress-interval must be > 0");
-            }
-
-            if (ReservoirCapacity <= 0)
-            {
-                return ValidationResult.Error("--reservoir must be > 0");
-            }
-
-            return ValidationResult.Success();
-        }
     }
 }

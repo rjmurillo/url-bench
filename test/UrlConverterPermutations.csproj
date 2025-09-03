@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\Logic\Logic.csproj" />
+    <ProjectReference Include="..\src\AkkaHost\AkkaHost.csproj" />
   </ItemGroup>
 
 </Project>

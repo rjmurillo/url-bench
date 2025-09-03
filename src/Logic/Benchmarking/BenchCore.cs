@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 
 using BenchmarkDotNet.Mathematics;
@@ -8,13 +7,6 @@ using Logic.Contracts;
 
 namespace Logic.Benchmarking;
 
-/// <summary>
-/// Provides core benchmarking functionality for measuring the performance of URL shortening and retrieval operations.
-/// </summary>
-/// <remarks>
-/// This class contains methods to execute sequential write and read benchmarking phases, as well as utilities to compute statistical results.
-/// It is designed to work with an <see cref="Logic.Contracts.IUrlManager"/> implementation for managing URL operations.
-/// </remarks>
 public static class BenchCore
 {
     public const int ProgressInterval = 65_536;
@@ -46,6 +38,10 @@ public static class BenchCore
     /// </param>
     /// <param name="progressInterval">Optional progress sampling interval; defaults to <see cref="ProgressInterval"/>.</param>
     /// <param name="collector">Optional sample collector which will receive per-window samples to allow scalable statistics.</param>
+    /// <param name="minimalOverhead">
+    /// If set to true, skips per-interval sampling and progress callbacks,
+    /// measuring only iteration totals to reduce overhead.
+    /// </param>
     /// <returns>A read-only list of doubles representing the average inserts per second for each iteration.</returns>
     public static IReadOnlyList<double> RunWritePhaseSequential(
         int iterations,
@@ -55,42 +51,55 @@ public static class BenchCore
         Action<long, int, double>? onProgress = null,
         Action<int, double, long>? onIterationCompleted = null,
         int progressInterval = ProgressInterval,
-        ISampleCollector? collector = null)
+        ISampleCollector? collector = null,
+        bool minimalOverhead = false)
     {
         var sw = new Stopwatch();
+        bool samplingEnabled = !minimalOverhead && (collector is not null || onProgress is not null);
+        var results = new List<double>(iterations);
 
         for (int j = 1; j <= iterations; j++)
         {
             sw.Restart();
             long lastMs = 0;
-            for (long i = 0; i < numberOfUrls; i++)
+            if (samplingEnabled)
             {
-                manager.ShortenAndSave(url);
-
-                if (i != 0 && (i % progressInterval) == 0)
+                for (long i = 0; i < numberOfUrls; i++)
                 {
-                    long elapsedMs = sw.ElapsedMilliseconds - lastMs;
-                    lastMs = sw.ElapsedMilliseconds;
-                    if (elapsedMs > 0)
+                    manager.ShortenAndSave(url);
+
+                    if (i != 0 && (i % progressInterval) == 0)
                     {
-                        double ips = progressInterval / (elapsedMs / 1000.0);
-                        collector?.Add(ips);
-                        onProgress?.Invoke(i, j, ips);
+                        long elapsedMs = sw.ElapsedMilliseconds - lastMs;
+                        lastMs = sw.ElapsedMilliseconds;
+                        if (elapsedMs > 0)
+                        {
+                            double ips = progressInterval / (elapsedMs / 1000.0);
+                            collector?.Add(ips);
+                            onProgress?.Invoke(i, j, ips);
+                        }
+                    }
+                }
+
+                // Emit a final remainder sample if there are leftover operations not captured by the exact interval
+                long completedAtIntervals = (numberOfUrls / progressInterval) * progressInterval;
+                long remaining = numberOfUrls - completedAtIntervals;
+                if (remaining > 0)
+                {
+                    long elapsedMsRemainder = sw.ElapsedMilliseconds - lastMs;
+                    if (elapsedMsRemainder > 0)
+                    {
+                        double ipsRemainder = remaining / (elapsedMsRemainder / 1000.0);
+                        collector?.Add(ipsRemainder);
+                        onProgress?.Invoke(numberOfUrls, j, ipsRemainder);
                     }
                 }
             }
-
-            // Emit a final remainder sample if there are leftover operations not captured by the exact interval
-            long completedAtIntervals = (numberOfUrls / progressInterval) * progressInterval;
-            long remaining = numberOfUrls - completedAtIntervals;
-            if (remaining > 0)
+            else
             {
-                long elapsedMsRemainder = sw.ElapsedMilliseconds - lastMs;
-                if (elapsedMsRemainder > 0)
+                for (long i = 0; i < numberOfUrls; i++)
                 {
-                    double ipsRemainder = remaining / (elapsedMsRemainder / 1000.0);
-                    collector?.Add(ipsRemainder);
-                    onProgress?.Invoke(numberOfUrls, j, ipsRemainder);
+                    manager.ShortenAndSave(url);
                 }
             }
 
@@ -98,11 +107,15 @@ public static class BenchCore
             double iterIps = sw.ElapsedMilliseconds > 0
                 ? numberOfUrls / (sw.ElapsedMilliseconds / 1000.0)
                 : double.NaN;
+            // Always capture iteration-level result locally
+            results.Add(iterIps);
+            // Preserve prior behavior of adding iteration aggregate to collector when provided
             collector?.Add(iterIps);
             onIterationCompleted?.Invoke(j, iterIps, sw.ElapsedMilliseconds);
         }
 
-        return collector?.Snapshot() ?? [];
+        // If we sampled via collector and minimalOverhead is false, return window-level samples as before; otherwise return iteration-level results
+        return (collector is not null && !minimalOverhead) ? collector.Snapshot() : results;
     }
 
     /// <summary>
@@ -149,6 +162,10 @@ public static class BenchCore
     /// </param>
     /// <param name="progressInterval">Optional progress sampling interval; defaults to <see cref="ProgressInterval"/>.</param>
     /// <param name="collector">Optional sample collector which will receive per-window samples to allow scalable statistics.</param>
+    /// <param name="minimalOverhead">
+    /// If set to true, skips per-interval sampling and progress callbacks,
+    /// measuring only iteration totals to reduce overhead.
+    /// </param>
     /// <returns>A read-only list of doubles representing the read operations per second (RPS) for each iteration.</returns>
     public static IReadOnlyList<double> RunReadPhaseSequential(
         int iterations,
@@ -157,44 +174,58 @@ public static class BenchCore
         Action<long, int, double>? onProgress = null,
         Action<int, double, long>? onIterationCompleted = null,
         int progressInterval = ProgressInterval,
-        ISampleCollector? collector = null)
+        ISampleCollector? collector = null,
+        bool minimalOverhead = false)
     {
         var rnd = new Random(0);
         var sw = new Stopwatch();
+        bool samplingEnabled = !minimalOverhead && (collector is not null || onProgress is not null);
+        var results = new List<double>(iterations);
 
         for (int j = 1; j <= iterations; j++)
         {
             sw.Restart();
             long lastMs = 0;
-            for (long i = 0; i < numberOfUrls; i++)
+            if (samplingEnabled)
             {
-                ulong k = (ulong)rnd.NextInt64(1, numberOfUrls * j);
-                ReadSingle(manager, k);
-
-                if (i != 0 && (i % progressInterval) == 0)
+                for (long i = 0; i < numberOfUrls; i++)
                 {
-                    long elapsedMs = sw.ElapsedMilliseconds - lastMs;
-                    lastMs = sw.ElapsedMilliseconds;
-                    if (elapsedMs > 0)
+                    ulong k = (ulong)rnd.NextInt64(1, numberOfUrls * j);
+                    ReadSingle(manager, k);
+
+                    if (i != 0 && (i % progressInterval) == 0)
                     {
-                        double rps = progressInterval / (elapsedMs / 1000.0);
-                        collector?.Add(rps);
-                        onProgress?.Invoke(i, j, rps);
+                        long elapsedMs = sw.ElapsedMilliseconds - lastMs;
+                        lastMs = sw.ElapsedMilliseconds;
+                        if (elapsedMs > 0)
+                        {
+                            double rps = progressInterval / (elapsedMs / 1000.0);
+                            collector?.Add(rps);
+                            onProgress?.Invoke(i, j, rps);
+                        }
+                    }
+                }
+
+                // Emit a final remainder sample for reads as well
+                long completedAtIntervals = (numberOfUrls / progressInterval) * progressInterval;
+                long remaining = numberOfUrls - completedAtIntervals;
+                if (remaining > 0)
+                {
+                    long elapsedMsRemainder = sw.ElapsedMilliseconds - lastMs;
+                    if (elapsedMsRemainder > 0)
+                    {
+                        double rpsRemainder = remaining / (elapsedMsRemainder / 1000.0);
+                        collector?.Add(rpsRemainder);
+                        onProgress?.Invoke(numberOfUrls, j, rpsRemainder);
                     }
                 }
             }
-
-            // Emit a final remainder sample for reads as well
-            long completedAtIntervals = (numberOfUrls / progressInterval) * progressInterval;
-            long remaining = numberOfUrls - completedAtIntervals;
-            if (remaining > 0)
+            else
             {
-                long elapsedMsRemainder = sw.ElapsedMilliseconds - lastMs;
-                if (elapsedMsRemainder > 0)
+                for (long i = 0; i < numberOfUrls; i++)
                 {
-                    double rpsRemainder = remaining / (elapsedMsRemainder / 1000.0);
-                    collector?.Add(rpsRemainder);
-                    onProgress?.Invoke(numberOfUrls, j, rpsRemainder);
+                    ulong k = (ulong)rnd.NextInt64(1, numberOfUrls * j);
+                    ReadSingle(manager, k);
                 }
             }
 
@@ -202,11 +233,12 @@ public static class BenchCore
             double iterRps = sw.ElapsedMilliseconds > 0
                 ? numberOfUrls / (sw.ElapsedMilliseconds / 1000.0)
                 : double.NaN;
+            results.Add(iterRps);
             collector?.Add(iterRps);
             onIterationCompleted?.Invoke(j, iterRps, sw.ElapsedMilliseconds);
         }
 
-        return collector?.Snapshot() ?? [];
+        return (collector is not null && !minimalOverhead) ? collector.Snapshot() : results;
     }
 
     /// <summary>
