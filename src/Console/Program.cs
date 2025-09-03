@@ -6,6 +6,11 @@ using Spectre.Console.Cli;
 #pragma warning disable HAA0101
 #pragma warning disable SA1600
 
+// Bump ThreadPool minimum threads to reduce ramp-up stalls under load
+ThreadPool.GetMinThreads(out var minWorkers, out var minIoThreads);
+var targetWorkers = Math.Max(minWorkers, Environment.ProcessorCount * 4);
+ThreadPool.SetMinThreads(targetWorkers, minIoThreads);
+
 var app = new CommandApp();
 app.Configure(config =>
 {

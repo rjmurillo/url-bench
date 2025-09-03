@@ -8,25 +8,36 @@ namespace AkkaHost;
 /// IUrlManager implementation that delegates operations to Akka.NET actors.
 /// Provides both synchronous and asynchronous APIs. Prefer the async members for
 /// non-blocking behavior and deterministic timeout/cancellation.
+/// Optionally supports a fast-path that bypasses actors when a local shortener and repository are provided.
 /// </summary>
 public sealed class AkkaUrlManager : IUrlManagerSpan
 {
-    private readonly IActorRef _writer;
-    private readonly IActorRef _reader;
+    private readonly IActorRef? _writer;
+    private readonly IActorRef? _reader;
+    private readonly IUrlShortener? _shortener;
+    private readonly IUrlRepository? _repository;
     private readonly TimeSpan _timeout;
 
-    /// <summary>
-    /// Creates a new instance of <see cref="AkkaUrlManager"/>.
-    /// </summary>
-    /// <param name="writer">Actor reference that handles write operations.</param>
-    /// <param name="reader">Actor reference that handles read operations.</param>
-    /// <param name="timeout">Optional default timeout applied to operations; defaults to 30 seconds and must be greater than zero.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer"/> or <paramref name="reader"/> is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout"/> is less than or equal to <see cref="TimeSpan.Zero"/>.</exception>
     public AkkaUrlManager(IActorRef writer, IActorRef reader, TimeSpan? timeout = null)
     {
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _reader = reader ?? throw new ArgumentNullException(nameof(reader));
+
+        if (timeout is not null)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout.Value, TimeSpan.Zero);
+        }
+
+        _timeout = timeout ?? TimeSpan.FromSeconds(30);
+    }
+
+    /// <summary>
+    /// Fast-path constructor: bypass actors and use local shortener + repository.
+    /// </summary>
+    public AkkaUrlManager(IUrlShortener shortener, IUrlRepository repository, TimeSpan? timeout = null)
+    {
+        _shortener = shortener ?? throw new ArgumentNullException(nameof(shortener));
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
 
         if (timeout is not null)
         {
@@ -74,8 +85,27 @@ public sealed class AkkaUrlManager : IUrlManagerSpan
     /// <returns>The generated short code.</returns>
     public async Task<string> ShortenAndSaveAsync(string longUrl, CancellationToken cancellationToken = default)
     {
-        // Ask without internal timeout; enforce deterministically via WaitAsync
-        var askTask = _writer.Ask(new ShortenUrl(longUrl), System.Threading.Timeout.InfiniteTimeSpan);
+        // Fast-path: bypass actors entirely
+        if (_shortener is not null && _repository is not null)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var shortCode = _shortener.ShortenUrl(longUrl);
+            if (shortCode.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var ok = _repository.TrySaveUrlMapping(shortCode, longUrl, expectedValue: null, out var currentValue);
+            if (ok || string.Equals(currentValue, longUrl, StringComparison.Ordinal))
+            {
+                return shortCode;
+            }
+
+            throw new InvalidOperationException($"Collision detected for short code '{shortCode}'");
+        }
+
+        // Fallback Ask path
+        var askTask = _writer!.Ask(new ShortenUrl(longUrl), System.Threading.Timeout.InfiniteTimeSpan);
         var response = await askTask.WaitAsync(_timeout, cancellationToken).ConfigureAwait(false);
         return response switch
         {
@@ -95,9 +125,17 @@ public sealed class AkkaUrlManager : IUrlManagerSpan
     /// <returns>The original URL if found; otherwise, an empty string.</returns>
     public async Task<string> GetOriginalUrlAsync(string shortUrl, CancellationToken cancellationToken = default)
     {
-        var askTask = _reader.Ask(new GetUrlByCode(shortUrl), System.Threading.Timeout.InfiniteTimeSpan);
-        var response = await askTask.WaitAsync(_timeout, cancellationToken).ConfigureAwait(false);
-        return response switch
+        // Fast-path: bypass actors entirely
+        if (_repository is not null)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return _repository.GetOriginalUrl(shortUrl) ?? string.Empty;
+        }
+
+        // Fallback Ask path
+        var askTask = _reader!.Ask(new GetUrlByCode(shortUrl), System.Threading.Timeout.InfiniteTimeSpan);
+        var resp = await askTask.WaitAsync(_timeout, cancellationToken).ConfigureAwait(false);
+        return resp switch
         {
             UrlDetails details => details.OriginalUrl,
             UrlNotFound => string.Empty,

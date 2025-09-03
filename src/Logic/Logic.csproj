@@ -7,6 +7,7 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
     <PackageReference Include="Microsoft.FASTER.Core" />
     <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Spectre.Console.Cli" />
     <PackageReference Include="Spectre.Console.Analyzer">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

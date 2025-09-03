@@ -18,6 +18,12 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Akka.Hosting" />
     <PackageReference Include="Akka.Persistence.Hosting" />
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Spectre.Console.Cli" />
+    <PackageReference Include="Spectre.Console.Analyzer">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
