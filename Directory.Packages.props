@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageVersion Include="Akka" Version="1.5.48" />
     <PackageVersion Include="Akka.Hosting" Version="1.5.48" />
-    <PackageVersion Include="Akka.Persistence" Version="1.5.48" />
+    <PackageVersion Include="Akka.Persistence" Version="1.5.68" />
     <PackageVersion Include="Akka.Persistence.Hosting" Version="1.5.48" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.2" />
     <PackageVersion Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.15.2" />
