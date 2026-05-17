@@ -7,7 +7,7 @@
   <Import Project="build/targets/tests/Packages.props" />
   <Import Project="build/targets/codeanalysis/Packages.props" />
   <ItemGroup>
-    <PackageVersion Include="Akka" Version="1.5.48" />
+    <PackageVersion Include="Akka" Version="1.5.68" />
     <PackageVersion Include="Akka.Hosting" Version="1.5.48" />
     <PackageVersion Include="Akka.Persistence" Version="1.5.48" />
     <PackageVersion Include="Akka.Persistence.Hosting" Version="1.5.48" />
