@@ -135,4 +135,5 @@ jobs:
       with:
         name: artifacts-${{ matrix.os }}
         path: ./artifacts
+        retention-days: 7
         if-no-files-found: error
