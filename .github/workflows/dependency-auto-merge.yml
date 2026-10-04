@@ -21,7 +21,7 @@ jobs:
       - name: Approve PR
         run: gh pr review --approve "$PR_URL"
 
-      # Enabling auto-merge fails when the PR is already mergeable (no required
-      # checks on main), so fall back to merging directly.
+      # Enabling auto-merge fails when the PR is already mergeable (e.g. checks
+      # finished first), so fall back to merging directly. Rulesets still apply.
       - name: Enable auto-merge
         run: gh pr merge --auto --squash "$PR_URL" || gh pr merge --squash "$PR_URL"
