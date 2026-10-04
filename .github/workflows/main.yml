@@ -61,7 +61,7 @@ jobs:
       run: dotnet build --no-restore --configuration Release /p:Deterministic=true /p:UseSharedCompilation=false /p:BuildInParallel=false /nodeReuse:false /bl:./artifacts/logs/release/build.release.binlog
 
     - name: Restore Code Coverage history
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v8
       with:
         name: CoverageHistory-${{ matrix.os }}
         path: ./artifacts/TestResults/coveragehistory
@@ -75,14 +75,14 @@ jobs:
         REPORTGENERATOR_LICENSE: ${{ secrets.REPORTGENERATOR_LICENSE }}
 
     - name: Upload coverage history
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: success() && env.IS_TARGET_MAIN == 'true'
       with:
         name: CoverageHistory-${{ matrix.os }}
         path: ./artifacts/TestResults/coveragehistory
 
     - name: Upload binlogs
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: success() || failure()
       with:
         name: binlogs-${{ matrix.os }}
@@ -90,21 +90,21 @@ jobs:
         if-no-files-found: error
 
     - name: Upload SARIF files
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: success() || failure()
       with:
         name: SARIF files (${{ matrix.os }})
         path: ./artifacts/obj/**/*.sarif
 
     - name: Upload Test Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: success() || failure()
       with:
         name: .NET Test Reports (${{ matrix.os }})
         path: ./artifacts/TestResults/**/*.trx
 
     - name: Upload Code Coverage Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: success() || failure()
       with:
         name: .NET Code Coverage Reports (${{ matrix.os }})
@@ -130,7 +130,7 @@ jobs:
         files: ${{ github.workspace }}/artifacts/TestResults/coverage/Cobertura.xml
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: success() || failure()
       with:
         name: artifacts-${{ matrix.os }}
