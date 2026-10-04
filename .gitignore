@@ -400,3 +400,8 @@ FodyWeavers.xsd
 
 #Ignore cursor AI rules
 .cursor\rules\codacy.mdc
+
+# Local environment files (for example a 1Password Environment mount). Only op:// reference templates are tracked.
+.env
+.env.*
+!.env.op

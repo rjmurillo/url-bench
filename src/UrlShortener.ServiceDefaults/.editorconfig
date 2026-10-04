@@ -1,0 +1,24 @@
+[*.cs]
+
+# Startup-only configuration code; allocation and boxing analyzers add noise without value.
+
+# HAA0101: Call site is 'params' resulting in array allocation
+dotnet_diagnostic.HAA0101.severity = none
+
+# HAA0301: Closure allocation
+dotnet_diagnostic.HAA0301.severity = none
+
+# HAA0302: Display class allocation to capture closure
+dotnet_diagnostic.HAA0302.severity = none
+
+# HAA0303: Lambda or anonymous method in a generic method
+dotnet_diagnostic.HAA0303.severity = none
+
+# HAA0601: Value type to reference type conversion
+dotnet_diagnostic.HAA0601.severity = none
+
+# ECS0200: Consider readonly instead of const
+dotnet_diagnostic.ECS0200.severity = none
+
+# ECS0900: Avoid boxing and unboxing
+dotnet_diagnostic.ECS0900.severity = none

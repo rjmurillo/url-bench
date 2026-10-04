@@ -1,0 +1,11 @@
+[*.cs]
+
+# ECS0200: Consider readonly instead of const. These constants are public contract values (header, table, and
+# section names) that must not change between builds.
+dotnet_diagnostic.ECS0200.severity = none
+
+# ECS0900: Avoid boxing. Flags StringValues and span conversions that do not box.
+dotnet_diagnostic.ECS0900.severity = none
+
+# ECS1300: Static fields should use a static constructor or Lazy<T>. Inline initializers are equivalent here.
+dotnet_diagnostic.ECS1300.severity = none

@@ -1,0 +1,10 @@
+[*.cs]
+
+# ECS0200: Consider readonly instead of const
+dotnet_diagnostic.ECS0200.severity = none
+
+# ECS1300: Static fields should use a static constructor or Lazy<T>
+dotnet_diagnostic.ECS1300.severity = none
+
+# HAA0603: Delegate allocation
+dotnet_diagnostic.HAA0603.severity = none

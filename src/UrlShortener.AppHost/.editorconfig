@@ -1,0 +1,15 @@
+[*.cs]
+
+# The AppHost runs once to build a resource model; allocation and boxing analyzers add noise without value.
+
+# HAA0301: Closure allocation
+dotnet_diagnostic.HAA0301.severity = none
+
+# HAA0302: Display class allocation to capture closure
+dotnet_diagnostic.HAA0302.severity = none
+
+# ECS0900: Avoid boxing and unboxing
+dotnet_diagnostic.ECS0900.severity = none
+
+# MA0048: File name must match type name (top-level statements)
+dotnet_diagnostic.MA0048.severity = none

@@ -20,4 +20,10 @@
     <ProjectReference Include="..\src\Logic\Logic.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="UrlShortener.Web.Tests/**" />
+    <None Remove="UrlShortener.Web.Tests/**" />
+    <Content Remove="UrlShortener.Web.Tests/**" />
+  </ItemGroup>
+
 </Project>

@@ -215,6 +215,53 @@ dotnet run -c Release --framework net9.0 --project ./src/Benchmark/Benchmark.csp
 
 Note: repository benchmarks may take ~20 minutes; shortener benchmarks ~5 minutes.
 
+## Web app (go.richardmurillo.com)
+
+An [Aspire](https://aspire.dev) app serves real short links using `Murmur3HashUrlShortener` and Azure Table Storage.
+
+| Project | Purpose |
+| --- | --- |
+| [`src/UrlShortener.Web`](src/UrlShortener.Web) | `POST /api/links` (requires `X-Api-Key`) and `GET /{slug}` redirect |
+| [`src/UrlShortener.AppHost`](src/UrlShortener.AppHost) | Local orchestration (Azurite) and Azure Container Apps deployment model |
+| [`src/UrlShortener.ServiceDefaults`](src/UrlShortener.ServiceDefaults) | OpenTelemetry, health checks, resilience |
+
+Create a short link:
+
+```bash
+curl -X POST https://go.richardmurillo.com/api/links \
+  -H "X-Api-Key: $(op read op://Hermes/GO_RICHARDMURILLO_SHORTENER_API_KEY/credential)" \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://example.com/some/long/path"}'
+```
+
+Run locally (requires Docker for Azurite and the [Aspire CLI](https://aspire.dev)):
+
+```bash
+dotnet user-secrets set Parameters:apiKey "$(openssl rand -hex 24)" --project src/UrlShortener.AppHost
+aspire start
+```
+
+Deploy (Container Apps scale-to-zero, Standard_LRS storage, no managed dashboard). [`.env.op`](.env.op) holds the
+deployment settings and a 1Password reference for the API key, so no secret is stored in the repo or on disk:
+
+```bash
+az login
+op run --env-file=.env.op -- aspire deploy --non-interactive
+```
+
+Verify a deployment with the [k6](https://k6.io/) suites. They call the live API and read the `links` table directly to
+confirm the data reached storage:
+
+```bash
+test/k6/run.sh smoke        # also: integration, load
+```
+
+See [docs/url-shortener](docs/url-shortener/README.md) for operations and troubleshooting.
+
+The custom domain needs a DNS-only (not proxied) Cloudflare `CNAME go` to the app FQDN and a `TXT asuid.go` with the
+environment's verification ID. `Parameters:certificateName` in the AppHost `appsettings.json` names the managed
+certificate; deploying with it empty unbinds HTTPS.
+
 ## Tests
 
 Unit tests use [xUnit](https://xunit.net/). Each implementation of [`IUrlShortener`](src/Logic/Contracts/IUrlShortener.cs) and [`IUrlRepository`](src/Logic/Contracts/IUrlRepository.cs) is covered.

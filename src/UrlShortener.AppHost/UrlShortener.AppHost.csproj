@@ -1,0 +1,22 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.0">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks></TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>4f0d7a52-3c1e-4b8e-9a64-7d2b1c9e5f31</UserSecretsId>
+    <!-- WithHttpProbe is experimental in Aspire 13.6 but is the supported way to emit Container Apps probes. -->
+    <NoWarn>$(NoWarn);ASPIREPROBES001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UrlShortener.Web\UrlShortener.Web.csproj" />
+  </ItemGroup>
+
+</Project>
