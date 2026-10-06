@@ -20,7 +20,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
     <PackageVersion Include="Akka" Version="1.5.73" />
     <PackageVersion Include="Akka.Hosting" Version="1.5.73" />
-    <PackageVersion Include="Akka.Persistence" Version="1.5.72" />
+    <PackageVersion Include="Akka.Persistence" Version="1.5.73" />
     <PackageVersion Include="Akka.Persistence.Hosting" Version="1.5.72" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.15.8" />
