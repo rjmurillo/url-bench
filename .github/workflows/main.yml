@@ -34,7 +34,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -42,9 +42,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Pull requests (including dependabot[bot]) run the single Linux leg to save Actions minutes.
-        # Push to main, merge_group, schedule, and manual runs keep the full matrix.
-        os: ${{ (github.event_name == 'pull_request' || github.actor == 'dependabot[bot]') && fromJSON('["ubuntu-latest"]') || fromJSON('["windows-11-arm","ubuntu-24.04-arm","ubuntu-latest","windows-latest","macos-latest"]') }}
+        # Pull requests (including dependabot) run ubuntu-latest only. Other events keep the full matrix.
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["windows-11-arm","ubuntu-24.04-arm","ubuntu-latest","windows-latest","macos-latest"]') }}
 
     runs-on: ${{ matrix.os }}
 
