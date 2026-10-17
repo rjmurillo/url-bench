@@ -24,12 +24,6 @@ on:
     branches:
       - main
   workflow_call: # Allow to be called from the release workflow
-    inputs:
-      full_matrix:
-        description: 'Build on the full 5-OS matrix? (true/false)'
-        required: false
-        default: true
-        type: boolean
 
 permissions:
   security-events: write  # required for CodeQL
@@ -46,9 +40,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Full 5-OS matrix for workflow_dispatch and workflow_call (full_matrix input); ubuntu-latest otherwise.
-        # Inside a called workflow, github.event_name is the caller's event, so gate on the input instead.
-        os: ${{ (github.event_name == 'workflow_dispatch' || inputs.full_matrix) && fromJSON('["windows-11-arm","ubuntu-24.04-arm","ubuntu-latest","windows-latest","macos-latest"]') || fromJSON('["ubuntu-latest"]') }}
+        # Linux only. The single entry keeps the job name `build (ubuntu-latest)`,
+        # which is the required status check in the main branch ruleset.
+        os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
