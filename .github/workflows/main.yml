@@ -24,8 +24,6 @@ on:
     branches:
       - main
   workflow_call: # Allow to be called from the release workflow
-  schedule:
-    - cron: '0 3 * * *' # Nightly run for performance validation
 
 permissions:
   security-events: write  # required for CodeQL
@@ -42,8 +40,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Pull requests (including dependabot) run ubuntu-latest only. Other events keep the full matrix.
-        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["windows-11-arm","ubuntu-24.04-arm","ubuntu-latest","windows-latest","macos-latest"]') }}
+        # Linux only. The single entry keeps the job name `build (ubuntu-latest)`,
+        # which is the required status check in the main branch ruleset.
+        os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -91,6 +90,7 @@ jobs:
       with:
         name: CoverageHistory-${{ matrix.os }}
         path: ./artifacts/TestResults/coveragehistory
+        retention-days: 7
 
     - name: Upload binlogs
       uses: actions/upload-artifact@v7
@@ -98,6 +98,7 @@ jobs:
       with:
         name: binlogs-${{ matrix.os }}
         path: ./artifacts/logs
+        retention-days: 7
         if-no-files-found: error
 
     - name: Upload SARIF files
@@ -106,6 +107,7 @@ jobs:
       with:
         name: SARIF files (${{ matrix.os }})
         path: ./artifacts/obj/**/*.sarif
+        retention-days: 7
 
     - name: Upload Test Report
       uses: actions/upload-artifact@v7
@@ -113,6 +115,7 @@ jobs:
       with:
         name: .NET Test Reports (${{ matrix.os }})
         path: ./artifacts/TestResults/**/*.trx
+        retention-days: 7
 
     - name: Upload Code Coverage Report
       uses: actions/upload-artifact@v7
@@ -120,6 +123,7 @@ jobs:
       with:
         name: .NET Code Coverage Reports (${{ matrix.os }})
         path: ./artifacts/TestResults/coverage/**
+        retention-days: 7
 
     - name: Publish coverage summary to GitHub
       if: success() && steps.test-step.outcome == 'success'
@@ -139,12 +143,3 @@ jobs:
       with:
         token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
         files: ${{ github.workspace }}/artifacts/TestResults/coverage/Cobertura.xml
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v7
-      if: success() || failure()
-      with:
-        name: artifacts-${{ matrix.os }}
-        path: ./artifacts
-        retention-days: 7
-        if-no-files-found: error
