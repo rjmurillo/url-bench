@@ -35,7 +35,7 @@ It helps answer:
 
 - Windows, macOS, or Linux
 - Git: [Download Git](https://git-scm.com/downloads)
-- .NET 9 SDK: [Download .NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+- .NET 10 SDK: [Download .NET 10](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 
 Check your install:
 
@@ -44,7 +44,7 @@ dotnet --info
 git --version
 ```
 
-This repo pins SDK 9.0.304 (or later) in `global.json`.
+This repo pins SDK 10.0.403 (or later) in `global.json`.
 
 ### 2) Build and run a small test
 
@@ -60,7 +60,7 @@ dotnet tool restore
 dotnet build -c Release
 
 # Run a short benchmark using the incrementing integer shortener and a concurrent dictionary repository
-dotnet run --project ./src/Console --framework net9.0 -- bench -t IncrementingIntegerUrlShortener -s ConcurrentUrlRepository
+dotnet run --project ./src/Console --framework net10.0 -- bench -t IncrementingIntegerUrlShortener -s ConcurrentUrlRepository
 ```
 
 What you'll see:
@@ -161,7 +161,7 @@ Options:
 Example: attempt to shorten 5.2 trillion URLs, each generating a unique short URL
 
 ```powershell
-dotnet run --project ./src/Console -c Release --framework net9.0 -- bench -t IncrementingIntegerUrlShortener -s ConcurrentUrlRepository -n 5200000000000 -i 3
+dotnet run --project ./src/Console -c Release --framework net10.0 -- bench -t IncrementingIntegerUrlShortener -s ConcurrentUrlRepository -n 5200000000000 -i 3
 ```
 
 Defaults when you don't pass options:
@@ -210,7 +210,7 @@ We include a [BenchmarkDotNet](https://benchmarkdotnet.org/) project for deeper 
 Run:
 
 ```powershell
-dotnet run -c Release --framework net9.0 --project ./src/Benchmark/Benchmark.csproj
+dotnet run -c Release --framework net10.0 --project ./src/Benchmark/Benchmark.csproj
 ```
 
 Note: repository benchmarks may take ~20 minutes; shortener benchmarks ~5 minutes.
