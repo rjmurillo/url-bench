@@ -13,8 +13,8 @@ These instructions define how the coding agent must operate in Richard Murilloâ€
 ---
 
 ## Development Environment
-- **Language:** C# 13
-- **Runtime:** .NET 9
+- **Language:** C# 14
+- **Runtime:** .NET 10 (SDK pinned in `global.json`)
 - **Build Settings:** `/p:PedanticMode=true`
 - **Formatting:** `dotnet format` must be clean before commit
 - **Tests:** 100% coverage required for all changes
@@ -99,7 +99,7 @@ Your purpose is to **accelerate correct, high-quality development**â€”not to spe
 - [ ] Identify constraints: runtime, versions, perf targets, APIs allowed.
 
 ## 1) Environment Gate
-- [ ] Language is C# 13. Target .NET 9.
+- [ ] Language is C# 14. Target .NET 10.
 - [ ] Build uses `/p:PedanticMode=true`.
 - [ ] Repo builds locally with no warnings.
 
