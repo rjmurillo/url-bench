@@ -8,12 +8,11 @@ on:
         required: false
         default: false
         type: boolean
+  # No paths-ignore on pull_request. The required check must report on every PR.
+  # The changes job skips the compile job when a PR only touches docs.
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
   push:
     branches:
       - main
@@ -36,12 +35,41 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
 
 jobs:
-  build:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+    - name: Detect non-doc changes
+      id: filter
+      env:
+        GH_TOKEN: ${{ github.token }}
+        EVENT_NAME: ${{ github.event_name }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+      run: |
+        if [ "$EVENT_NAME" != "pull_request" ]; then
+          echo "code=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        files=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename')
+        echo "Changed files:"
+        echo "$files"
+        # Same patterns as the push paths-ignore: docs/** and **.md.
+        if echo "$files" | grep -qvE '^docs/|\.md$'; then
+          echo "code=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "code=false" >> "$GITHUB_OUTPUT"
+        fi
+
+  compile:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
       matrix:
-        # Linux only. The single entry keeps the job name `build (ubuntu-latest)`,
-        # which is the required status check in the main branch ruleset.
         os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
@@ -143,3 +171,29 @@ jobs:
       with:
         token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
         files: ${{ github.workspace }}/artifacts/TestResults/coverage/Cobertura.xml
+
+  # Gate for the required status check. The single matrix entry keeps the job
+  # name `build (ubuntu-latest)`, which the main branch ruleset requires.
+  # It passes when compile passed, or when compile was skipped for a docs-only PR.
+  build:
+    needs: [changes, compile]
+    if: always()
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Check compile result
+      env:
+        CHANGES_RESULT: ${{ needs.changes.result }}
+        CODE_CHANGED: ${{ needs.changes.outputs.code }}
+        COMPILE_RESULT: ${{ needs.compile.result }}
+      run: |
+        echo "changes=$CHANGES_RESULT code=$CODE_CHANGED compile=$COMPILE_RESULT"
+        if [ "$CHANGES_RESULT" != "success" ]; then
+          exit 1
+        fi
+        if [ "$CODE_CHANGED" = "false" ] && [ "$COMPILE_RESULT" = "skipped" ]; then
+          exit 0
+        fi
+        [ "$COMPILE_RESULT" = "success" ]
