@@ -54,11 +54,13 @@ jobs:
           echo "code=true" >> "$GITHUB_OUTPUT"
           exit 0
         fi
-        files=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename')
+        # Include the old path of renamed files, so moving code into docs/ still compiles.
+        files=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[] | .filename, (.previous_filename // empty)')
         echo "Changed files:"
         echo "$files"
         # Same patterns as the push paths-ignore: docs/** and **.md.
-        if echo "$files" | grep -qvE '^docs/|\.md$'; then
+        # A here-string, not a pipe: grep -q exiting early must not fail the test under pipefail.
+        if grep -qvE '^docs/|\.md$' <<< "$files"; then
           echo "code=true" >> "$GITHUB_OUTPUT"
         else
           echo "code=false" >> "$GITHUB_OUTPUT"
