@@ -22,7 +22,7 @@ namespace Console;
 internal sealed class BenchmarkCommand : Command<BenchmarkCommand.Settings>
 {
 #pragma warning disable MA0051
-    public override int Execute(CommandContext context, Settings settings)
+    public override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
 #pragma warning restore MA0051
     {
         try
