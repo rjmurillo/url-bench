@@ -16,4 +16,4 @@
 |docs filter scope: `changes` filters on `pull_request` only. Push skips docs-only changes through `paths-ignore`. Push, merge queue, and dispatch runs that start always compile.
 |filter sync: edit the `changes` regex and the push `paths-ignore` list together.
 |`changes` needs `pull-requests: read` for `gh api`. If `changes` fails, the gate fails.
-|concurrency: one group per workflow, event, and PR number or ref. New runs cancel older ones on `pull_request` and `push` only.
+|concurrency: one group per workflow, event, and PR number or ref. New runs cancel running ones on `pull_request` and `push` only. On every event, a new run replaces an older pending run.
