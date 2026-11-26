@@ -9,10 +9,11 @@
 
 ## CI rules agents must not break
 
-|required check: the main ruleset requires the check `build (ubuntu-latest)`. It comes from the `build` gate job in main.yml.
-|keep the gate: do not rename `build`, change its matrix, or drop `if: always()`. Each change renames or hides the required check.
-|docs-only PRs: `pull_request` has no `paths-ignore`, so the required check always reports.
-|docs filter: the `changes` job skips `compile` when every changed path matches `^docs/` or `\.md$`. The gate then passes.
-|filter sync: the `changes` patterns must match the `push` paths-ignore list (`docs/**`, `**.md`). Edit both together.
-|matrix: `compile` runs `os: [ubuntu-latest]` with `fail-fast: false`. The `build` gate keeps that single entry for its check name.
+|required check: the main ruleset requires only `build (ubuntu-latest)`. The `build` gate job in main.yml emits it.
+|check name: only the `build` job name and its matrix set that name. Renaming either breaks the required check.
+|`if: always()` on `build`: without it, a failed compile skips the gate. A skipped required check counts as passing.
+|docs-only PRs: never add `paths-ignore` to `pull_request`. The `changes` job skips `compile` instead, and the gate passes.
+|docs filter scope: it runs on `pull_request` only. Push, merge queue, dispatch, and call always compile.
+|filter sync: edit the `changes` regex and the push `paths-ignore` list together.
+|`changes` needs `pull-requests: read` for `gh api`. If `changes` fails, the gate fails.
 |concurrency: one group per workflow, event, and PR number or ref. New runs cancel older ones on `pull_request` and `push` only.
